@@ -1,34 +1,110 @@
-<script>
-async function spracujVyzjazd() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const akcia = urlParams.get('akcia');
-    
-    if (akcia) {
-        // 1. Skúsime získať meno z pamäte mobilu
-        let meno = localStorage.getItem('mojeMeno');
-        
-        // 2. Ak meno v pamäti nie je, vypýtame si ho
-        if (!meno) {
-            const vybraneMeno = prompt("Tento mobil ešte nie je priradený. Napíš svoje meno (presne ako je v systéme):", "Jaroslav Baláž");
-            if (vybraneMeno) {
-                localStorage.setItem('mojeMeno', vybraneMeno);
-                meno = vybraneMeno;
-            } else {
-                alert("Bez mena ťa nemôžem zapísať.");
-                return;
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHZ Lednica - Dispečing</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .header { background-color: #d32f2f; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { margin: 0; font-size: 2.5em; text-transform: uppercase; letter-spacing: 2px; }
+        .status-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+        .hasic-card { width: 250px; padding: 20px; border-radius: 12px; font-size: 1.5em; font-weight: bold; transition: all 0.3s ease; border: 2px solid transparent; }
+        .stav-NEZADANE { background-color: #333; color: #888; border-color: #444; }
+        .stav-IDEM { background-color: #2e7d32; color: white; border-color: #4caf50; box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
+        .stav-NEMOZEM { background-color: #c62828; color: white; border-color: #f44336; }
+        .loading { font-size: 1.2em; color: #ffa000; }
+        .footer { margin-top: 30px; font-size: 0.9em; color: #666; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🚒 DHZ LEDNICA 🚒</h1>
+        <p>AKTUÁLNY STAV VÝJAZDU</p>
+    </div>
+
+    <div id="loading" class="loading">Pripájam sa k základni...</div>
+    <div id="dispecing" class="status-container"></div>
+
+    <div class="footer">Systém sa automaticky resetuje po ukončení zásahu.</div>
+
+    <script>
+        // TU VLOŽ SVOJU KONFIGURÁCIU FIREBASE (ako si mal predtým)
+        const firebaseConfig = {
+            apiKey: "AIzaSy...", 
+            authDomain: "hasici-lednica.firebaseapp.com",
+            projectId: "hasici-lednica",
+            storageBucket: "hasici-lednica.appspot.com",
+            messagingSenderId: "747340639310",
+            appId: "1:747340639310:web:..."
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Funkcia na spracovanie kliknutia z Pushoveru
+        async function spracujKliknutie() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const akcia = urlParams.get('akcia');
+
+            if (akcia) {
+                let meno = localStorage.getItem('mojeMeno');
+
+                if (!meno) {
+                    meno = prompt("Tento mobil ešte nie je priradený. Napíš svoje meno (napr. Jaroslav Baláž):");
+                    if (meno) {
+                        localStorage.setItem('mojeMeno', meno);
+                    } else {
+                        return; 
+                    }
+                }
+
+                try {
+                    await db.collection("vyjazdy").doc("active").update({
+                        [meno]: akcia
+                    });
+                    // Po zapísaní odstránime parametre z URL, aby sa to pri refreshi neopakovalo
+                    window.history.replaceState({}, document.title, "/");
+                } catch (error) {
+                    console.error("Chyba pri zápise:", error);
+                }
             }
         }
-        
-        // 3. Teraz už meno máme, zapíšeme ho do Firebase
-        try {
-            const docRef = doc(db, "vyjazdy", "active");
-            await updateDoc(docRef, {
-                [meno]: akcia === 'IDEM' ? 'IDEM' : 'NEMOZEM'
+
+        // Sledovanie zmien v databáze v reálnom čase
+        function nacitajDispecing() {
+            db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
+                if (doc.exists) {
+                    document.getElementById('loading').style.display = 'none';
+                    const data = doc.data();
+                    const container = document.getElementById('dispecing');
+                    container.innerHTML = '';
+
+                    // Zoradenie mien podľa abecedy
+                    Object.keys(data).sort().forEach(meno => {
+                        const stav = data[meno];
+                        const card = document.createElement('div');
+                        card.className = `hasic-card stav-${stav}`;
+                        card.innerHTML = `
+                            <div>${meno}</div>
+                            <div style="font-size: 0.6em; margin-top: 5px; opacity: 0.8;">
+                                ${stav === 'IDEM' ? 'PRICHÁDZA' : (stav === 'NEMOZEM' ? 'NEDOSTUPNÝ' : 'ČAKÁ')}
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                }
             });
-            console.log("Úspešne zapísané!");
-        } catch (e) {
-            console.error("Chyba pri zápise: ", e);
         }
-    }
-}
-</script>
+
+        // Spustenie pri načítaní stránky
+        window.onload = () => {
+            spracujKliknutie();
+            nacitajDispecing();
+        };
+    </script>
+</body>
+</html>
