@@ -86,8 +86,7 @@ body{
     padding:15px;
     text-align:center;
     animation: stroboskop 0.8s infinite;
-    /* Banner je v základe skrytý */
-    display: none; 
+    display: none; /* Skrytý, kým nie je aktívny výjazd */
 }
 
 @keyframes stroboskop {
@@ -176,22 +175,39 @@ body{
     color:#999;
 }
 
-/* MOBILE FIX */
+/* ========================= */
+/* 📱 MOBILE FIX (KOMPAKTNÝ) */
+/* ========================= */
+
 @media (max-width: 768px){
     body{ overflow:hidden; }
+
     .header{ flex-direction:column; gap:4px; padding:6px 10px; }
     .brand{ font-size:0.9rem; text-align:center; }
     .center-timer{ font-size:1rem; }
     .clock{ font-size:1rem; }
     .reset{ font-size:0.65rem; padding:3px 6px; }
-    .banner{ padding:8px; }
-    .event-type{ font-size:1.4rem; }
-    .event-address{ font-size:1rem; }
+
+    /* BANNER ZMENŠENÝ O 50% */
+    .banner{ padding:5px; }
+    .event-type{ font-size:1.2rem; line-height:1.1; }
+    .event-address{ font-size:0.8rem; margin-top:2px; }
+
     .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
     .col{ padding:6px; }
-    .title{ font-size:0.9rem; margin-bottom:5px; padding-bottom:3px; }
-    .list{ grid-template-columns:1fr; gap:2px; }
-    .item{ font-size:0.8rem; padding:2px 4px; line-height:1.1; letter-spacing:0.3px; }
+
+    /* Názvy sekcií IDEM/NEJDEM */
+    .title{ font-size:0.8rem; margin-bottom:3px; padding-bottom:2px; }
+
+    /* MENÁ V 2 STĹPCOCH A ZMENŠENÉ O 50% */
+    .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
+    .item{
+        font-size: 0.65rem;
+        padding: 2px 4px;
+        line-height: 1.0;
+        letter-spacing: 0px;
+    }
+
     .footer{ font-size:0.8rem; padding:6px; text-align:center; }
 }
 </style>
@@ -246,7 +262,7 @@ setInterval(()=>{
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
 },1000);
 
-/* INPUT Z URL */
+/* VSTUP Z URL */
 async function spracujVstup(){
     const params=new URLSearchParams(window.location.search);
     const u=params.get('udalost');
@@ -275,7 +291,7 @@ async function spracujVstup(){
     }
 }
 
-/* FIREBASE - SLEDOVANIE ZMIEN */
+/* FIREBASE SNAPSHOT */
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const idem=document.getElementById("idem");
     const nejdem=document.getElementById("nejdem");
@@ -285,7 +301,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     nejdem.innerHTML="";
 
     if(!doc.exists){
-        banner.style.display="none"; // Schová banner, ak nie je výjazd
+        banner.style.display="none";
         document.getElementById("timer").innerText="--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
@@ -294,9 +310,8 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const d=doc.data();
     const m=d.__metadata||{};
 
-    // ZOBRAZENIE BANNERA
     if(m.typ){
-        banner.style.display="block"; // Toto ti tam chýbalo, aby sa banner ukázal
+        banner.style.display="block";
         document.getElementById("typ").innerText=m.typ;
         document.getElementById("adresa").innerText=m.miesto||"";
         if(m.timestamp) startTimer(m.timestamp);
