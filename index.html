@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <title>DHZ Lednica - OPERAČNÉ</title>
+    <title>DHZ Lednica - DISPEČING</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -20,7 +20,6 @@
             flex-direction: column;
         }
 
-        /* HEADER */
         .header { 
             display: flex; 
             justify-content: space-between; 
@@ -41,7 +40,6 @@
             color: #00e5ff;
         }
 
-        /* EVENT */
         .event-banner { 
             text-align: center; 
             padding: 20px;
@@ -58,7 +56,6 @@
             100% { opacity: 1; }
         }
 
-        /* MAIN */
         .main-content { 
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -109,7 +106,6 @@
             color: #777;
         }
 
-        /* FOOTER */
         .bottom-bar {
             height: 40px;
             background: #0f141a;
@@ -184,7 +180,6 @@
         document.getElementById('clock').innerText = new Date().toLocaleTimeString('sk-SK');
     }, 1000);
 
-    /* PÔVODNÁ FUNKCIONALITA (NECHÁVAM) */
     const params = new URLSearchParams(window.location.search);
     const u = params.get('udalost');
     const a = params.get('akcia');
@@ -194,13 +189,40 @@
         window.history.replaceState({}, '', '/');
     }
 
-    if (a) {
-        let m = localStorage.getItem('h_meno') || prompt("Meno:");
-        if (m) { 
-            m = m.trim().toUpperCase();
-            localStorage.setItem('h_meno', m); 
-            db.collection("vyjazdy").doc("active").set({ [m]: a }, { merge: true }); 
+    /* COOKIE FUNKCIE */
+    function setCookie(name, value, days=365) {
+        const d = new Date();
+        d.setTime(d.getTime() + (days*24*60*60*1000));
+        document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+    }
+
+    function getCookie(name) {
+        const v = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+        return v ? v.split('=')[1] : null;
+    }
+
+    /* MENO */
+    let m = localStorage.getItem('h_meno') || getCookie('h_meno');
+
+    if (!m) {
+        m = prompt("Zadaj svoje meno (len raz):");
+
+        if (!m || m.trim() === "") {
+            alert("Meno je povinné!");
+            throw new Error("Bez mena sa nedá pokračovať");
         }
+
+        m = m.trim().toUpperCase();
+        localStorage.setItem('h_meno', m);
+        setCookie('h_meno', m);
+    } else {
+        localStorage.setItem('h_meno', m);
+        setCookie('h_meno', m);
+    }
+
+    /* AKCIA */
+    if (a) {
+        db.collection("vyjazdy").doc("active").set({ [m]: a }, { merge: true });
         window.history.replaceState({}, '', '/');
     }
 
