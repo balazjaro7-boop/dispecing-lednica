@@ -80,11 +80,11 @@ body{
     color:#fff;
 }
 
-/* EVENT BANNER - OPRAVENÝ */
+/* EVENT BANNER - ZMENŠENÝ O 50% NA PC */
 #banner {
-    display: none; /* Štandardne skrytý cez CSS */
+    display: none;
     flex: 0 0 auto;
-    padding: 15px;
+    padding: 8px; /* Zmenšený padding */
     text-align: center;
     animation: stroboskop 0.8s infinite;
 }
@@ -96,15 +96,15 @@ body{
 }
 
 .event-type{
-    font-size:2.8rem;
+    font-size:1.4rem; /* Zmenšené z 2.8rem */
     font-weight:900;
     text-transform:uppercase;
 }
 
 .event-address{
-    font-size:1.8rem;
+    font-size:0.9rem; /* Zmenšené z 1.8rem */
     font-weight:bold;
-    margin-top:5px;
+    margin-top:2px;
 }
 
 /* MAIN */
@@ -171,11 +171,7 @@ body{
     cursor:pointer;
 }
 
-.footer:hover{
-    color:#999;
-}
-
-/* MOBILE FIX */
+/* MOBILE FIX - EXTRA MINI BANNER AJ MENÁ */
 @media (max-width: 768px){
     body{ overflow:hidden; }
     .header{ flex-direction:column; gap:4px; padding:6px 10px; }
@@ -184,17 +180,19 @@ body{
     .clock{ font-size:1rem; }
     .reset{ font-size:0.65rem; padding:3px 6px; }
 
-    #banner { padding:5px; }
-    .event-type{ font-size:1.2rem; line-height:1.1; }
-    .event-address{ font-size:0.8rem; margin-top:2px; }
+    /* BANNER NA MOBILE - O ĎALŠÍCH 50% MENŠÍ */
+    #banner { padding:3px; }
+    .event-type{ font-size:0.8rem; line-height:1; }
+    .event-address{ font-size:0.6rem; margin-top:0px; }
 
     .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
-    .col{ padding:6px; }
-    .title{ font-size:0.8rem; margin-bottom:3px; padding-bottom:2px; }
+    .col{ padding:4px; }
+    .title{ font-size:0.7rem; margin-bottom:2px; padding-bottom:1px; }
 
+    /* MENÁ V 2 STĹPCOCH - MINI */
     .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
-    .item{ font-size: 0.65rem; padding: 2px 4px; line-height: 1.0; }
-    .footer{ font-size:0.8rem; padding:6px; text-align:center; }
+    .item{ font-size: 0.6rem; padding: 1px 3px; line-height: 1.0; }
+    .footer{ font-size:0.7rem; padding:5px; text-align:center; }
 }
 </style>
 </head>
@@ -240,7 +238,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 let timerInterval;
 
 setInterval(()=>{
@@ -294,7 +291,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const m=d.__metadata||{};
 
     if(m.typ){
-        banner.style.display="block"; // Zviditeľní banner
+        banner.style.display="block";
         document.getElementById("typ").innerText=m.typ;
         document.getElementById("adresa").innerText=m.miesto||"";
         if(m.timestamp) startTimer(m.timestamp);
