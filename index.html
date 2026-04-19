@@ -7,39 +7,158 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #1a1a1a; color: white; margin: 0; text-align: center; }
-        .header { background-color: #d32f2f; padding: 20px; font-size: 28px; font-weight: bold; border-bottom: 5px solid #b71c1c; }
-        .info-box { background-color: #333; padding: 15px; margin: 10px; border: 2px dashed #ffeb3b; color: #ffeb3b; font-size: 22px; text-transform: uppercase; }
-        .container { display: flex; justify-content: space-around; padding: 20px; flex-wrap: wrap; }
-        .column { background-color: #000; border: 2px solid #333; border-radius: 10px; width: 45%; min-height: 450px; padding: 10px; }
-        .idem-header { border: 2px solid #4caf50; color: #4caf50; padding: 10px; }
-        .nejdem-header { border: 2px solid #f44336; color: #f44336; padding: 10px; }
-        .name-box { padding: 15px; margin: 10px 0; border-radius: 5px; font-size: 24px; font-weight: bold; text-transform: uppercase; }
-        .bg-green { background-color: #2e7d32; border-left: 10px solid #1b5e20; }
-        .bg-red { background-color: #c62828; border-left: 10px solid #b71c1c; }
-        .nav-link { color: #888; text-decoration: none; font-size: 14px; display: block; margin-top: 20px; }
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: #141414;
+            --accent-red: #e63946;
+            --accent-green: #2ecc71;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border-color: #262626;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Moderný Header */
+        .header { 
+            background-color: var(--card-bg); 
+            padding: 15px 30px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--accent-red);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-logo { height: 70px; width: auto; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+        .header-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        
+        /* Box pre informáciu o výjazde */
+        .info-box { 
+            background: linear-gradient(90deg, #1a1a00 0%, #333300 100%);
+            padding: 15px; 
+            margin: 10px 20px; 
+            border: 1px solid #ffeb3b; 
+            border-left: 5px solid #ffeb3b;
+            color: #ffeb3b; 
+            font-size: 22px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Hlavný kontajner */
+        .main-container { 
+            display: flex; 
+            flex: 1;
+            gap: 20px;
+            padding: 10px 20px 20px 20px;
+            box-sizing: border-box;
+        }
+
+        .section { 
+            flex: 1; 
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            display: flex; 
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        
+        .section-header { 
+            padding: 20px; 
+            font-size: 20px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .idem-title { color: var(--accent-green); border-bottom: 2px solid var(--accent-green); }
+        .nejdem-title { color: var(--accent-red); border-bottom: 2px solid var(--accent-red); }
+
+        /* Grid mien */
+        .names-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            padding: 25px; 
+            align-content: start;
+            overflow-y: auto;
+        }
+
+        .name-item { 
+            font-size: 24px; 
+            font-weight: 600; 
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.03);
+            border-left: 4px solid var(--text-muted);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .idem-item { border-left-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+        .nejdem-item { border-left-color: var(--accent-red); background: rgba(230, 57, 70, 0.05); }
+
+        .nav-link { 
+            padding: 10px 20px;
+            color: var(--text-muted); 
+            text-decoration: none; 
+            font-size: 13px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-link:hover { color: #fff; }
+
+        .clock { font-size: 20px; font-weight: bold; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
-<div class="header">🚒 DHZ LEDNICA - LIVE DISPEČING</div>
+<div class="header">
+    <div class="header-left">
+        <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+        <div class="header-title">DHZ Lednica <span style="color: var(--text-muted); font-weight: 300;">| Live Dispečing</span></div>
+    </div>
+    <div class="clock" id="live-clock">00:00:00</div>
+</div>
+
 <div id="vyjazd-info" class="info-box" style="display:none;"></div>
 
-<div class="container">
-    <div class="column">
-        <h2 class="idem-header">🟢 IDEM</h2>
-        <div id="list-idem"></div>
+<div class="main-container">
+    <div class="section">
+        <div class="section-header">🟢 IDEM</div>
+        <div id="list-idem" class="names-grid"></div>
     </div>
-    <div class="column">
-        <h2 class="nejdem-header">🔴 NEJDEM</h2>
-        <div id="list-nejdem"></div>
+
+    <div class="section">
+        <div class="section-header">🔴 NEJDEM</div>
+        <div id="list-nejdem" class="names-grid"></div>
     </div>
 </div>
 
-<a href="archiv.html" class="nav-link">Kniha výjazdov (Archív)</a>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <a href="archiv.html" class="nav-link">Otvoriť knihu výjazdov</a>
+    <div class="nav-link" style="cursor: default;">Sledujete aktuálny stav v reálnom čase</div>
+</div>
 
 <script>
-    // TU PONECHAJ SVOJU KONFIGURÁCIU
+    // TU DOPLŇ SVOJU KONFIGURÁCIU
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -53,27 +172,31 @@
     const db = firebase.firestore();
     const docRef = db.collection("vyjazdy").doc("active");
 
-    // FUNKCIA NA ARCHIVÁCIU A RESET
+    // Hodiny
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('live-clock').innerText = now.toLocaleTimeString('sk-SK');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
     async function archiveAndReset(data) {
         const huraIdem = [];
         const smolaNejdem = [];
-        
         for (const [meno, stav] of Object.entries(data)) {
             if (meno !== 'lastUpdate' && meno !== 'infoText') {
                 if (stav === "IDEM") huraIdem.push(meno);
-                if (stav === "NEMÔŽEM" || stav === "NEJDEM") smolaNejdem.push(meno);
+                if (stav === "NEMÔŽEM" || stav === "NEJDEM" || stav === "NEJDE") smolaNejdem.push(meno);
             }
         }
-
         if (huraIdem.length > 0 || smolaNejdem.length > 0) {
             await db.collection("archiv").add({
                 datum: firebase.firestore.FieldValue.serverTimestamp(),
-                info: data.infoText || "Nezadaný typ výjazdu",
+                info: data.infoText || "VÝJAZD BEZ TEXTU",
                 isli: huraIdem,
                 nejdli: smolaNejdem
             });
         }
-
         const updates = { infoText: "" };
         Object.keys(data).forEach(key => {
             if (key !== 'lastUpdate' && key !== 'infoText') updates[key] = "NEZADANÉ";
@@ -81,7 +204,6 @@
         await docRef.update(updates);
     }
 
-    // SPRACOVANIE ADRESY (meno, akcia, info)
     const params = new URLSearchParams(window.location.search);
     const meno = params.get('meno');
     const akcia = params.get('akcia');
@@ -91,20 +213,16 @@
         let up = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
         if (meno && akcia) up[meno] = akcia;
         if (info) up.infoText = info.replace(/_/g, ' ');
-        
-        docRef.update(up).then(() => {
-            window.history.replaceState({}, document.title, "/");
-        });
+        docRef.update(up).then(() => { window.history.replaceState({}, document.title, "/"); });
     }
 
-    // REÁLNY ČAS
     docRef.onSnapshot((doc) => {
         const data = doc.data();
         if (!data) return;
 
         const infoDiv = document.getElementById("vyjazd-info");
         if (data.infoText) {
-            infoDiv.innerText = "AKTUÁLNY VÝJAZD: " + data.infoText;
+            infoDiv.innerText = "HLÁSENIE: " + data.infoText;
             infoDiv.style.display = "block";
         } else {
             infoDiv.style.display = "none";
@@ -116,16 +234,21 @@
 
         if (data.lastUpdate) {
             const last = data.lastUpdate.toDate().getTime();
-            if (new Date().getTime() - last > 1800000) { // 30 min
+            if (new Date().getTime() - last > 1800000) { 
                 archiveAndReset(data);
                 return;
             }
         }
 
-        for (const [m, s] of Object.entries(data)) {
-            if (m === 'lastUpdate' || m === 'infoText') continue;
-            if (s === "IDEM") lI.innerHTML += `<div class="name-box bg-green">${m}</div>`;
-            else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") lN.innerHTML += `<div class="name-box bg-red">${m}</div>`;
+        const entries = Object.entries(data).filter(([m]) => m !== 'lastUpdate' && m !== 'infoText');
+        entries.sort((a, b) => a[0].localeCompare(b[0]));
+
+        for (const [m, s] of entries) {
+            if (s === "IDEM") {
+                lI.innerHTML += `<div class="name-item idem-item">${m}</div>`;
+            } else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") {
+                lN.innerHTML += `<div class="name-item nejdem-item">${m}</div>`;
+            }
         }
     });
 </script>
