@@ -75,16 +75,11 @@ body{
     font-size:0.8rem;
 }
 
-.reset:hover{
-    background:#ff1744;
-    color:#fff;
-}
-
-/* EVENT BANNER - ZMENŠENÝ O 50% NA PC */
+/* BANNER PC */
 #banner {
     display: none;
     flex: 0 0 auto;
-    padding: 8px; /* Zmenšený padding */
+    padding: 8px;
     text-align: center;
     animation: stroboskop 0.8s infinite;
 }
@@ -96,13 +91,13 @@ body{
 }
 
 .event-type{
-    font-size:1.4rem; /* Zmenšené z 2.8rem */
+    font-size:1.4rem;
     font-weight:900;
     text-transform:uppercase;
 }
 
 .event-address{
-    font-size:0.9rem; /* Zmenšené z 1.8rem */
+    font-size:0.9rem;
     font-weight:bold;
     margin-top:2px;
 }
@@ -135,7 +130,6 @@ body{
     padding-bottom:5px;
 }
 
-/* LIST */
 .list{
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
@@ -150,17 +144,9 @@ body{
     text-transform:uppercase;
 }
 
-.idem{
-    color:var(--green);
-    background:rgba(0,230,118,0.08);
-}
+.idem{ color:var(--green); background:rgba(0,230,118,0.08); }
+.nejdem{ color:var(--gray); background:rgba(255,255,255,0.03); }
 
-.nejdem{
-    color:var(--gray);
-    background:rgba(255,255,255,0.03);
-}
-
-/* FOOTER */
 .footer{
     flex:0 0 auto;
     padding:10px 15px;
@@ -168,31 +154,45 @@ body{
     color:#444;
     background:#000;
     border-top:1px solid #111;
-    cursor:pointer;
+    text-align:center;
 }
 
-/* MOBILE FIX - EXTRA MINI BANNER AJ MENÁ */
+/* ================================= */
+/* 📱 MOBILNÁ OPRAVA - TOTÁLNY FIX  */
+/* ================================= */
+
 @media (max-width: 768px){
-    body{ overflow:hidden; }
-    .header{ flex-direction:column; gap:4px; padding:6px 10px; }
-    .brand{ font-size:0.9rem; text-align:center; }
-    .center-timer{ font-size:1rem; }
-    .clock{ font-size:1rem; }
-    .reset{ font-size:0.65rem; padding:3px 6px; }
+    /* Hlavička do stĺpca, aby sa časy neprekrývali */
+    .header{ 
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        padding: 5px 10px; 
+        justify-content: space-around;
+    }
+    .brand{ font-size: 0.7rem; width: 100%; text-align: center; margin-bottom: 2px; }
+    .center-timer{ font-size: 1.1rem; order: 1; }
+    .right{ order: 2; gap: 5px; }
+    .clock{ font-size: 1.1rem; }
+    .reset{ font-size: 0.6rem; padding: 2px 5px; }
 
-    /* BANNER NA MOBILE - O ĎALŠÍCH 50% MENŠÍ */
-    #banner { padding:3px; }
-    .event-type{ font-size:0.8rem; line-height:1; }
-    .event-address{ font-size:0.6rem; margin-top:0px; }
+    /* BANNER - EXTRA MINI */
+    #banner { padding: 4px; }
+    .event-type{ font-size: 0.9rem; line-height: 1; }
+    .event-address{ font-size: 0.7rem; margin-top: 1px; }
 
-    .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
-    .col{ padding:4px; }
-    .title{ font-size:0.7rem; margin-bottom:2px; padding-bottom:1px; }
+    .main{ padding: 5px; gap: 5px; }
+    .col{ padding: 5px; }
+    .title{ font-size: 0.8rem; margin-bottom: 4px; padding-bottom: 2px; }
 
-    /* MENÁ V 2 STĹPCOCH - MINI */
-    .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
-    .item{ font-size: 0.6rem; padding: 1px 3px; line-height: 1.0; }
-    .footer{ font-size:0.7rem; padding:5px; text-align:center; }
+    /* MENÁ - MINI V 2 STĹPCOCH */
+    .list{ grid-template-columns: 1fr 1fr; gap: 3px; }
+    .item{ 
+        font-size: 0.65rem; 
+        padding: 3px 5px; 
+        line-height: 1; 
+        border-radius: 2px;
+    }
+    .footer{ font-size: 0.7rem; padding: 5px; }
 }
 </style>
 </head>
