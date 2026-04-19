@@ -24,7 +24,6 @@
             display: flex; flex-direction: column; height: 100vh;
         }
 
-        /* Horná lišta */
         .header { 
             background-color: var(--header-bg); 
             padding: 10px 30px; 
@@ -38,7 +37,6 @@
         .header-logo { height: 75px; width: auto; }
         .header-title { font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Veľké biele hodiny */
         .clock { 
             font-size: 55px; 
             font-weight: 900; 
@@ -48,15 +46,21 @@
             line-height: 1;
         }
 
-        /* Box pre text výjazdu */
+        /* ŽLTÝ BOX S PULZOVANÍM */
         .info-box { 
             background: #222; padding: 12px; margin: 10px 20px; 
-            border: 2px solid #ffeb3b; color: #ffeb3b; 
-            font-size: 24px; font-weight: bold; text-align: center; border-radius: 4px;
+            border: 3px solid #ffeb3b; color: #ffeb3b; 
+            font-size: 26px; font-weight: bold; text-align: center; border-radius: 4px;
             text-transform: uppercase;
+            animation: pulse-border 2s infinite;
         }
 
-        /* Hlavný priestor s tabuľkami */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 5px #ffeb3b; border-color: #ffeb3b; }
+            50% { box-shadow: 0 0 20px #ffeb3b; border-color: #fff176; }
+            100% { box-shadow: 0 0 5px #ffeb3b; border-color: #ffeb3b; }
+        }
+
         .main-container { display: flex; flex: 1; gap: 20px; padding: 10px 20px; box-sizing: border-box; }
 
         .section { 
@@ -66,30 +70,37 @@
         }
         
         .section-header { 
-            padding: 15px; font-size: 26px; font-weight: 900; text-align: center; 
-            background: rgba(0,0,0,0.05);
+            padding: 15px; font-size: 32px; font-weight: 900; text-align: center; 
+            background: rgba(0,0,0,0.1);
             border-bottom: 4px solid rgba(0,0,0,0.1); 
         }
         .idem-title { color: var(--accent-green); }
         .nejdem-title { color: var(--accent-red); }
 
-        /* Mriežka mien - 2 stĺpce */
-        .names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; align-content: start; }
+        .names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 15px; align-content: start; }
         
+        /* ČISTÉ MENÁ SO ZEBRA EFEKTOM */
         .name-item { 
-            font-size: 28px; font-weight: 900; color: var(--text-dark); 
-            padding: 12px; background: rgba(255,255,255,0.5); 
-            border-radius: 4px; text-transform: uppercase;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            border-left: 8px solid rgba(0,0,0,0.2);
+            font-size: 32px; font-weight: 900; color: var(--text-dark); 
+            padding: 10px 15px; 
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
         }
 
-        /* Spodná lišta s odpočtom */
+        /* Zebra pre 2 stĺpce (strieda dvojice riadkov) */
+        .name-item:nth-child(4n+1), 
+        .name-item:nth-child(4n+2) { 
+            background: rgba(0,0,0,0.07); 
+        }
+
+        .idem-border { border-left: 12px solid var(--accent-green); }
+        .nejdem-border { border-left: 12px solid var(--accent-red); }
+
         .footer { padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; background: #111; height: 50px; }
         .timer-container { position: absolute; left: 50%; transform: translateX(-50%); color: #888; font-weight: bold; font-size: 18px; }
         #reset-timer { color: var(--accent-red); font-size: 20px; font-weight: 900; }
         .nav-link { color: #555; text-decoration: none; font-size: 14px; font-weight: bold; text-transform: uppercase; }
-        .nav-link:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -106,28 +117,24 @@
 
 <div class="main-container">
     <div class="section">
-        <div class="section-header idem-title">IDEM</div>
+        <div class="section-header idem-title">🟢 IDEM</div>
         <div id="list-idem" class="names-grid"></div>
     </div>
 
     <div class="section">
-        <div class="section-header nejdem-title">NEJDEM</div>
+        <div class="section-header nejdem-title">🔴 NEJDEM</div>
         <div id="list-nejdem" class="names-grid"></div>
     </div>
 </div>
 
 <div class="footer">
-    <a href="archiv.html" class="nav-link">Kniha výjazdov (Archív)</a>
-    
-    <div class="timer-container">
-        Automatický reset za: <span id="reset-timer">--:--</span>
-    </div>
-
-    <div class="nav-link" style="cursor: default;">Live Systém v1.2</div>
+    <a href="archiv.html" class="nav-link">Archív</a>
+    <div class="timer-container">RESET ZA: <span id="reset-timer">--:--</span></div>
+    <div class="nav-link" style="cursor: default;">Live Systém v1.3</div>
 </div>
 
 <script>
-    // --- SEM VLOŽ SVOJU KONFIGURÁCIU Z FIREBASE ---
+    // --- SEM KONFIGURÁCIU ---
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -141,14 +148,12 @@
     const db = firebase.firestore();
     const docRef = db.collection("vyjazdy").doc("active");
 
-    // Živé hodiny
     function updateClock() {
         document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK');
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Funkcia pre Archiváciu a Reset
     async function archiveAndReset(data) {
         const huraIdem = [];
         const smolaNejdem = [];
@@ -166,7 +171,6 @@
                 nejdli: smolaNejdem
             });
         }
-        // Reset polí na NEZADANÉ
         const updates = { infoText: "" };
         Object.keys(data).forEach(key => {
             if (key !== 'lastUpdate' && key !== 'infoText') updates[key] = "NEZADANÉ";
@@ -174,24 +178,17 @@
         await docRef.update(updates);
     }
 
-    // Zachytenie parametrov z URL
     const params = new URLSearchParams(window.location.search);
-    if (params.get('meno') || params.get('info')) {
+    if (params.get('meno')) {
         let up = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
-        if (params.get('meno')) up[params.get('meno')] = params.get('akcia');
-        if (params.get('info')) up.infoText = params.get('info').replace(/_/g, ' ');
-        
-        docRef.update(up).then(() => {
-            window.history.replaceState({}, document.title, "/");
-        });
+        up[params.get('meno')] = params.get('akcia');
+        docRef.update(up).then(() => { window.history.replaceState({}, document.title, "/"); });
     }
 
-    // Sledovanie databázy
     docRef.onSnapshot((doc) => {
         const data = doc.data();
         if (!data) return;
 
-        // Info o výjazde
         const infoDiv = document.getElementById("vyjazd-info");
         if (data.infoText) {
             infoDiv.innerText = "HLÁSENIE: " + data.infoText;
@@ -200,12 +197,10 @@
             infoDiv.style.display = "none";
         }
 
-        // Zoznamy mien
         const lI = document.getElementById("list-idem");
         const lN = document.getElementById("list-nejdem");
         lI.innerHTML = ""; lN.innerHTML = "";
 
-        // Odpočítavanie (30 minút = 1800000 ms)
         if (data.lastUpdate) {
             const updateTimer = () => {
                 const diff = (data.lastUpdate.toDate().getTime() + 1800000) - new Date().getTime();
@@ -222,20 +217,18 @@
             updateTimer();
         }
 
-        // Zoradenie mien a vykreslenie
         const entries = Object.entries(data)
             .filter(([m]) => m !== 'lastUpdate' && m !== 'infoText')
             .sort((a, b) => a[0].localeCompare(b[0]));
 
         for (const [m, s] of entries) {
             if (s === "IDEM") {
-                lI.innerHTML += `<div class="name-item">${m}</div>`;
+                lI.innerHTML += `<div class="name-item idem-border">${m}</div>`;
             } else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") {
-                lN.innerHTML += `<div class="name-item">${m}</div>`;
+                lN.innerHTML += `<div class="name-item nejdem-border">${m}</div>`;
             }
         }
     });
 </script>
-
 </body>
 </html>
