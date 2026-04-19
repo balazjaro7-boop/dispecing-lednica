@@ -80,13 +80,13 @@ body{
     color:#fff;
 }
 
-/* EVENT BANNER */
-.banner{
-    flex:0 0 auto;
-    padding:15px;
-    text-align:center;
+/* EVENT BANNER - OPRAVENÝ */
+#banner {
+    display: none; /* Štandardne skrytý cez CSS */
+    flex: 0 0 auto;
+    padding: 15px;
+    text-align: center;
     animation: stroboskop 0.8s infinite;
-    display: none; /* Skrytý, kým nie je aktívny výjazd */
 }
 
 @keyframes stroboskop {
@@ -175,39 +175,25 @@ body{
     color:#999;
 }
 
-/* ========================= */
-/* 📱 MOBILE FIX (KOMPAKTNÝ) */
-/* ========================= */
-
+/* MOBILE FIX */
 @media (max-width: 768px){
     body{ overflow:hidden; }
-
     .header{ flex-direction:column; gap:4px; padding:6px 10px; }
     .brand{ font-size:0.9rem; text-align:center; }
     .center-timer{ font-size:1rem; }
     .clock{ font-size:1rem; }
     .reset{ font-size:0.65rem; padding:3px 6px; }
 
-    /* BANNER ZMENŠENÝ O 50% */
-    .banner{ padding:5px; }
+    #banner { padding:5px; }
     .event-type{ font-size:1.2rem; line-height:1.1; }
     .event-address{ font-size:0.8rem; margin-top:2px; }
 
     .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
     .col{ padding:6px; }
-
-    /* Názvy sekcií IDEM/NEJDEM */
     .title{ font-size:0.8rem; margin-bottom:3px; padding-bottom:2px; }
 
-    /* MENÁ V 2 STĹPCOCH A ZMENŠENÉ O 50% */
     .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
-    .item{
-        font-size: 0.65rem;
-        padding: 2px 4px;
-        line-height: 1.0;
-        letter-spacing: 0px;
-    }
-
+    .item{ font-size: 0.65rem; padding: 2px 4px; line-height: 1.0; }
     .footer{ font-size:0.8rem; padding:6px; text-align:center; }
 }
 </style>
@@ -224,7 +210,7 @@ body{
     </div>
 </div>
 
-<div id="banner" class="banner">
+<div id="banner">
     <div id="typ" class="event-type"></div>
     <div id="adresa" class="event-address"></div>
 </div>
@@ -257,12 +243,10 @@ const db = firebase.firestore();
 
 let timerInterval;
 
-/* HODINY */
 setInterval(()=>{
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
 },1000);
 
-/* VSTUP Z URL */
 async function spracujVstup(){
     const params=new URLSearchParams(window.location.search);
     const u=params.get('udalost');
@@ -291,7 +275,6 @@ async function spracujVstup(){
     }
 }
 
-/* FIREBASE SNAPSHOT */
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const idem=document.getElementById("idem");
     const nejdem=document.getElementById("nejdem");
@@ -311,7 +294,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const m=d.__metadata||{};
 
     if(m.typ){
-        banner.style.display="block";
+        banner.style.display="block"; // Zviditeľní banner
         document.getElementById("typ").innerText=m.typ;
         document.getElementById("adresa").innerText=m.miesto||"";
         if(m.timestamp) startTimer(m.timestamp);
