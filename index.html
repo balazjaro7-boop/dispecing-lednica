@@ -24,6 +24,7 @@
             display: flex; flex-direction: column; height: 100vh;
         }
 
+        /* HORNÁ LIŠTA */
         .header { 
             background-color: var(--header-bg); 
             padding: 10px 30px; 
@@ -46,20 +47,41 @@
             line-height: 1;
         }
 
+        /* AGRESÍVNY HASIČSKÝ MAJÁK PRE HLÁSENIE */
         .info-box { 
-            background: #222; padding: 15px; margin: 10px 20px; 
-            border: 3px solid #ffeb3b; color: #ffeb3b; 
-            font-size: 28px; font-weight: bold; text-align: center; border-radius: 4px;
+            background: #000; 
+            padding: 20px; 
+            margin: 15px 20px; 
+            border: 6px solid #ffeb3b; 
+            color: #ffeb3b; 
+            font-size: 38px; 
+            font-weight: 900; 
+            text-align: center; 
+            border-radius: 8px;
             text-transform: uppercase;
-            animation: pulse-border 2s infinite;
+            animation: fire-alert 1.2s infinite;
         }
 
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 5px #ffeb3b; border-color: #ffeb3b; }
-            50% { box-shadow: 0 0 20px #ffeb3b; border-color: #fff176; }
-            100% { box-shadow: 0 0 5px #ffeb3b; border-color: #ffeb3b; }
+        @keyframes fire-alert {
+            0% { 
+                box-shadow: 0 0 15px #ffeb3b, inset 0 0 10px #ffeb3b;
+                border-color: #ffeb3b;
+                color: #ffeb3b;
+            }
+            50% { 
+                box-shadow: 0 0 60px #d32f2f, inset 0 0 30px #d32f2f;
+                border-color: #d32f2f;
+                color: #fff;
+                transform: scale(1.02);
+            }
+            100% { 
+                box-shadow: 0 0 15px #ffeb3b, inset 0 0 10px #ffeb3b;
+                border-color: #ffeb3b;
+                color: #ffeb3b;
+            }
         }
 
+        /* HLAVNÝ KONTAJNER */
         .main-container { display: flex; flex: 1; gap: 20px; padding: 10px 20px; box-sizing: border-box; }
 
         .section { 
@@ -76,6 +98,7 @@
         .idem-title { color: var(--accent-green); }
         .nejdem-title { color: var(--accent-red); }
 
+        /* MENÁ A ZEBRA */
         .names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 15px; align-content: start; }
         
         .name-item { 
@@ -86,7 +109,7 @@
             align-items: center;
         }
 
-        /* Zebra efekt pre dva stĺpce */
+        /* Zebra efekt prispôsobený pre 2 stĺpce */
         .name-item:nth-child(4n+1), 
         .name-item:nth-child(4n+2) { 
             background: rgba(0,0,0,0.07); 
@@ -95,6 +118,7 @@
         .idem-border { border-left: 12px solid var(--accent-green); }
         .nejdem-border { border-left: 12px solid var(--accent-red); }
 
+        /* SPODNÁ LIŠTA */
         .footer { padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; background: #111; height: 50px; }
         .timer-container { position: absolute; left: 50%; transform: translateX(-50%); color: #888; font-weight: bold; font-size: 18px; }
         #reset-timer { color: var(--accent-red); font-size: 20px; font-weight: 900; }
@@ -127,11 +151,11 @@
 <div class="footer">
     <a href="archiv.html" class="nav-link">Archív</a>
     <div class="timer-container">RESET ZA: <span id="reset-timer">--:--</span></div>
-    <div class="nav-link" style="cursor: default;">Live Systém v1.4</div>
+    <div class="nav-link" style="cursor: default;">Live Systém v1.5</div>
 </div>
 
 <script>
-    // --- KONFIGURÁCIA ---
+    // --- KONFIGURÁCIA FIREBASE ---
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -175,7 +199,7 @@
         await docRef.update(updates);
     }
 
-    // --- OPRAVENÉ SPRACOVANIE URL ---
+    // --- SPRACOVANIE PRICHÁDZAJÚCICH PARAMETROV ---
     const params = new URLSearchParams(window.location.search);
     const pMeno = params.get('meno');
     const pAkcia = params.get('akcia');
@@ -193,16 +217,15 @@
         }
 
         docRef.update(updateData).then(() => {
-            // Vymaže parametre z URL bez obnovenia stránky
             window.history.replaceState({}, document.title, window.location.pathname);
         });
     }
 
+    // --- SLEDOVANIE DATABÁZY ---
     docRef.onSnapshot((doc) => {
         const data = doc.data();
         if (!data) return;
 
-        // HLÁSENIE
         const infoDiv = document.getElementById("vyjazd-info");
         if (data.infoText && data.infoText.trim() !== "") {
             infoDiv.innerText = "HLÁSENIE: " + data.infoText;
