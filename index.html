@@ -30,15 +30,21 @@
         }
 
         .brand { font-size: 1.8em; font-weight: bold; }
-        .clock-container { display: flex; align-items: center; gap: 20px; }
-        .clock { font-size: 1.8em; font-family: 'Courier New', monospace; color: var(--accent-red); }
+        .clock-container { display: flex; align-items: center; gap: 30px; }
         
-        /* Tlačidlo RESET pre testovanie */
+        /* Hodiny: Biele a Väčšie */
+        .clock { 
+            font-size: 2.5em; 
+            font-family: 'Courier New', monospace; 
+            color: #ffffff; 
+            font-weight: bold;
+        }
+        
         .btn-reset {
             background: #333; color: #777; border: 1px solid #444;
-            padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.6em;
+            padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 0.7em;
         }
-        .btn-reset:hover { background: #444; color: #fff; }
+        .btn-reset:hover { background: #d32f2f; color: #fff; }
 
         .event-banner {
             background-color: var(--accent-red); color: white;
@@ -48,8 +54,8 @@
         }
 
         .timer-line {
-            background: #222; text-align: center; padding: 5px;
-            font-size: 1.3em; color: #ffeb3b; border-bottom: 1px solid #333;
+            background: #222; text-align: center; padding: 10px;
+            font-size: 1.5em; color: #ffeb3b; border-bottom: 1px solid #333;
         }
 
         .main-grid {
@@ -81,13 +87,12 @@
         .nejdem-card { background-color: #333; color: #777; border-left: 15px solid #222; }
 
         .bottom-bar {
-            height: 100px; background: #000; display: flex;
+            height: 80px; background: #000; display: flex;
             justify-content: space-between; align-items: center;
             padding: 0 25px; border-top: 2px solid #222;
         }
 
         .link-archiv { color: #555; text-decoration: none; font-size: 1.2em; }
-        .link-archiv:hover { color: var(--accent-red); }
     </style>
 </head>
 <body>
@@ -95,7 +100,7 @@
     <div class="top-bar">
         <div class="brand">DHZ LEDNICA - DISPEČING</div>
         <div class="clock-container">
-            <button class="btn-reset" onclick="manualnyReset()">TEST RESET</button>
+            <button class="btn-reset" onclick="manualnyReset()">VYMAZAŤ / RESET</button>
             <div id="live-clock" class="clock">00:00:00</div>
         </div>
     </div>
@@ -103,7 +108,7 @@
     <div id="event-line" class="event-banner">--- ČAKÁM ---</div>
 
     <div class="timer-line">
-        AUTOMATICKÝ ARCHÍV O: <span id="countdown">30:00</span>
+        RESTART O: <span id="countdown">30:00</span>
     </div>
 
     <div class="main-grid">
@@ -118,8 +123,7 @@
     </div>
 
     <div class="bottom-bar">
-        <a href="archiv.html" class="link-archiv">📂 OTVORIŤ ARCHÍV VÝJAZDOV</a>
-        <div style="color: #222;">v2.5</div>
+        <a href="archiv.html" class="link-archiv">📂 ARCHÍV VÝJAZDOV</a>
     </div>
 
     <script>
@@ -135,8 +139,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // Živé hodiny - Biele a Väčšie
         setInterval(() => {
-            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK');
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + 
+                                                              now.getMinutes().toString().padStart(2, '0') + ":" + 
+                                                              now.getSeconds().toString().padStart(2, '0');
         }, 1000);
 
         async function spracujVstup() {
@@ -144,16 +152,20 @@
             const akcia = params.get('akcia');
             const udalost = params.get('udalost');
 
+            // Ak príde udalosť, zapíšeme ju s novým časom (toto spustí odpočet)
             if (udalost) {
                 await db.collection("vyjazdy").doc("active").set({
-                    __metadata: { typ: udalost, timestamp: Date.now() }
+                    __metadata: { 
+                        typ: udalost, 
+                        timestamp: Date.now() 
+                    }
                 }, { merge: true });
             }
 
             if (akcia) {
                 let meno = localStorage.getItem('mojeMeno_DHZ');
                 if (!meno) {
-                    meno = prompt("Meno hasiča:");
+                    meno = prompt("Zadaj svoje meno:");
                     if (meno) localStorage.setItem('mojeMeno_DHZ', meno);
                     else return;
                 }
@@ -168,23 +180,30 @@
                 const listIdem = document.getElementById('list-idem');
                 const listNejdem = document.getElementById('list-nejdem');
                 const eventLine = document.getElementById('event-line');
+                const countdownBox = document.getElementById('countdown');
                 
                 if (!doc.exists) {
                     listIdem.innerHTML = ''; listNejdem.innerHTML = '';
                     eventLine.innerText = "--- ČAKÁM ---";
-                    document.getElementById('countdown').innerText = "30:00";
+                    countdownBox.innerText = "30:00";
                     if(timerInterval) clearInterval(timerInterval);
                     return;
                 }
                 
                 const data = doc.data();
                 const meta = data.__metadata || {};
+                
+                // Zobrazenie textu udalosti
                 eventLine.innerText = meta.typ || "--- ČAKÁM ---";
 
-                if (meta.timestamp) startTimer(meta.timestamp);
+                // Spustenie odpočtu ak máme timestamp
+                if (meta.timestamp) {
+                    startTimer(meta.timestamp);
+                } else {
+                    countdownBox.innerText = "30:00";
+                }
 
                 listIdem.innerHTML = ''; listNejdem.innerHTML = '';
-
                 Object.keys(data).sort().forEach(meno => {
                     if (meno === '__metadata') return;
                     const stav = data[meno];
@@ -201,19 +220,21 @@
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(async () => {
                 const zostava = 1800 - Math.floor((Date.now() - startTime) / 1000);
+                const countdownBox = document.getElementById('countdown');
+                
                 if (zostava <= 0) {
                     clearInterval(timerInterval);
                     await archivovatAResetovat();
                 } else {
                     const m = Math.floor(zostava / 60);
                     const s = zostava % 60;
-                    document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                    countdownBox.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
                 }
             }, 1000);
         }
 
         async function manualnyReset() {
-            if(confirm("Chceš manuálne ukončiť výjazd a uložiť ho do archívu?")) {
+            if(confirm("Ukončiť výjazd a uložiť do archívu?")) {
                 await archivovatAResetovat();
             }
         }
@@ -221,32 +242,22 @@
         async function archivovatAResetovat() {
             const docRef = db.collection("vyjazdy").doc("active");
             const snapshot = await docRef.get();
-            
             if (snapshot.exists) {
                 const data = snapshot.data();
                 const meta = data.__metadata || {};
-                
-                const isli = [];
-                const nejdli = [];
-                
+                const isli = []; const nejdli = [];
                 Object.keys(data).forEach(m => {
                     if(m !== '__metadata') {
-                        if(data[m] === 'IDEM') isli.push(m);
-                        else nejdli.push(m);
+                        if(data[m] === 'IDEM') isli.push(m); else nejdli.push(m);
                     }
                 });
-
-                // Zápis do archívu
                 if (meta.typ) {
                     await db.collection("archiv").add({
                         datum: firebase.firestore.Timestamp.now(),
                         info: meta.typ,
-                        isli: isli,
-                        nejdli: nejdli
+                        isli: isli, nejdli: nejdli
                     });
                 }
-                
-                // Vymazanie aktívneho výjazdu
                 await docRef.delete();
             }
         }
