@@ -80,12 +80,14 @@ body{
     color:#fff;
 }
 
-/* EVENT */
+/* EVENT BANNER */
 .banner{
     flex:0 0 auto;
     padding:15px;
     text-align:center;
     animation: stroboskop 0.8s infinite;
+    /* Banner je v základe skrytý */
+    display: none; 
 }
 
 @keyframes stroboskop {
@@ -174,86 +176,23 @@ body{
     color:#999;
 }
 
-/* ========================= */
-/* 📱 MOBILE FIX (ZLEPŠENÉ TEXTY) */
-/* ========================= */
-
+/* MOBILE FIX */
 @media (max-width: 768px){
-
-    body{
-        overflow:hidden;
-    }
-
-    .header{
-        flex-direction:column;
-        gap:4px;
-        padding:6px 10px;
-    }
-
-    .brand{
-        font-size:0.9rem;
-        text-align:center;
-    }
-
-    .center-timer{
-        font-size:1rem;
-    }
-
-    .clock{
-        font-size:1rem;
-    }
-
-    .reset{
-        font-size:0.65rem;
-        padding:3px 6px;
-    }
-
-    .banner{
-        padding:8px;
-    }
-
-    .event-type{
-        font-size:1.4rem;
-    }
-
-    .event-address{
-        font-size:1rem;
-    }
-
-    .main{
-        grid-template-columns:1fr;
-        gap:8px;
-        padding:6px;
-    }
-
-    .col{
-        padding:6px;
-    }
-
-    .title{
-        font-size:0.9rem;
-        margin-bottom:5px;
-        padding-bottom:3px;
-    }
-
-    .list{
-        grid-template-columns:1fr;
-        gap:2px;
-    }
-
-    /* 🔥 HLAVNÁ OPRAVA - MENÁ */
-    .item{
-        font-size:0.8rem;
-        padding:2px 4px;
-        line-height:1.1;
-        letter-spacing:0.3px;
-    }
-
-    .footer{
-        font-size:0.8rem;
-        padding:6px;
-        text-align:center;
-    }
+    body{ overflow:hidden; }
+    .header{ flex-direction:column; gap:4px; padding:6px 10px; }
+    .brand{ font-size:0.9rem; text-align:center; }
+    .center-timer{ font-size:1rem; }
+    .clock{ font-size:1rem; }
+    .reset{ font-size:0.65rem; padding:3px 6px; }
+    .banner{ padding:8px; }
+    .event-type{ font-size:1.4rem; }
+    .event-address{ font-size:1rem; }
+    .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
+    .col{ padding:6px; }
+    .title{ font-size:0.9rem; margin-bottom:5px; padding-bottom:3px; }
+    .list{ grid-template-columns:1fr; gap:2px; }
+    .item{ font-size:0.8rem; padding:2px 4px; line-height:1.1; letter-spacing:0.3px; }
+    .footer{ font-size:0.8rem; padding:6px; text-align:center; }
 }
 </style>
 </head>
@@ -269,7 +208,7 @@ body{
     </div>
 </div>
 
-<div id="banner" class="banner" style="display:none;">
+<div id="banner" class="banner">
     <div id="typ" class="event-type"></div>
     <div id="adresa" class="event-address"></div>
 </div>
@@ -302,13 +241,12 @@ const db = firebase.firestore();
 
 let timerInterval;
 
-/* CLOCK */
+/* HODINY */
 setInterval(()=>{
-    document.getElementById("clock").innerText =
-    new Date().toLocaleTimeString("sk-SK");
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
 },1000);
 
-/* INPUT */
+/* INPUT Z URL */
 async function spracujVstup(){
     const params=new URLSearchParams(window.location.search);
     const u=params.get('udalost');
@@ -321,11 +259,9 @@ async function spracujVstup(){
             typ=p[0].trim();
             adr=p[1].trim();
         }
-
         await db.collection("vyjazdy").doc("active").set({
             __metadata:{typ:typ, miesto:adr, timestamp:Date.now()}
         },{merge:true});
-
         window.history.replaceState({},'','/');
     }
 
@@ -339,16 +275,17 @@ async function spracujVstup(){
     }
 }
 
-/* FIREBASE */
+/* FIREBASE - SLEDOVANIE ZMIEN */
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const idem=document.getElementById("idem");
     const nejdem=document.getElementById("nejdem");
+    const banner=document.getElementById("banner");
 
     idem.innerHTML="";
     nejdem.innerHTML="";
 
     if(!doc.exists){
-        document.getElementById("banner").style.display="none";
+        banner.style.display="none"; // Schová banner, ak nie je výjazd
         document.getElementById("timer").innerText="--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
@@ -357,20 +294,21 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const d=doc.data();
     const m=d.__metadata||{};
 
+    // ZOBRAZENIE BANNERA
     if(m.typ){
-        document.getElementById("banner").style.display="block";
+        banner.style.display="block"; // Toto ti tam chýbalo, aby sa banner ukázal
         document.getElementById("typ").innerText=m.typ;
         document.getElementById("adresa").innerText=m.miesto||"";
         if(m.timestamp) startTimer(m.timestamp);
+    } else {
+        banner.style.display="none";
     }
 
     Object.keys(d).forEach(k=>{
         if(k==="__metadata") return;
-
         const div=document.createElement("div");
         div.className="item";
         div.innerText=k;
-
         if(d[k]==="IDEM"){
             div.classList.add("idem");
             idem.appendChild(div);
@@ -383,21 +321,16 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
 
 function startTimer(start){
     if(timerInterval) clearInterval(timerInterval);
-
     timerInterval=setInterval(async()=>{
         const left=1800-Math.floor((Date.now()-start)/1000);
-
         if(left<=0){
             clearInterval(timerInterval);
             await autoReset();
             return;
         }
-
         const m=Math.floor(left/60);
         const s=left%60;
-
-        document.getElementById("timer").innerText=
-        `${m}:${s.toString().padStart(2,"0")}`;
+        document.getElementById("timer").innerText=`${m}:${s.toString().padStart(2,"0")}`;
     },1000);
 }
 
@@ -410,18 +343,13 @@ async function manualReset(){
 async function autoReset(){
     const ref=db.collection("vyjazdy").doc("active");
     const snap=await ref.get();
-
     if(snap.exists){
         const d=snap.data();
         const m=d.__metadata||{};
-
         const ide=[],nej=[];
-
         Object.keys(d).forEach(k=>{
-            if(k!=="__metadata")
-                (d[k]==="IDEM"?ide:nej).push(k);
+            if(k!=="__metadata") (d[k]==="IDEM"?ide:nej).push(k);
         });
-
         if(m.typ){
             await db.collection("archiv").add({
                 datum:firebase.firestore.Timestamp.now(),
@@ -430,7 +358,6 @@ async function autoReset(){
                 nejdli:nej
             });
         }
-
         await ref.delete();
     }
 }
