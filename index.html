@@ -1,266 +1,229 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHZ Lednica - Operačné Stredisko</title>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root {
-            --bg-color: #0a0a0a;
-            --panel-color: #161616;
-            --accent-red: #cc0000;
-            --accent-green: #2e7d32;
-            --text-main: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHZ Lednica - DISPEČING</title>
 
-        body {
-            font-family: 'Segoe UI', Impact, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0; padding: 0;
-            height: 100vh; display: flex; flex-direction: column;
-            overflow: hidden;
-        }
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 25px; background: #000; border-bottom: 4px solid var(--accent-red);
-        }
+<style>
+:root{
+    --bg:#07090c;
+    --panel:#10141a;
+    --green:#00e676;
+    --gray:#888;
+    --red:#ff1744;
+}
 
-        .brand { font-size: 1.8em; font-weight: bold; color: #ddd; }
-        
-        /* HODINY: Biele, masívne, jasné */
-        .clock { 
-            font-size: 4.5em; 
-            font-family: 'Courier New', monospace; 
-            color: #ffffff; 
-            font-weight: 900;
-            text-shadow: 0 0 20px rgba(255,255,255,0.2);
-        }
-        
-        .btn-reset {
-            background: #222; color: #555; border: 1px solid #333;
-            padding: 10px 20px; cursor: pointer; border-radius: 4px; font-size: 0.8em;
-            text-transform: uppercase; transition: 0.3s;
-        }
-        .btn-reset:hover { background: #d32f2f; color: #fff; border-color: #f00; }
+*{box-sizing:border-box;}
 
-        .event-banner {
-            background-color: var(--accent-red); color: white;
-            padding: 20px 0; text-align: center;
-            display: flex; flex-direction: column; justify-content: center;
-            min-height: 180px; box-shadow: inset 0 0 70px rgba(0,0,0,0.7);
-        }
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    font-family:Segoe UI,sans-serif;
+    background:var(--bg);
+    color:#fff;
+    overflow:hidden;
+}
 
-        .event-type { font-size: 5em; font-weight: 900; text-transform: uppercase; line-height: 1; }
-        
-        /* ADRESA AKO ODKAZ */
-        .event-address-link {
-            font-size: 3em; font-weight: bold; margin-top: 15px; 
-            color: #ffeb3b; text-decoration: none;
-            display: inline-block; padding: 5px 20px;
-            border: 2px dashed rgba(255,235,59,0.3);
-            border-radius: 10px; transition: 0.3s;
-        }
-        .event-address-link:hover { background: rgba(0,0,0,0.3); border-color: #ffeb3b; transform: scale(1.05); }
-        .event-address-link:empty { display: none; }
+/* HEADER */
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 25px;
+    background:#000;
+    border-bottom:2px solid #222;
+    flex:0 0 auto;
+}
 
-        .timer-line {
-            background: #222; text-align: center; padding: 12px;
-            font-size: 2em; color: #ffeb3b; border-bottom: 1px solid #333;
-        }
+.title{
+    font-size:1.6rem;
+    font-weight:700;
+    color:#aaa;
+}
 
-        .main-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-            padding: 20px; flex-grow: 1;
-        }
+.clock{
+    font-size:2.8rem;
+    font-family:monospace;
+}
 
-        .column { background: var(--panel-color); border: 1px solid #222; border-radius: 8px; display: flex; flex-direction: column; }
-        .column-header { text-align: center; font-size: 3.5em; padding: 15px; background: rgba(255,255,255,0.02); border-bottom: 2px solid #222; font-weight: bold; }
-        .list-container { padding: 20px; overflow-y: auto; }
+/* EVENT */
+.banner{
+    flex:0 0 auto;
+    padding:15px;
+    text-align:center;
+    background:linear-gradient(90deg,#8b0000,#ff1744);
+}
 
-        .hasic-card {
-            padding: 25px; margin-bottom: 20px; border-radius: 12px;
-            font-size: 3em; font-weight: bold; text-align: center;
-            text-transform: uppercase; animation: fadeIn 0.4s ease-out;
-        }
+.event-type{
+    font-size:clamp(1.8rem,3vw,3.5rem);
+    font-weight:900;
+}
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .idem-card { background-color: var(--accent-green); border-left: 25px solid #1b5e20; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .nejdem-card { background-color: #2a2a2a; color: #555; border-left: 25px solid #111; }
+.event-address{
+    font-size:clamp(1rem,2vw,1.8rem);
+    color:#ffeb3b;
+    margin-top:5px;
+}
 
-        .bottom-bar { height: 60px; background: #000; padding: 0 30px; border-top: 2px solid #222; display: flex; align-items: center; }
-        .link-archiv { color: #444; text-decoration: none; font-size: 1.3em; font-weight: bold; }
-    </style>
+/* MAIN */
+.main{
+    flex:1;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+/* COLUMN */
+.col{
+    background:var(--panel);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border-radius:6px;
+}
+
+.col h2{
+    margin:10px 0;
+    text-align:center;
+    font-size:1.5rem;
+}
+
+/* LIST */
+.list{
+    flex:1;
+    overflow:hidden;
+    padding:5px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+/* ROW */
+.item{
+    padding:4px 6px;
+    font-size:clamp(0.9rem,1.5vw,1.4rem);
+    display:flex;
+    align-items:center;
+}
+
+/* ZVÝRAZNENIE (jemné) */
+.idem{
+    color:var(--green);
+    background:rgba(0,230,118,0.08);
+}
+
+.nejdem{
+    color:var(--gray);
+    background:rgba(255,255,255,0.03);
+}
+
+/* FOOTER */
+.footer{
+    flex:0 0 auto;
+    padding:6px 20px;
+    background:#000;
+    border-top:1px solid #222;
+    font-size:0.9rem;
+    color:#555;
+}
+
+/* MOBILE STACK */
+@media (max-width:700px){
+    .main{
+        grid-template-columns:1fr;
+    }
+}
+</style>
 </head>
+
 <body>
 
-    <div class="top-bar">
-        <div class="brand">DHZ LEDNICA - DISPEČING</div>
-        <div style="display: flex; align-items: center; gap: 40px;">
-            <button class="btn-reset" onclick="manualnyReset()">VYMAZAŤ / RESET VÝJAZDU</button>
-            <div id="live-clock" class="clock">00:00:00</div>
-        </div>
+<div class="header">
+    <div class="title">DHZ LEDNICA – DISPEČING</div>
+    <div id="clock" class="clock">00:00:00</div>
+</div>
+
+<div id="banner" class="banner">
+    <div id="typ" class="event-type">ČAKÁM</div>
+    <div id="adresa" class="event-address"></div>
+</div>
+
+<div class="main">
+    <div class="col">
+        <h2>IDEM</h2>
+        <div id="idem" class="list"></div>
     </div>
 
-    <div id="event-line" class="event-banner">
-        <div id="display-udalost" class="event-type">--- ČAKÁM ---</div>
-        <a id="display-adresa" class="event-address-link" target="_blank"></a>
+    <div class="col">
+        <h2>NEJDEM</h2>
+        <div id="nejdem" class="list"></div>
     </div>
+</div>
 
-    <div class="timer-line">REŠTART PLOCHY O: <span id="countdown">30:00</span></div>
+<div class="footer">
+    📂 ARCHÍV VÝJAZDOV
+</div>
 
-    <div class="main-grid">
-        <div class="column">
-            <div class="column-header" style="color: #4caf50;">IDEM</div>
-            <div id="list-idem" class="list-container"></div>
-        </div>
-        <div class="column">
-            <div class="column-header" style="color: #f44336;">NEJDEM</div>
-            <div id="list-nejdem" class="list-container"></div>
-        </div>
-    </div>
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
 
-    <div class="bottom-bar">
-        <a href="archiv.html" class="link-archiv">📂 ARCHÍV VÝJAZDOV</a>
-    </div>
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-            authDomain: "hasici-lednica.firebaseapp.com",
-            projectId: "hasici-lednica",
-            storageBucket: "hasici-lednica.firebasestorage.app",
-            messagingSenderId: "747340639310",
-            appId: "1:747340639310:web:e6cba7417ffae4ed59e71f"
-        };
+/* CLOCK */
+setInterval(()=>{
+    const d=new Date();
+    document.getElementById("clock").innerText =
+    d.toLocaleTimeString("sk-SK");
+},1000);
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+/* REALTIME */
+db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
 
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('live-clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
-        }, 1000);
+    const idem=document.getElementById("idem");
+    const nejdem=document.getElementById("nejdem");
 
-        async function spracujVstup() {
-            const params = new URLSearchParams(window.location.search);
-            const akcia = params.get('akcia');
-            const message = params.get('udalost');
+    idem.innerHTML="";
+    nejdem.innerHTML="";
 
-            if (message) {
-                let typ = message;
-                let adresa = "";
+    if(!doc.exists) return;
 
-                if (message.toLowerCase().includes("adresa:")) {
-                    const parts = message.split(/adresa:/i);
-                    typ = parts[0].trim().replace(/,$/, "");
-                    adresa = parts[1].trim();
-                }
+    const d=doc.data();
+    const m=d.__metadata||{};
 
-                await db.collection("vyjazdy").doc("active").set({
-                    __metadata: { 
-                        typ: typ, 
-                        miesto: adresa, 
-                        timestamp: Date.now() 
-                    }
-                }, { merge: true });
-                window.history.replaceState({}, document.title, "/");
-            }
+    document.getElementById("typ").innerText=m.typ||"VÝJAZD";
+    document.getElementById("adresa").innerText=m.miesto||"";
 
-            if (akcia) {
-                let meno = localStorage.getItem('mojeMeno_DHZ');
-                if (!meno) {
-                    meno = prompt("Zadaj meno:");
-                    if (meno) localStorage.setItem('mojeMeno_DHZ', meno);
-                    else return;
-                }
-                await db.collection("vyjazdy").doc("active").set({ [meno]: akcia }, { merge: true });
-                window.history.replaceState({}, document.title, "/");
-            }
+    Object.keys(d).forEach(k=>{
+        if(k==="__metadata") return;
+
+        const div=document.createElement("div");
+        div.className="item";
+
+        div.innerText=k;
+
+        if(d[k]==="IDEM"){
+            div.classList.add("idem");
+            idem.appendChild(div);
+        }else{
+            div.classList.add("nejdem");
+            nejdem.appendChild(div);
         }
+    });
+});
+</script>
 
-        let timerInterval;
-        function sledovatStav() {
-            db.collection("vyjazdy").doc("active").onSnapshot(async (doc) => {
-                const listIdem = document.getElementById('list-idem');
-                const listNejdem = document.getElementById('list-nejdem');
-                const dispUdalost = document.getElementById('display-udalost');
-                const dispAdresa = document.getElementById('display-adresa');
-                
-                if (!doc.exists) {
-                    listIdem.innerHTML = ''; listNejdem.innerHTML = '';
-                    dispUdalost.innerText = "--- ČAKÁM ---";
-                    dispAdresa.innerText = ""; dispAdresa.href = "#";
-                    document.getElementById('countdown').innerText = "30:00";
-                    if(timerInterval) clearInterval(timerInterval);
-                    return;
-                }
-                
-                const data = doc.data();
-                const meta = data.__metadata || {};
-                
-                dispUdalost.innerText = meta.typ || "--- VÝJAZD ---";
-                
-                if (meta.miesto) {
-                    dispAdresa.innerText = "📍 " + meta.miesto;
-                    // Vytvorenie Google Maps odkazu
-                    dispAdresa.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(meta.miesto);
-                } else {
-                    dispAdresa.innerText = "";
-                    dispAdresa.href = "#";
-                }
-
-                if (meta.timestamp) startTimer(meta.timestamp);
-
-                listIdem.innerHTML = ''; listNejdem.innerHTML = '';
-                Object.keys(data).sort().forEach(meno => {
-                    if (meno === '__metadata') return;
-                    const stav = data[meno];
-                    const card = document.createElement('div');
-                    card.className = `hasic-card ${stav === 'IDEM' ? 'idem-card' : 'nejdem-card'}`;
-                    card.innerText = meno;
-                    if (stav === 'IDEM') listIdem.appendChild(card);
-                    else listNejdem.appendChild(card);
-                });
-            });
-        }
-
-        function startTimer(startTime) {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(async () => {
-                const zostava = 1800 - Math.floor((Date.now() - startTime) / 1000);
-                if (zostava <= 0) { clearInterval(timerInterval); await archivovatAResetovat(); }
-                else {
-                    const m = Math.floor(zostava / 60); const s = zostava % 60;
-                    document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                }
-            }, 1000);
-        }
-
-        async function manualnyReset() { if(confirm("Naozaj resetovať plochu a uložiť do archívu?")) await archivovatAResetovat(); }
-
-        async function archivovatAResetovat() {
-            const docRef = db.collection("vyjazdy").doc("active");
-            const snapshot = await docRef.get();
-            if (snapshot.exists) {
-                const data = snapshot.data();
-                const meta = data.__metadata || {};
-                const isli = []; const nejdli = [];
-                Object.keys(data).forEach(m => { if(m !== '__metadata') { if(data[m] === 'IDEM') isli.push(m); else nejdli.push(m); } });
-                if (meta.typ) {
-                    await db.collection("archiv").add({
-                        datum: firebase.firestore.Timestamp.now(),
-                        info: meta.typ + (meta.miesto ? " (" + meta.miesto + ")" : ""),
-                        isli: isli, nejdli: nejdli
-                    });
-                }
-                await docRef.delete();
-            }
-        }
-        window.onload = () => { spracujVstup(); sledovatStav(); };
-    </script>
 </body>
 </html>
