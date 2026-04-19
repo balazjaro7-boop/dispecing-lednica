@@ -15,6 +15,7 @@
     --green:#00e676;
     --gray:#888;
     --red:#ff1744;
+    --yellow:#ffeb3b;
 }
 
 *{box-sizing:border-box;}
@@ -35,40 +36,68 @@ body{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:10px 25px;
+    padding:10px 20px;
     background:#000;
     border-bottom:2px solid #222;
     flex:0 0 auto;
 }
 
-.title{
-    font-size:1.6rem;
+/* LEFT */
+.brand{
+    font-size:1.3rem;
     font-weight:700;
     color:#aaa;
 }
 
-.clock{
-    font-size:2.8rem;
+/* CENTER TIMER */
+.center-timer{
+    font-size:1.6rem;
     font-family:monospace;
+    color:var(--yellow);
+}
+
+/* RIGHT */
+.right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.clock{
+    font-family:monospace;
+    font-size:1.4rem;
+}
+
+.reset{
+    background:#222;
+    color:#aaa;
+    border:1px solid #333;
+    padding:4px 10px;
+    cursor:pointer;
+    font-size:0.8rem;
+}
+
+.reset:hover{
+    background:#ff1744;
+    color:#fff;
 }
 
 /* EVENT */
 .banner{
     flex:0 0 auto;
-    padding:15px;
+    padding:10px;
     text-align:center;
     background:linear-gradient(90deg,#8b0000,#ff1744);
 }
 
 .event-type{
-    font-size:clamp(1.8rem,3vw,3.5rem);
+    font-size:2.2rem;
     font-weight:900;
 }
 
 .event-address{
-    font-size:clamp(1rem,2vw,1.8rem);
+    font-size:1.2rem;
     color:#ffeb3b;
-    margin-top:5px;
 }
 
 /* MAIN */
@@ -76,45 +105,37 @@ body{
     flex:1;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
-    padding:10px;
     overflow:hidden;
 }
 
-/* COLUMN */
+/* COL */
 .col{
-    background:var(--panel);
     display:flex;
     flex-direction:column;
     overflow:hidden;
-    border-radius:6px;
+    padding:5px;
 }
 
-.col h2{
-    margin:10px 0;
+.title{
     text-align:center;
-    font-size:1.5rem;
+    font-size:1.2rem;
+    margin:5px 0;
 }
 
 /* LIST */
 .list{
-    flex:1;
     overflow:hidden;
-    padding:5px 10px;
     display:flex;
     flex-direction:column;
-    gap:4px;
+    gap:2px;
 }
 
 /* ROW */
 .item{
-    padding:4px 6px;
-    font-size:clamp(0.9rem,1.5vw,1.4rem);
-    display:flex;
-    align-items:center;
+    padding:2px 4px;
+    font-size:1rem;
 }
 
-/* ZVÝRAZNENIE (jemné) */
 .idem{
     color:var(--green);
     background:rgba(0,230,118,0.08);
@@ -128,18 +149,14 @@ body{
 /* FOOTER */
 .footer{
     flex:0 0 auto;
-    padding:6px 20px;
+    padding:6px 15px;
+    font-size:0.8rem;
+    color:#444;
     background:#000;
-    border-top:1px solid #222;
-    font-size:0.9rem;
-    color:#555;
+    cursor:pointer;
 }
-
-/* MOBILE STACK */
-@media (max-width:700px){
-    .main{
-        grid-template-columns:1fr;
-    }
+.footer:hover{
+    color:#999;
 }
 </style>
 </head>
@@ -147,8 +164,14 @@ body{
 <body>
 
 <div class="header">
-    <div class="title">DHZ LEDNICA – DISPEČING</div>
-    <div id="clock" class="clock">00:00:00</div>
+    <div class="brand">DHZ LEDNICA DISPEČING</div>
+
+    <div id="timer" class="center-timer">--:--</div>
+
+    <div class="right">
+        <div id="clock" class="clock">00:00:00</div>
+        <button class="reset" onclick="manualReset()">RESET</button>
+    </div>
 </div>
 
 <div id="banner" class="banner">
@@ -158,17 +181,17 @@ body{
 
 <div class="main">
     <div class="col">
-        <h2>IDEM</h2>
+        <div class="title">IDEM</div>
         <div id="idem" class="list"></div>
     </div>
 
     <div class="col">
-        <h2>NEJDEM</h2>
+        <div class="title">NEJDEM</div>
         <div id="nejdem" class="list"></div>
     </div>
 </div>
 
-<div class="footer">
+<div class="footer" onclick="window.location.href='archiv.html'">
     📂 ARCHÍV VÝJAZDOV
 </div>
 
@@ -182,14 +205,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+let timerInterval;
+
 /* CLOCK */
 setInterval(()=>{
-    const d=new Date();
     document.getElementById("clock").innerText =
-    d.toLocaleTimeString("sk-SK");
+    new Date().toLocaleTimeString("sk-SK");
 },1000);
 
-/* REALTIME */
+/* SNAPSHOT */
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
 
     const idem=document.getElementById("idem");
@@ -198,13 +222,18 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     idem.innerHTML="";
     nejdem.innerHTML="";
 
-    if(!doc.exists) return;
+    if(!doc.exists){
+        resetUI();
+        return;
+    }
 
     const d=doc.data();
     const m=d.__metadata||{};
 
     document.getElementById("typ").innerText=m.typ||"VÝJAZD";
     document.getElementById("adresa").innerText=m.miesto||"";
+
+    if(m.timestamp) startTimer(m.timestamp);
 
     Object.keys(d).forEach(k=>{
         if(k==="__metadata") return;
@@ -223,6 +252,74 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
         }
     });
 });
+
+/* TIMER B */
+function startTimer(start){
+    clearInterval(timerInterval);
+
+    timerInterval=setInterval(async()=>{
+        const left = 1800 - Math.floor((Date.now()-start)/1000);
+
+        if(left<=0){
+            clearInterval(timerInterval);
+            await autoReset();
+            return;
+        }
+
+        const m=Math.floor(left/60);
+        const s=left%60;
+
+        document.getElementById("timer").innerText =
+        `${m}:${s.toString().padStart(2,"0")}`;
+
+    },1000);
+}
+
+/* RESET UI */
+function resetUI(){
+    document.getElementById("typ").innerText="ČAKÁM";
+    document.getElementById("adresa").innerText="";
+    document.getElementById("timer").innerText="--:--";
+}
+
+/* MANUAL RESET */
+async function manualReset(){
+    if(confirm("RESET + ARCHÍV?")){
+        await autoReset();
+    }
+}
+
+/* AUTO RESET + ARCHIV */
+async function autoReset(){
+    const ref=db.collection("vyjazdy").doc("active");
+    const snap=await ref.get();
+
+    if(snap.exists){
+        const d=snap.data();
+        const m=d.__metadata||{};
+
+        const ide=[], nej=[];
+
+        Object.keys(d).forEach(k=>{
+            if(k!=="__metadata"){
+                (d[k]==="IDEM"?ide:nej).push(k);
+            }
+        });
+
+        if(m.typ){
+            await db.collection("archiv").add({
+                datum:firebase.firestore.Timestamp.now(),
+                info:m.typ+" "+(m.miesto||""),
+                isli:ide,
+                nejdli:nej
+            });
+        }
+
+        await ref.delete();
+    }
+
+    resetUI();
+}
 </script>
 
 </body>
