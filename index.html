@@ -3,123 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DISPEČING DHZ LEDNICA</title>
+    <title>DHZ Lednica</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        :root {
-            --bg-color: #050505;
-            --panel-bg: #0f0f0f;
-            --accent-red: #d32f2f;
-            --green-txt: #4caf50;
-            --red-txt: #f44336;
+        :root { --bg: #000; --red: #cc0000; --green: #4caf50; --gray: #555; }
+        body { font-family: sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .top-bar { display: flex; justify-content: flex-end; align-items: center; padding: 10px 30px; height: 80px; }
+        .clock { font-size: 4.5em; font-family: monospace; font-weight: bold; color: #fff; }
+        
+        .event-banner { background: var(--red); text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
+        .event-type { font-size: 4em; font-weight: bold; text-transform: uppercase; }
+        .event-address { font-size: 2.5em; color: #ffeb3b; }
+
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; flex-grow: 1; overflow: hidden; }
+        .column { display: flex; flex-direction: column; }
+        .column-header { font-size: 2.5em; font-weight: bold; border-bottom: 2px solid #222; margin-bottom: 15px; }
+        
+        .list-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+            gap: 10px; align-content: start; 
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background-color: var(--bg-color);
-            color: white;
-            margin: 0; padding: 0;
-            height: 100vh;
-            display: flex; flex-direction: column;
-            overflow: hidden;
-        }
+        .name-item { font-size: 2.2em; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
+        .idem { color: var(--green); }
+        .nejdem { color: var(--gray); }
 
-        /* Horná lišta - veľmi tenká */
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 2px 20px; background: #000; border-bottom: 2px solid var(--accent-red);
-            height: 50px;
-        }
-
-        .clock { font-size: 2.2em; font-family: monospace; font-weight: bold; }
-        .btn-reset { background: #222; color: #555; border: 1px solid #333; cursor: pointer; font-size: 0.8em; padding: 2px 8px; }
-
-        /* Banner udalosti - stredne veľký, aby ostalo miesto na mená */
-        .event-banner {
-            background-color: var(--accent-red);
-            padding: 10px; text-align: center;
-            min-height: 80px;
-        }
-        .event-type { font-size: 2.5em; font-weight: 900; text-transform: uppercase; line-height: 1.1; }
-        .event-address { font-size: 1.5em; font-weight: bold; color: #ffeb3b; margin-top: 4px; }
-
-        .timer-line { background: #111; text-align: center; font-size: 0.9em; padding: 2px; color: #888; border-bottom: 1px solid #222; }
-
-        /* Mriežka pre mená */
-        .main-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
-            padding: 5px; flex-grow: 1; overflow: hidden;
-        }
-
-        .column {
-            background: var(--panel-bg); border: 1px solid #1a1a1a;
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        .column-header {
-            text-align: center; font-size: 1.4em; padding: 5px;
-            background: rgba(255,255,255,0.05); font-weight: bold; border-bottom: 1px solid #222;
-        }
-
-        /* Kontajner pre mená - tu sa deje mágia s dvoma radmi */
-        .list-container {
-            padding: 10px;
-            display: grid;
-            /* Automaticky vytvorí stĺpce široké cca 180px - ak je veľa ľudí, idú vedľa seba */
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 5px;
-            align-content: start;
-            overflow-y: auto;
-        }
-
-        .hasic-name {
-            font-size: 1.6em; /* Čitateľné ale nie obrie */
-            font-weight: bold;
-            padding: 4px 8px;
-            border-bottom: 1px solid #1a1a1a;
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .txt-green { color: var(--green-txt); }
-        .txt-red { color: #555; } /* Nejdúci sú šedí, aby nekričali */
-
-        .bottom-bar { height: 25px; background: #000; padding: 0 10px; font-size: 0.7em; display: flex; align-items: center; color: #333; }
+        .btn-reset { position: absolute; left: 10px; top: 10px; background: #111; color: #333; border: 1px solid #222; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <button class="btn-reset" onclick="manualnyReset()">RESET</button>
+
     <div class="top-bar">
-        <div style="font-size: 0.9em; color: #444;">DHZ LEDNICA</div>
         <div id="live-clock" class="clock">00:00:00</div>
-        <button class="btn-reset" onclick="manualnyReset()">RESET</button>
     </div>
 
-    <div id="event-line" class="event-banner">
-        <div id="display-udalost" class="event-type">ČAKÁM...</div>
+    <div id="event-line" class="event-banner" style="display: none;">
+        <div id="display-udalost" class="event-type"></div>
         <div id="display-adresa" class="event-address"></div>
     </div>
 
-    <div class="timer-line">AUTO-RESET: <span id="countdown" style="color:#ffeb3b">30:00</span></div>
-
     <div class="main-grid">
         <div class="column">
-            <div class="column-header" style="color: var(--green-txt);">IDEM</div>
+            <div class="column-header" style="color: var(--green);">IDEM</div>
             <div id="list-idem" class="list-container"></div>
         </div>
         <div class="column">
-            <div class="column-header" style="color: var(--red-txt);">NEJDEM</div>
+            <div class="column-header" style="color: var(--gray);">NEJDEM</div>
             <div id="list-nejdem" class="list-container"></div>
         </div>
     </div>
 
-    <div class="bottom-bar">ARCHÍV V2.7</div>
-
     <script>
-        // TU DAJ SVOJU KONFIGURÁCIU (API KEY, APP ID atď.)
         const firebaseConfig = {
             apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
             authDomain: "hasici-lednica.firebaseapp.com",
@@ -132,20 +71,20 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Hodiny
         setInterval(() => {
-            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK');
+            const now = new Date();
+            document.getElementById('live-clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
         }, 1000);
 
         async function spracujVstup() {
             const params = new URLSearchParams(window.location.search);
-            const udalost = params.get('udalost');
+            const message = params.get('udalost');
             const akcia = params.get('akcia');
 
-            if (udalost) {
-                let typ = udalost, adresa = "";
-                if (udalost.toLowerCase().includes("adresa:")) {
-                    const parts = udalost.split(/adresa:/i);
+            if (message) {
+                let typ = message, adresa = "";
+                if (message.toLowerCase().includes("adresa:")) {
+                    const parts = message.split(/adresa:/i);
                     typ = parts[0].trim().replace(/,$/, "");
                     adresa = parts[1].trim();
                 }
@@ -156,48 +95,48 @@
             }
 
             if (akcia) {
-                let meno = localStorage.getItem('mojeMeno_DHZ');
-                if (!meno) {
-                    meno = prompt("Meno:");
-                    if (meno) localStorage.setItem('mojeMeno_DHZ', meno);
-                    else return;
+                let meno = localStorage.getItem('mojeMeno_DHZ') || prompt("Zadaj meno:");
+                if (meno) {
+                    localStorage.setItem('mojeMeno_DHZ', meno);
+                    await db.collection("vyjazdy").doc("active").set({ [meno]: akcia }, { merge: true });
                 }
-                await db.collection("vyjazdy").doc("active").set({ [meno]: akcia }, { merge: true });
                 window.history.replaceState({}, document.title, "/");
             }
         }
 
         let timerInterval;
         function sledovatStav() {
-            db.collection("vyjazdy").doc("active").onSnapshot(async (doc) => {
+            db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
                 const listIdem = document.getElementById('list-idem');
                 const listNejdem = document.getElementById('list-nejdem');
-                const dispUdalost = document.getElementById('display-udalost');
-                const dispAdresa = document.getElementById('display-adresa');
+                const banner = document.getElementById('event-line');
                 
+                listIdem.innerHTML = ''; listNejdem.innerHTML = '';
+
                 if (!doc.exists) {
-                    listIdem.innerHTML = ''; listNejdem.innerHTML = '';
-                    dispUdalost.innerText = "ČAKÁM..."; dispAdresa.innerText = "";
+                    banner.style.display = 'none';
                     if(timerInterval) clearInterval(timerInterval);
                     return;
                 }
                 
                 const data = doc.data();
                 const meta = data.__metadata || {};
-                dispUdalost.innerText = meta.typ || "VÝJAZD";
-                dispAdresa.innerText = meta.miesto || "";
 
-                if (meta.timestamp) startTimer(meta.timestamp);
+                if (meta.typ) {
+                    banner.style.display = 'flex';
+                    document.getElementById('display-udalost').innerText = meta.typ;
+                    document.getElementById('display-adresa').innerText = meta.miesto || "";
+                    if (meta.timestamp) startTimer(meta.timestamp);
+                } else {
+                    banner.style.display = 'none';
+                }
 
-                listIdem.innerHTML = ''; listNejdem.innerHTML = '';
                 Object.keys(data).sort().forEach(meno => {
                     if (meno === '__metadata') return;
                     const div = document.createElement('div');
-                    div.className = 'hasic-name ' + (data[meno] === 'IDEM' ? 'txt-green' : 'txt-red');
-                    div.innerText = (data[meno] === 'IDEM' ? '✔ ' : '✖ ') + meno;
-                    
-                    if (data[meno] === 'IDEM') listIdem.appendChild(div);
-                    else listNejdem.appendChild(div);
+                    div.className = 'name-item ' + (data[meno] === 'IDEM' ? 'idem' : 'nejdem');
+                    div.innerText = meno;
+                    (data[meno] === 'IDEM' ? listIdem : listNejdem).appendChild(div);
                 });
             });
         }
@@ -205,29 +144,31 @@
         function startTimer(startTime) {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(async () => {
-                const zostava = 1800 - Math.floor((Date.now() - startTime) / 1000);
-                if (zostava <= 0) { clearInterval(timerInterval); await archivovatAResetovat(); }
-                else {
-                    const m = Math.floor(zostava / 60), s = zostava % 60;
-                    document.getElementById('countdown').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                if (Math.floor((Date.now() - startTime) / 1000) >= 1800) {
+                    clearInterval(timerInterval);
+                    await archivovatAResetovat();
                 }
             }, 1000);
         }
 
-        async function manualnyReset() { if(confirm("Archivovať a resetovať?")) await archivovatAResetovat(); }
+        async function manualnyReset() { if(confirm("Uložiť a vymazať?")) await archivovatAResetovat(); }
 
         async function archivovatAResetovat() {
             const docRef = db.collection("vyjazdy").doc("active");
             const snapshot = await docRef.get();
             if (snapshot.exists) {
-                const data = snapshot.data(), meta = data.__metadata || {};
+                const data = snapshot.data();
+                const meta = data.__metadata || {};
                 const isli = [], nejdli = [];
-                Object.keys(data).forEach(m => { if(m !== '__metadata') (data[m] === 'IDEM' ? isli : nejdli).push(m); });
+                Object.keys(data).forEach(m => {
+                    if(m !== '__metadata') (data[m] === 'IDEM' ? isli : nejdli).push(m);
+                });
                 if (meta.typ) {
                     await db.collection("archiv").add({
                         datum: firebase.firestore.Timestamp.now(),
-                        info: meta.typ + (meta.miesto ? " (" + meta.miesto + ")" : ""),
-                        isli, nejdli
+                        info: meta.typ + (meta.miesto ? " - " + meta.miesto : ""),
+                        isli: isli,
+                        nejdli: nejdli
                     });
                 }
                 await docRef.delete();
