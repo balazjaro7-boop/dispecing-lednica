@@ -46,7 +46,7 @@
             line-height: 1;
         }
 
-        /* AGRESÍVNY MAJÁK */
+        /* MAJÁK BEZ ZBYTOČNÉHO TEXTU */
         .info-box { 
             background: #000; 
             margin: 15px 20px; 
@@ -57,16 +57,15 @@
             border-radius: 8px;
             text-transform: uppercase;
             animation: fire-alert 1.2s infinite;
-            height: 110px; /* Mierne zväčšený box */
+            height: 120px; /* Ešte o kúsok vyšší pre maximálny efekt */
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             box-sizing: border-box;
-            padding: 5px 20px;
+            padding: 5px 15px;
         }
 
-        /* Vnútorný obal pre text, aby sme vedeli merať šírku */
         #info-text-inner {
             white-space: nowrap;
             display: inline-block;
@@ -74,7 +73,7 @@
 
         @keyframes fire-alert {
             0% { box-shadow: 0 0 15px #ffeb3b; border-color: #ffeb3b; color: #ffeb3b; }
-            50% { box-shadow: 0 0 60px #d32f2f; border-color: #d32f2f; color: #fff; transform: scale(1.01); }
+            50% { box-shadow: 0 0 70px #d32f2f; border-color: #d32f2f; color: #fff; transform: scale(1.01); }
             100% { box-shadow: 0 0 15px #ffeb3b; border-color: #ffeb3b; color: #ffeb3b; }
         }
 
@@ -141,10 +140,11 @@
 <div class="footer">
     <a href="archiv.html" class="nav-link">Archív</a>
     <div class="timer-container">RESET ZA: <span id="reset-timer">--:--</span></div>
-    <div class="nav-link" style="cursor: default;">Live Systém v1.7</div>
+    <div class="nav-link" style="cursor: default;">Live Systém v1.8</div>
 </div>
 
 <script>
+    // --- KONFIGURÁCIA FIREBASE ---
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -200,16 +200,16 @@
         const infoInner = document.getElementById("info-text-inner");
 
         if (data.infoText && data.infoText.trim() !== "") {
-            infoInner.innerText = "HLÁSENIE: " + data.infoText;
+            // TERAZ UŽ LEN ČISTÝ TEXT
+            infoInner.innerText = data.infoText;
             infoDiv.style.display = "flex";
 
-            // AGRESÍVNY AUTO-FIT
-            let fontSize = 80; // Začíname na obrovskom písme
+            // AUTO-FIT PRE MAXIMÁLNU VEĽKOSŤ
+            let fontSize = 90; // Začíname ešte od väčšieho písma
             infoDiv.style.fontSize = fontSize + "px";
             
-            // Zmenšujeme len o nevyhnutné minimum
-            while (infoInner.offsetWidth > (infoDiv.clientWidth - 60) && fontSize > 20) {
-                fontSize -= 2;
+            while (infoInner.offsetWidth > (infoDiv.clientWidth - 40) && fontSize > 20) {
+                fontSize -= 1;
                 infoDiv.style.fontSize = fontSize + "px";
             }
         } else {
