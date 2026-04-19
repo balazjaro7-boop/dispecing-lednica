@@ -2,13 +2,13 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <title>DISPEČING DHZ LEDNICA</title>
+    <title>DHZ Lednica - OPERAČNÉ</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { 
-            font-family: 'Arial Black', sans-serif; 
+            font-family: sans-serif; 
             background: #000; 
             color: #fff; 
             margin: 0; 
@@ -23,87 +23,99 @@
             display: flex; 
             justify-content: flex-end; 
             padding: 10px 40px; 
-            height: 110px; 
+            height: 90px; 
         }
         .clock { 
-            font-size: 6em; 
-            font-family: 'Courier New', monospace; 
+            font-size: 5em; 
+            font-family: monospace; 
             font-weight: 900; 
-            color: #fff; 
         }
 
-        /* STROBOSKOP BANNER */
-        .banner { 
+        /* BLIKAJÚCI BANNER S UDALOSŤOU */
+        .event-banner { 
             text-align: center; 
-            padding: 20px; 
-            min-height: 180px; 
+            min-height: 140px; 
             display: flex; 
             align-items: center; 
             justify-content: center;
-            animation: stroboskop 0.8s infinite; 
-            margin-bottom: 20px;
+            animation: blink 0.8s infinite; 
+            margin-bottom: 10px;
         }
 
-        @keyframes stroboskop {
+        @keyframes blink {
             0% { background: #cc0000; color: #fff; }
             50% { background: #ffeb3b; color: #000; }
             100% { background: #cc0000; color: #fff; }
         }
 
         .u-text { 
-            font-size: 5em; 
+            font-size: 4em; 
             font-weight: 900; 
             text-transform: uppercase; 
-            line-height: 1;
         }
 
-        /* HLAVNÁ MRIEŽKA PRE MENÁ */
+        /* HLAVNÁ PLOCHA */
         .main-content { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 50px; 
-            padding: 0 40px 20px 40px; 
+            gap: 40px; 
+            padding: 0 40px 10px 40px; 
             flex-grow: 1; 
+            overflow: hidden;
         }
 
         .col-title { 
-            font-size: 3.5em; 
+            font-size: 2.5em; 
             font-weight: 900; 
-            border-bottom: 5px solid #222; 
-            margin-bottom: 20px; 
+            border-bottom: 3px solid #222; 
+            margin-bottom: 10px; 
         }
 
-        /* AUTO-STĹPCE PRE MENÁ */
+        /* MENÁ O 2/3 MENŠIE */
         .names-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
-            gap: 15px; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 8px; 
             align-content: start; 
         }
 
         .name-entry { 
-            font-size: 3em; 
-            font-weight: 900; 
+            font-size: 1.2em; /* Zmenšené na tretinu pôvodnej veľkosti */
+            font-weight: bold; 
             text-transform: uppercase; 
-            white-space: nowrap; 
         }
 
         .color-idem { color: #4caf50; }
-        .color-nejdem { color: #333; }
+        .color-nejdem { color: #444; }
 
-        /* SKRYTÝ RESET */
-        .btn-reset { position: absolute; left: 0; top: 0; opacity: 0.05; background: none; border: none; color: #fff; cursor: pointer; font-size: 10px; }
+        /* ARCHÍV DOLU */
+        .bottom-bar {
+            height: 40px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            border-top: 1px solid #222;
+        }
+        .link-archiv {
+            color: #555;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .btn-reset { position: absolute; left: 5px; top: 5px; opacity: 0.1; background: none; border: none; color: #fff; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<button class="btn-reset" onclick="manualReset()">RESET</button>
+<button class="btn-reset" onclick="manualReset()">.</button>
 
 <div class="header">
     <div id="clock" class="clock">00:00:00</div>
 </div>
 
-<div id="banner" class="banner" style="display:none">
+<div id="banner" class="event-banner" style="display:none">
     <div id="u-display" class="u-text"></div>
 </div>
 
@@ -116,6 +128,10 @@
         <div class="col-title" style="color:#444">NEJDEM</div>
         <div id="list-nejdem" class="names-grid"></div>
     </div>
+</div>
+
+<div class="bottom-bar">
+    <a href="archiv.html" class="link-archiv">📂 ARCHÍV VÝJAZDOV</a>
 </div>
 
 <script>
@@ -131,12 +147,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Hodiny v reálnom čase
     setInterval(() => {
         document.getElementById('clock').innerText = new Date().toLocaleTimeString('sk-SK');
     }, 1000);
 
-    // Spracovanie URL (ak naskočí udalosť alebo meno)
     const params = new URLSearchParams(window.location.search);
     const u = params.get('udalost');
     const a = params.get('akcia');
@@ -154,7 +168,6 @@
         window.history.replaceState({}, '', '/');
     }
 
-    // Živá aktualizácia plochy
     db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         const d_idem = document.getElementById('list-idem');
         const d_nejdem = document.getElementById('list-nejdem');
@@ -189,9 +202,8 @@
         });
     });
 
-    // Reset a Archív
     async function manualReset() {
-        if (!confirm("Uložiť výjazd a vymazať plochu?")) return;
+        if (!confirm("Uložiť výjazd do archívu a vymazať plochu?")) return;
         const ref = db.collection("vyjazdy").doc("active");
         const snap = await ref.get();
         if (snap.exists) {
@@ -199,15 +211,11 @@
             const idem = [], nejdem = [];
             Object.keys(d).forEach(k => { if(k !== 'info' && k !== 'cas') (d[k] === 'IDEM' ? idem : nejdem).push(k); });
             
-            // Zápis do archívu
             await db.collection("archiv").add({ 
                 datum: firebase.firestore.Timestamp.now(), 
-                info: d.info || "Výjazd bez popisu", 
-                idem: idem, 
-                nejdem: nejdem 
+                info: d.info || "Bez popisu", 
+                idem, nejdem 
             });
-            
-            // Vymazanie aktívnej plochy
             await ref.delete();
         }
     }
