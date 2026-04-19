@@ -125,16 +125,18 @@ import {
   getFirestore,
   doc,
   onSnapshot,
-  updateDoc
+  updateDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// KONFIGURÁCIA PRE PROJEKT: hasici-lednica
 const firebaseConfig = {
-  apiKey: "AIzaSyBEs_jevah2vq-zOLhNbvaoQ37fupAKlBg",
-  authDomain: "dhz-lednica.firebaseapp.com",
-  projectId: "dhz-lednica",
-  storageBucket: "dhz-lednica.firebasestorage.app",
-  messagingSenderId: "486037163441",
-  appId: "1:486037163441:web:1fce766ed28ea953a2c190"
+  apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+  authDomain: "hasici-lednica.firebaseapp.com",
+  projectId: "hasici-lednica",
+  storageBucket: "hasici-lednica.firebasestorage.app",
+  messagingSenderId: "747340639310",
+  appId: "1:747340639310:web:e6cba7417ffae4ed59e71f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -145,7 +147,7 @@ const ideContainer = document.getElementById("ide");
 const neideContainer = document.getElementById("neide");
 const autoMsg = document.getElementById("auto-msg");
 
-// --- FUNKCIA PRE AUTOMATICKÝ ZÁPIS Z PUSHOVERU ---
+// --- FUNKCIA PRE AUTOMATICKÝ ZÁPIS ---
 async function checkUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const pMeno = urlParams.get('meno');
@@ -156,40 +158,47 @@ async function checkUrlParams() {
         autoMsg.innerText = `NAHLASUJEM: ${pMeno} -> ${pAkcia}...`;
         
         try {
+            // Používame priamy názov poľa pre meno hasiča
             await updateDoc(ref, {
-                [`hasici.${pMeno}`]: pAkcia
+                [pMeno]: pAkcia
             });
             autoMsg.style.background = "#28a745";
-            autoMsg.innerText = `ROZKAZ! ${pMeno}, TVOJA ÚČASŤ (${pAkcia}) BOLA ZAPÍSANÁ.`;
+            autoMsg.innerText = `ROZKAZ! ${pMeno}, TVOJA ÚČASŤ BOLA ZAPÍSANÁ.`;
             
-            // Po 3 sekundách správa zmizne a vyčistí URL adresu
             setTimeout(() => {
                 autoMsg.style.display = "none";
                 window.history.replaceState({}, document.title, window.location.pathname);
             }, 3000);
         } catch (e) {
-            autoMsg.style.background = "red";
-            autoMsg.innerText = "CHYBA PRI ZÁPISE!";
-            console.error(e);
+            // Ak dokument neexistuje, vytvoríme ho
+            try {
+                await setDoc(ref, { [pMeno]: pAkcia }, { merge: true });
+                autoMsg.style.background = "#28a745";
+                autoMsg.innerText = `ROZKAZ! ${pMeno}, TVOJA ÚČASŤ BOLA ZAPÍSANÁ.`;
+            } catch (err2) {
+                autoMsg.style.background = "red";
+                autoMsg.innerText = "CHYBA PRI ZÁPISE!";
+                console.error(err2);
+            }
         }
     }
 }
 
-// --- LIVE AKTUALIZÁCIA DISPEČINGU ---
+// --- LIVE AKTUALIZÁCIA ---
 onSnapshot(ref, (snap) => {
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+        ideContainer.innerHTML = "<p>Čakám na prvé nahlásenie...</p>";
+        return;
+    }
     
     const data = snap.data();
-    const h = data.hasici || {};
-
     ideContainer.innerHTML = "";
     neideContainer.innerHTML = "";
 
-    // Zoradenie mien podľa abecedy
-    const zoradeneMena = Object.keys(h).sort();
+    const zoradeneMena = Object.keys(data).sort();
 
     zoradeneMena.forEach(meno => {
-        const stav = h[meno];
+        const stav = data[meno];
         const div = document.createElement("div");
         div.className = "person " + (stav === "IDEM" ? "ok" : "no");
         div.innerHTML = `<span>${meno}</span>`;
@@ -200,7 +209,7 @@ onSnapshot(ref, (snap) => {
 
         btn.onclick = async () => {
             await updateDoc(ref, {
-                [`hasici.${meno}`]: stav === "IDEM" ? "NEJDEM" : "IDEM"
+                [meno]: stav === "IDEM" ? "NEJDEM" : "IDEM"
             });
         };
 
@@ -214,10 +223,7 @@ onSnapshot(ref, (snap) => {
     });
 });
 
-// Spustíme kontrolu parametrov pri načítaní
 checkUrlParams();
-
 </script>
-
 </body>
 </html>
