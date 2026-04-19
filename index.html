@@ -46,11 +46,10 @@
             line-height: 1;
         }
 
-        /* ŽLTÝ BOX S PULZOVANÍM */
         .info-box { 
-            background: #222; padding: 12px; margin: 10px 20px; 
+            background: #222; padding: 15px; margin: 10px 20px; 
             border: 3px solid #ffeb3b; color: #ffeb3b; 
-            font-size: 26px; font-weight: bold; text-align: center; border-radius: 4px;
+            font-size: 28px; font-weight: bold; text-align: center; border-radius: 4px;
             text-transform: uppercase;
             animation: pulse-border 2s infinite;
         }
@@ -79,7 +78,6 @@
 
         .names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 15px; align-content: start; }
         
-        /* ČISTÉ MENÁ SO ZEBRA EFEKTOM */
         .name-item { 
             font-size: 32px; font-weight: 900; color: var(--text-dark); 
             padding: 10px 15px; 
@@ -88,7 +86,7 @@
             align-items: center;
         }
 
-        /* Zebra pre 2 stĺpce (strieda dvojice riadkov) */
+        /* Zebra efekt pre dva stĺpce */
         .name-item:nth-child(4n+1), 
         .name-item:nth-child(4n+2) { 
             background: rgba(0,0,0,0.07); 
@@ -120,7 +118,6 @@
         <div class="section-header idem-title">🟢 IDEM</div>
         <div id="list-idem" class="names-grid"></div>
     </div>
-
     <div class="section">
         <div class="section-header nejdem-title">🔴 NEJDEM</div>
         <div id="list-nejdem" class="names-grid"></div>
@@ -130,11 +127,11 @@
 <div class="footer">
     <a href="archiv.html" class="nav-link">Archív</a>
     <div class="timer-container">RESET ZA: <span id="reset-timer">--:--</span></div>
-    <div class="nav-link" style="cursor: default;">Live Systém v1.3</div>
+    <div class="nav-link" style="cursor: default;">Live Systém v1.4</div>
 </div>
 
 <script>
-    // --- SEM KONFIGURÁCIU ---
+    // --- KONFIGURÁCIA ---
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -178,19 +175,36 @@
         await docRef.update(updates);
     }
 
+    // --- OPRAVENÉ SPRACOVANIE URL ---
     const params = new URLSearchParams(window.location.search);
-    if (params.get('meno')) {
-        let up = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
-        up[params.get('meno')] = params.get('akcia');
-        docRef.update(up).then(() => { window.history.replaceState({}, document.title, "/"); });
+    const pMeno = params.get('meno');
+    const pAkcia = params.get('akcia');
+    const pInfo = params.get('info');
+
+    if (pMeno || pInfo) {
+        let updateData = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
+        
+        if (pMeno && pAkcia) {
+            updateData[pMeno] = pAkcia;
+        }
+        
+        if (pInfo) {
+            updateData.infoText = pInfo.replace(/_/g, ' ');
+        }
+
+        docRef.update(updateData).then(() => {
+            // Vymaže parametre z URL bez obnovenia stránky
+            window.history.replaceState({}, document.title, window.location.pathname);
+        });
     }
 
     docRef.onSnapshot((doc) => {
         const data = doc.data();
         if (!data) return;
 
+        // HLÁSENIE
         const infoDiv = document.getElementById("vyjazd-info");
-        if (data.infoText) {
+        if (data.infoText && data.infoText.trim() !== "") {
             infoDiv.innerText = "HLÁSENIE: " + data.infoText;
             infoDiv.style.display = "block";
         } else {
