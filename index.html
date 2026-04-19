@@ -2,17 +2,14 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DHZ Lednica - OPERAČNÉ</title>
+    <title>DISPEČING DHZ LEDNICA</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --bg: #000; --red: #cc0000; --green: #4caf50; --gray: #444; }
-        
         * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', Helvetica, sans-serif; 
-            background: var(--bg); 
+            font-family: 'Arial Black', sans-serif; 
+            background: #000; 
             color: #fff; 
             margin: 0; 
             height: 100vh; 
@@ -20,231 +17,200 @@
             display: flex; 
             flex-direction: column; 
         }
-        
-        .top-bar { 
+
+        /* HODINY VPRAVO HORE */
+        .header { 
             display: flex; 
             justify-content: flex-end; 
-            align-items: center; 
             padding: 10px 40px; 
-            height: 100px; 
+            height: 110px; 
         }
         .clock { 
-            font-size: 5.5em; 
+            font-size: 6em; 
             font-family: 'Courier New', monospace; 
             font-weight: 900; 
-            color: #ffffff; 
+            color: #fff; 
         }
-        
-        /* BANNER S ANIMÁCIOU PREBLIKÁVANIA */
-        .event-banner { 
+
+        /* STROBOSKOP BANNER */
+        .banner { 
             text-align: center; 
-            min-height: 160px; 
+            padding: 20px; 
+            min-height: 180px; 
             display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            margin-bottom: 10px;
-            animation: blink-bg 1s infinite; /* Tu je to preblikávanie */
+            align-items: center; 
+            justify-content: center;
+            animation: stroboskop 0.8s infinite; 
+            margin-bottom: 20px;
         }
 
-        @keyframes blink-bg {
-            0% { background-color: #cc0000; color: #fff; }
-            50% { background-color: #ffeb3b; color: #000; }
-            100% { background-color: #cc0000; color: #fff; }
+        @keyframes stroboskop {
+            0% { background: #cc0000; color: #fff; }
+            50% { background: #ffeb3b; color: #000; }
+            100% { background: #cc0000; color: #fff; }
         }
 
-        .event-type { font-size: 5em; font-weight: 900; text-transform: uppercase; }
-        .event-address { font-size: 3em; font-weight: bold; }
+        .u-text { 
+            font-size: 5em; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            line-height: 1;
+        }
 
-        .main-grid { 
+        /* HLAVNÁ MRIEŽKA PRE MENÁ */
+        .main-content { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 30px; 
-            padding: 0 30px 20px 30px; 
+            gap: 50px; 
+            padding: 0 40px 20px 40px; 
             flex-grow: 1; 
-            overflow: hidden; 
         }
-        .column { display: flex; flex-direction: column; }
-        .column-header { 
-            font-size: 3.2em; 
+
+        .col-title { 
+            font-size: 3.5em; 
             font-weight: 900; 
-            border-bottom: 3px solid #222; 
-            margin-bottom: 15px; 
+            border-bottom: 5px solid #222; 
+            margin-bottom: 20px; 
         }
-        
-        .list-container { 
+
+        /* AUTO-STĹPCE PRE MENÁ */
+        .names-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
             gap: 15px; 
             align-content: start; 
         }
 
-        .name-item { 
-            font-size: 2.8em; 
-            font-weight: bold; 
+        .name-entry { 
+            font-size: 3em; 
+            font-weight: 900; 
             text-transform: uppercase; 
+            white-space: nowrap; 
         }
-        .idem { color: var(--green); }
-        .nejdem { color: var(--gray); }
 
-        .btn-reset { 
-            position: absolute; 
-            left: 5px; top: 5px; 
-            opacity: 0.1; 
-            background: none; 
-            border: none; 
-            color: #fff; 
-            cursor: pointer; 
-        }
+        .color-idem { color: #4caf50; }
+        .color-nejdem { color: #333; }
+
+        /* SKRYTÝ RESET */
+        .btn-reset { position: absolute; left: 0; top: 0; opacity: 0.05; background: none; border: none; color: #fff; cursor: pointer; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <button class="btn-reset" onclick="manualnyReset()">.</button>
+<button class="btn-reset" onclick="manualReset()">RESET</button>
 
-    <div class="top-bar">
-        <div id="live-clock" class="clock">00:00:00</div>
+<div class="header">
+    <div id="clock" class="clock">00:00:00</div>
+</div>
+
+<div id="banner" class="banner" style="display:none">
+    <div id="u-display" class="u-text"></div>
+</div>
+
+<div class="main-content">
+    <div>
+        <div class="col-title" style="color:#4caf50">IDEM</div>
+        <div id="list-idem" class="names-grid"></div>
     </div>
-
-    <div id="event-line" class="event-banner" style="display: none;">
-        <div id="display-udalost" class="event-type"></div>
-        <div id="display-adresa" class="event-address"></div>
+    <div>
+        <div class="col-title" style="color:#444">NEJDEM</div>
+        <div id="list-nejdem" class="names-grid"></div>
     </div>
+</div>
 
-    <div class="main-grid">
-        <div class="column">
-            <div class="column-header" style="color: var(--green);">IDEM</div>
-            <div id="list-idem" class="list-container"></div>
-        </div>
-        <div class="column">
-            <div class="column-header" style="color: var(--gray);">NEJDEM</div>
-            <div id="list-nejdem" class="list-container"></div>
-        </div>
-    </div>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+        authDomain: "hasici-lednica.firebaseapp.com",
+        projectId: "hasici-lednica",
+        storageBucket: "hasici-lednica.firebasestorage.app",
+        messagingSenderId: "747340639310",
+        appId: "1:747340639310:web:e6cba7417ffae4ed59e71f"
+    };
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-            authDomain: "hasici-lednica.firebaseapp.com",
-            projectId: "hasici-lednica",
-            storageBucket: "hasici-lednica.firebasestorage.app",
-            messagingSenderId: "747340639310",
-            appId: "1:747340639310:web:e6cba7417ffae4ed59e71f"
-        };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    // Hodiny v reálnom čase
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString('sk-SK');
+    }, 1000);
 
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('live-clock').innerText = 
-                now.getHours().toString().padStart(2, '0') + ":" + 
-                now.getMinutes().toString().padStart(2, '0') + ":" + 
-                now.getSeconds().toString().padStart(2, '0');
-        }, 1000);
+    // Spracovanie URL (ak naskočí udalosť alebo meno)
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get('udalost');
+    const a = params.get('akcia');
 
-        async function spracujVstup() {
-            const params = new URLSearchParams(window.location.search);
-            const message = params.get('udalost');
-            const akcia = params.get('akcia');
+    if (u) {
+        db.collection("vyjazdy").doc("active").set({ info: u, cas: Date.now() }, { merge: true });
+        window.history.replaceState({}, '', '/');
+    }
+    if (a) {
+        let m = localStorage.getItem('h_meno') || prompt("Meno:");
+        if (m) { 
+            localStorage.setItem('h_meno', m); 
+            db.collection("vyjazdy").doc("active").set({ [m]: a }, { merge: true }); 
+        }
+        window.history.replaceState({}, '', '/');
+    }
 
-            if (message) {
-                let typ = message, adresa = "";
-                if (message.toLowerCase().includes("adresa:")) {
-                    const parts = message.split(/adresa:/i);
-                    typ = parts[0].trim().replace(/,$/, "");
-                    adresa = parts[1].trim();
-                }
-                await db.collection("vyjazdy").doc("active").set({
-                    __metadata: { typ: typ, miesto: adresa, timestamp: Date.now() }
-                }, { merge: true });
-                window.history.replaceState({}, document.title, "/");
-            }
+    // Živá aktualizácia plochy
+    db.collection("vyjazdy").doc("active").onSnapshot(doc => {
+        const d_idem = document.getElementById('list-idem');
+        const d_nejdem = document.getElementById('list-nejdem');
+        const d_banner = document.getElementById('banner');
+        d_idem.innerHTML = ''; d_nejdem.innerHTML = '';
 
-            if (akcia) {
-                let meno = localStorage.getItem('mojeMeno_DHZ') || prompt("Zadaj meno:");
-                if (meno) {
-                    localStorage.setItem('mojeMeno_DHZ', meno);
-                    await db.collection("vyjazdy").doc("active").set({ [meno]: akcia }, { merge: true });
-                }
-                window.history.replaceState({}, document.title, "/");
-            }
+        if (!doc.exists) { 
+            d_banner.style.display = 'none'; 
+            return; 
         }
 
-        let timerInterval;
-        function sledovatStav() {
-            db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
-                const listIdem = document.getElementById('list-idem');
-                const listNejdem = document.getElementById('list-nejdem');
-                const banner = document.getElementById('event-line');
-                
-                listIdem.innerHTML = ''; listNejdem.innerHTML = '';
+        const data = doc.data();
+        if (data.info) {
+            d_banner.style.display = 'flex';
+            document.getElementById('u-display').innerText = data.info;
+        } else { 
+            d_banner.style.display = 'none'; 
+        }
 
-                if (!doc.exists) {
-                    banner.style.display = 'none';
-                    if(timerInterval) clearInterval(timerInterval);
-                    return;
-                }
-                
-                const data = doc.data();
-                const meta = data.__metadata || {};
+        Object.keys(data).sort().forEach(key => {
+            if (key === 'info' || key === 'cas') return;
+            const div = document.createElement('div');
+            div.className = 'name-entry';
+            div.innerText = key;
+            if (data[key] === 'IDEM') { 
+                div.classList.add('color-idem'); 
+                d_idem.appendChild(div); 
+            } else { 
+                div.classList.add('color-nejdem'); 
+                d_nejdem.appendChild(div); 
+            }
+        });
+    });
 
-                if (meta.typ) {
-                    banner.style.display = 'flex';
-                    document.getElementById('display-udalost').innerText = meta.typ;
-                    document.getElementById('display-adresa').innerText = meta.miesto || "";
-                    if (meta.timestamp) startTimer(meta.timestamp);
-                } else {
-                    banner.style.display = 'none';
-                }
-
-                Object.keys(data).sort().forEach(meno => {
-                    if (meno === '__metadata') return;
-                    const div = document.createElement('div');
-                    div.className = 'name-item ' + (data[meno] === 'IDEM' ? 'idem' : 'nejdem');
-                    div.innerText = meno;
-                    (data[meno] === 'IDEM' ? listIdem : listNejdem).appendChild(div);
-                });
+    // Reset a Archív
+    async function manualReset() {
+        if (!confirm("Uložiť výjazd a vymazať plochu?")) return;
+        const ref = db.collection("vyjazdy").doc("active");
+        const snap = await ref.get();
+        if (snap.exists) {
+            const d = snap.data();
+            const idem = [], nejdem = [];
+            Object.keys(d).forEach(k => { if(k !== 'info' && k !== 'cas') (d[k] === 'IDEM' ? idem : nejdem).push(k); });
+            
+            // Zápis do archívu
+            await db.collection("archiv").add({ 
+                datum: firebase.firestore.Timestamp.now(), 
+                info: d.info || "Výjazd bez popisu", 
+                idem: idem, 
+                nejdem: nejdem 
             });
+            
+            // Vymazanie aktívnej plochy
+            await ref.delete();
         }
-
-        function startTimer(startTime) {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(async () => {
-                if (Math.floor((Date.now() - startTime) / 1000) >= 1800) {
-                    clearInterval(timerInterval);
-                    await archivovatAResetovat();
-                }
-            }, 1000);
-        }
-
-        async function manualnyReset() { 
-            if(confirm("Uložiť výjazd do archívu a vymazať plochu?")) {
-                await archivovatAResetovat();
-            }
-        }
-
-        async function archivovatAResetovat() {
-            const docRef = db.collection("vyjazdy").doc("active");
-            const snapshot = await docRef.get();
-            if (snapshot.exists) {
-                const data = snapshot.data();
-                const meta = data.__metadata || {};
-                const isli = [], nejdli = [];
-                Object.keys(data).forEach(m => {
-                    if(m !== '__metadata') (data[m] === 'IDEM' ? isli : nejdli).push(m);
-                });
-                if (meta.typ) {
-                    await db.collection("archiv").add({
-                        datum: firebase.firestore.Timestamp.now(),
-                        info: meta.typ + (meta.miesto ? " - " + meta.miesto : ""),
-                        isli: isli,
-                        nejdli: nejdli
-                    });
-                }
-                await docRef.delete();
-            }
-        }
-        window.onload = () => { spracujVstup(); sledovatStav(); };
-    </script>
+    }
+</script>
 </body>
 </html>
