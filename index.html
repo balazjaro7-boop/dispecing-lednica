@@ -9,123 +9,87 @@
     <style>
         :root {
             --bg-color: #0a0a0a;
-            --card-bg: #141414;
-            --accent-red: #e63946;
-            --accent-green: #2ecc71;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --border-color: #262626;
+            --card-bg: #cccccc; 
+            --accent-red: #d32f2f;
+            --accent-green: #2e7d32;
+            --text-dark: #000000; 
+            --header-bg: #141414;
         }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
             background-color: var(--bg-color); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            color: white; 
+            margin: 0; padding: 0; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh;
         }
 
-        /* Moderný Header */
+        /* Horná lišta */
         .header { 
-            background-color: var(--card-bg); 
-            padding: 15px 30px; 
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 3px solid var(--accent-red);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        .header-left { display: flex; align-items: center; gap: 20px; }
-        .header-logo { height: 70px; width: auto; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
-        .header-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        
-        /* Box pre informáciu o výjazde */
-        .info-box { 
-            background: linear-gradient(90deg, #1a1a00 0%, #333300 100%);
-            padding: 15px; 
-            margin: 10px 20px; 
-            border: 1px solid #ffeb3b; 
-            border-left: 5px solid #ffeb3b;
-            color: #ffeb3b; 
-            font-size: 22px; 
-            font-weight: bold; 
-            text-transform: uppercase;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        /* Hlavný kontajner */
-        .main-container { 
-            display: flex; 
-            flex: 1;
-            gap: 20px;
-            padding: 10px 20px 20px 20px;
+            background-color: var(--header-bg); 
+            padding: 10px 30px; 
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 4px solid var(--accent-red);
+            height: 90px;
             box-sizing: border-box;
         }
 
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-logo { height: 75px; width: auto; }
+        .header-title { font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Veľké biele hodiny */
+        .clock { 
+            font-size: 55px; 
+            font-weight: 900; 
+            color: #ffffff; 
+            font-family: 'Arial Black', sans-serif;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        /* Box pre text výjazdu */
+        .info-box { 
+            background: #222; padding: 12px; margin: 10px 20px; 
+            border: 2px solid #ffeb3b; color: #ffeb3b; 
+            font-size: 24px; font-weight: bold; text-align: center; border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Hlavný priestor s tabuľkami */
+        .main-container { display: flex; flex: 1; gap: 20px; padding: 10px 20px; box-sizing: border-box; }
+
         .section { 
-            flex: 1; 
-            background-color: var(--card-bg);
-            border-radius: 8px;
-            display: flex; 
-            flex-direction: column;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            flex: 1; background-color: var(--card-bg); border-radius: 8px;
+            display: flex; flex-direction: column; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            overflow: hidden;
         }
         
         .section-header { 
-            padding: 20px; 
-            font-size: 20px; 
-            font-weight: 700; 
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-bottom: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.02);
-            border-radius: 8px 8px 0 0;
+            padding: 15px; font-size: 26px; font-weight: 900; text-align: center; 
+            background: rgba(0,0,0,0.05);
+            border-bottom: 4px solid rgba(0,0,0,0.1); 
         }
+        .idem-title { color: var(--accent-green); }
+        .nejdem-title { color: var(--accent-red); }
 
-        .idem-title { color: var(--accent-green); border-bottom: 2px solid var(--accent-green); }
-        .nejdem-title { color: var(--accent-red); border-bottom: 2px solid var(--accent-red); }
-
-        /* Grid mien */
-        .names-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 15px; 
-            padding: 25px; 
-            align-content: start;
-            overflow-y: auto;
-        }
-
+        /* Mriežka mien - 2 stĺpce */
+        .names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px; align-content: start; }
+        
         .name-item { 
-            font-size: 24px; 
-            font-weight: 600; 
-            padding: 12px 15px;
-            background: rgba(255,255,255,0.03);
-            border-left: 4px solid var(--text-muted);
-            border-radius: 2px;
-            transition: all 0.3s ease;
+            font-size: 28px; font-weight: 900; color: var(--text-dark); 
+            padding: 12px; background: rgba(255,255,255,0.5); 
+            border-radius: 4px; text-transform: uppercase;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            border-left: 8px solid rgba(0,0,0,0.2);
         }
 
-        .idem-item { border-left-color: var(--accent-green); background: rgba(46, 204, 113, 0.05); }
-        .nejdem-item { border-left-color: var(--accent-red); background: rgba(230, 57, 70, 0.05); }
-
-        .nav-link { 
-            padding: 10px 20px;
-            color: var(--text-muted); 
-            text-decoration: none; 
-            font-size: 13px; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        /* Spodná lišta s odpočtom */
+        .footer { padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; background: #111; height: 50px; }
+        .timer-container { position: absolute; left: 50%; transform: translateX(-50%); color: #888; font-weight: bold; font-size: 18px; }
+        #reset-timer { color: var(--accent-red); font-size: 20px; font-weight: 900; }
+        .nav-link { color: #555; text-decoration: none; font-size: 14px; font-weight: bold; text-transform: uppercase; }
         .nav-link:hover { color: #fff; }
-
-        .clock { font-size: 20px; font-weight: bold; color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -133,7 +97,7 @@
 <div class="header">
     <div class="header-left">
         <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
-        <div class="header-title">DHZ Lednica <span style="color: var(--text-muted); font-weight: 300;">| Live Dispečing</span></div>
+        <div class="header-title">DHZ Lednica | <span style="font-weight: 300; color: #888;">Dispečing</span></div>
     </div>
     <div class="clock" id="live-clock">00:00:00</div>
 </div>
@@ -142,23 +106,28 @@
 
 <div class="main-container">
     <div class="section">
-        <div class="section-header">🟢 IDEM</div>
+        <div class="section-header idem-title">VÝJAZD: IDEM</div>
         <div id="list-idem" class="names-grid"></div>
     </div>
 
     <div class="section">
-        <div class="section-header">🔴 NEJDEM</div>
+        <div class="section-header nejdem-title">VÝJAZD: NEJDEM</div>
         <div id="list-nejdem" class="names-grid"></div>
     </div>
 </div>
 
-<div style="display: flex; justify-content: space-between; align-items: center;">
-    <a href="archiv.html" class="nav-link">Otvoriť knihu výjazdov</a>
-    <div class="nav-link" style="cursor: default;">Sledujete aktuálny stav v reálnom čase</div>
+<div class="footer">
+    <a href="archiv.html" class="nav-link">Kniha výjazdov (Archív)</a>
+    
+    <div class="timer-container">
+        Automatický reset za: <span id="reset-timer">--:--</span>
+    </div>
+
+    <div class="nav-link" style="cursor: default;">Live Systém v1.2</div>
 </div>
 
 <script>
-    // TU DOPLŇ SVOJU KONFIGURÁCIU
+    // --- SEM VLOŽ SVOJU KONFIGURÁCIU Z FIREBASE ---
     const firebaseConfig = {
         apiKey: "TVOJ_API_KEY",
         authDomain: "hasici-lednica.firebaseapp.com",
@@ -172,14 +141,14 @@
     const db = firebase.firestore();
     const docRef = db.collection("vyjazdy").doc("active");
 
-    // Hodiny
+    // Živé hodiny
     function updateClock() {
-        const now = new Date();
-        document.getElementById('live-clock').innerText = now.toLocaleTimeString('sk-SK');
+        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK');
     }
     setInterval(updateClock, 1000);
     updateClock();
 
+    // Funkcia pre Archiváciu a Reset
     async function archiveAndReset(data) {
         const huraIdem = [];
         const smolaNejdem = [];
@@ -192,11 +161,12 @@
         if (huraIdem.length > 0 || smolaNejdem.length > 0) {
             await db.collection("archiv").add({
                 datum: firebase.firestore.FieldValue.serverTimestamp(),
-                info: data.infoText || "VÝJAZD BEZ TEXTU",
+                info: data.infoText || "BEZ TEXTU",
                 isli: huraIdem,
                 nejdli: smolaNejdem
             });
         }
+        // Reset polí na NEZADANÉ
         const updates = { infoText: "" };
         Object.keys(data).forEach(key => {
             if (key !== 'lastUpdate' && key !== 'infoText') updates[key] = "NEZADANÉ";
@@ -204,22 +174,24 @@
         await docRef.update(updates);
     }
 
+    // Zachytenie parametrov z URL
     const params = new URLSearchParams(window.location.search);
-    const meno = params.get('meno');
-    const akcia = params.get('akcia');
-    const info = params.get('info');
-
-    if (meno || info) {
+    if (params.get('meno') || params.get('info')) {
         let up = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
-        if (meno && akcia) up[meno] = akcia;
-        if (info) up.infoText = info.replace(/_/g, ' ');
-        docRef.update(up).then(() => { window.history.replaceState({}, document.title, "/"); });
+        if (params.get('meno')) up[params.get('meno')] = params.get('akcia');
+        if (params.get('info')) up.infoText = params.get('info').replace(/_/g, ' ');
+        
+        docRef.update(up).then(() => {
+            window.history.replaceState({}, document.title, "/");
+        });
     }
 
+    // Sledovanie databázy
     docRef.onSnapshot((doc) => {
         const data = doc.data();
         if (!data) return;
 
+        // Info o výjazde
         const infoDiv = document.getElementById("vyjazd-info");
         if (data.infoText) {
             infoDiv.innerText = "HLÁSENIE: " + data.infoText;
@@ -228,29 +200,42 @@
             infoDiv.style.display = "none";
         }
 
+        // Zoznamy mien
         const lI = document.getElementById("list-idem");
         const lN = document.getElementById("list-nejdem");
         lI.innerHTML = ""; lN.innerHTML = "";
 
+        // Odpočítavanie (30 minút = 1800000 ms)
         if (data.lastUpdate) {
-            const last = data.lastUpdate.toDate().getTime();
-            if (new Date().getTime() - last > 1800000) { 
-                archiveAndReset(data);
-                return;
-            }
+            const updateTimer = () => {
+                const diff = (data.lastUpdate.toDate().getTime() + 1800000) - new Date().getTime();
+                if (diff <= 0) {
+                    archiveAndReset(data);
+                    document.getElementById("reset-timer").innerText = "00:00";
+                } else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    document.getElementById("reset-timer").innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                }
+            };
+            setInterval(updateTimer, 1000);
+            updateTimer();
         }
 
-        const entries = Object.entries(data).filter(([m]) => m !== 'lastUpdate' && m !== 'infoText');
-        entries.sort((a, b) => a[0].localeCompare(b[0]));
+        // Zoradenie mien a vykreslenie
+        const entries = Object.entries(data)
+            .filter(([m]) => m !== 'lastUpdate' && m !== 'infoText')
+            .sort((a, b) => a[0].localeCompare(b[0]));
 
         for (const [m, s] of entries) {
             if (s === "IDEM") {
-                lI.innerHTML += `<div class="name-item idem-item">${m}</div>`;
+                lI.innerHTML += `<div class="name-item">${m}</div>`;
             } else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") {
-                lN.innerHTML += `<div class="name-item nejdem-item">${m}</div>`;
+                lN.innerHTML += `<div class="name-item">${m}</div>`;
             }
         }
     });
 </script>
+
 </body>
 </html>
