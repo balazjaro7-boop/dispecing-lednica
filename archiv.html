@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCHÍV VÝJAZDOV - DHZ LEDNICA</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial; background-color: #1a1a1a; color: white; text-align: center; }
+        .header { background-color: #333; padding: 20px; font-weight: bold; }
+        .entry { background-color: #000; border: 1px solid #444; margin: 10px auto; padding: 15px; max-width: 800px; border-radius: 8px; text-align: left; }
+        .date { color: #888; font-size: 14px; }
+        .info { color: #ffeb3b; font-size: 18px; font-weight: bold; margin: 5px 0; }
+        .names { font-size: 16px; }
+        .green { color: #4caf50; }
+        .red { color: #f44336; }
+        .back { display: inline-block; margin: 20px; color: #d32f2f; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="header">KNIHA VÝJAZDOV</div>
+    <a href="index.html" class="back">← Späť na dispečing</a>
+    <div id="archiv-list">Načítavam archív...</div>
+
+<script>
+    // TU PONECHAJ SVOJU KONFIGURÁCIU
+    const firebaseConfig = {
+        apiKey: "TVOJ_API_KEY",
+        authDomain: "hasici-lednica.firebaseapp.com",
+        projectId: "hasici-lednica",
+        storageBucket: "hasici-lednica.appspot.com",
+        messagingSenderId: "747340639310",
+        appId: "TVOJE_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    db.collection("archiv").orderBy("datum", "desc").get().then((querySnapshot) => {
+        const listDiv = document.getElementById("archiv-list");
+        listDiv.innerHTML = "";
+        querySnapshot.forEach((doc) => {
+            const d = doc.data();
+            const date = d.datum ? d.datum.toDate().toLocaleString('sk-SK') : "Neznámy čas";
+            listDiv.innerHTML += `
+                <div class="entry">
+                    <div class="date">${date}</div>
+                    <div class="info">${d.info}</div>
+                    <div class="names">
+                        <span class="green">✔ IDEM:</span> ${d.isli.join(", ") || "Nikto"} <br>
+                        <span class="red">✖ NEJDEM:</span> ${d.nejdli.join(", ") || "Nikto"}
+                    </div>
+                </div>`;
+        });
+    });
+</script>
+</body>
+</html>
