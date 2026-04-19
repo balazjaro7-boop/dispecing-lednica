@@ -80,7 +80,7 @@ body{
     color:#fff;
 }
 
-/* EVENT BANNER */
+/* EVENT */
 .banner{
     flex:0 0 auto;
     padding:15px;
@@ -89,15 +89,15 @@ body{
 }
 
 @keyframes stroboskop {
-    0% { background: #8b0000; color: #fff; }
-    50% { background: #ffeb3b; color: #000; }
-    100% { background: #8b0000; color: #fff; }
+    0% { background:#8b0000; color:#fff; }
+    50% { background:#ffeb3b; color:#000; }
+    100% { background:#8b0000; color:#fff; }
 }
 
 .event-type{
     font-size:2.8rem;
     font-weight:900;
-    text-transform: uppercase;
+    text-transform:uppercase;
 }
 
 .event-address{
@@ -106,22 +106,22 @@ body{
     margin-top:5px;
 }
 
-/* MAIN GRID */
+/* MAIN */
 .main{
     flex:1;
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns:1fr 1fr;
     overflow:hidden;
-    padding: 10px;
-    gap: 15px;
+    padding:10px;
+    gap:15px;
 }
 
 .col{
     display:flex;
     flex-direction:column;
     overflow:hidden;
-    background: var(--panel);
-    border-radius: 4px;
+    background:var(--panel);
+    border-radius:4px;
     padding:10px;
 }
 
@@ -137,7 +137,7 @@ body{
 /* LIST */
 .list{
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
     gap:5px;
     overflow-y:auto;
 }
@@ -175,7 +175,7 @@ body{
 }
 
 /* ========================= */
-/* 📱 MOBILE FIX */
+/* 📱 MOBILE FIX (ZLEPŠENÉ TEXTY) */
 /* ========================= */
 
 @media (max-width: 768px){
@@ -186,8 +186,6 @@ body{
 
     .header{
         flex-direction:column;
-        justify-content:center;
-        align-items:center;
         gap:4px;
         padding:6px 10px;
     }
@@ -233,18 +231,22 @@ body{
     }
 
     .title{
-        font-size:1rem;
+        font-size:0.9rem;
         margin-bottom:5px;
         padding-bottom:3px;
     }
 
     .list{
         grid-template-columns:1fr;
+        gap:2px;
     }
 
+    /* 🔥 HLAVNÁ OPRAVA - MENÁ */
     .item{
-        font-size:0.95rem;
-        padding:3px 5px;
+        font-size:0.8rem;
+        padding:2px 4px;
+        line-height:1.1;
+        letter-spacing:0.3px;
     }
 
     .footer{
@@ -307,35 +309,30 @@ setInterval(()=>{
 },1000);
 
 /* INPUT */
-async function spracujVstup() {
-    const params = new URLSearchParams(window.location.search);
-    const u = params.get('udalost');
-    const a = params.get('akcia');
+async function spracujVstup(){
+    const params=new URLSearchParams(window.location.search);
+    const u=params.get('udalost');
+    const a=params.get('akcia');
 
-    if (u) {
-        let typUdalosti = u, adresaUdalosti = "";
-
-        if (u.toLowerCase().includes("adresa:")) {
-            const parts = u.split(/adresa:/i);
-            typUdalosti = parts[0].trim();
-            adresaUdalosti = parts[1].trim();
+    if(u){
+        let typ=u, adr="";
+        if(u.toLowerCase().includes("adresa:")){
+            const p=u.split(/adresa:/i);
+            typ=p[0].trim();
+            adr=p[1].trim();
         }
 
         await db.collection("vyjazdy").doc("active").set({
-            __metadata:{
-                typ:typUdalosti,
-                miesto:adresaUdalosti,
-                timestamp:Date.now()
-            }
+            __metadata:{typ:typ, miesto:adr, timestamp:Date.now()}
         },{merge:true});
 
         window.history.replaceState({},'','/');
     }
 
-    if (a) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
-        if (meno) {
-            localStorage.setItem('h_meno', meno);
+    if(a){
+        let meno=localStorage.getItem('h_meno')||prompt("Zadaj meno:");
+        if(meno){
+            localStorage.setItem('h_meno',meno);
             await db.collection("vyjazdy").doc("active").set({[meno]:a},{merge:true});
         }
         window.history.replaceState({},'','/');
