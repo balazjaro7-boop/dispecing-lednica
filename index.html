@@ -46,10 +46,9 @@
             line-height: 1;
         }
 
-        /* AGRESÍVNY HASIČSKÝ MAJÁK S FIXNOU VÝŠKOU */
+        /* AGRESÍVNY MAJÁK */
         .info-box { 
             background: #000; 
-            padding: 0 20px; 
             margin: 15px 20px; 
             border: 6px solid #ffeb3b; 
             color: #ffeb3b; 
@@ -58,32 +57,25 @@
             border-radius: 8px;
             text-transform: uppercase;
             animation: fire-alert 1.2s infinite;
-            height: 90px; /* Fixná výška */
+            height: 110px; /* Mierne zväčšený box */
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            white-space: nowrap; /* Aby sme vedeli merať šírku textu */
             box-sizing: border-box;
+            padding: 5px 20px;
+        }
+
+        /* Vnútorný obal pre text, aby sme vedeli merať šírku */
+        #info-text-inner {
+            white-space: nowrap;
+            display: inline-block;
         }
 
         @keyframes fire-alert {
-            0% { 
-                box-shadow: 0 0 15px #ffeb3b, inset 0 0 10px #ffeb3b;
-                border-color: #ffeb3b;
-                color: #ffeb3b;
-            }
-            50% { 
-                box-shadow: 0 0 60px #d32f2f, inset 0 0 30px #d32f2f;
-                border-color: #d32f2f;
-                color: #fff;
-                transform: scale(1.01);
-            }
-            100% { 
-                box-shadow: 0 0 15px #ffeb3b, inset 0 0 10px #ffeb3b;
-                border-color: #ffeb3b;
-                color: #ffeb3b;
-            }
+            0% { box-shadow: 0 0 15px #ffeb3b; border-color: #ffeb3b; color: #ffeb3b; }
+            50% { box-shadow: 0 0 60px #d32f2f; border-color: #d32f2f; color: #fff; transform: scale(1.01); }
+            100% { box-shadow: 0 0 15px #ffeb3b; border-color: #ffeb3b; color: #ffeb3b; }
         }
 
         .main-container { display: flex; flex: 1; gap: 20px; padding: 10px 20px; box-sizing: border-box; }
@@ -97,7 +89,6 @@
         .section-header { 
             padding: 15px; font-size: 32px; font-weight: 900; text-align: center; 
             background: rgba(0,0,0,0.1);
-            border-bottom: 4px solid rgba(0,0,0,0.1); 
         }
         .idem-title { color: var(--accent-green); }
         .nejdem-title { color: var(--accent-red); }
@@ -108,14 +99,10 @@
             font-size: 32px; font-weight: 900; color: var(--text-dark); 
             padding: 10px 15px; 
             text-transform: uppercase;
-            display: flex;
-            align-items: center;
+            display: flex; align-items: center;
         }
 
-        .name-item:nth-child(4n+1), 
-        .name-item:nth-child(4n+2) { 
-            background: rgba(0,0,0,0.07); 
-        }
+        .name-item:nth-child(4n+1), .name-item:nth-child(4n+2) { background: rgba(0,0,0,0.07); }
 
         .idem-border { border-left: 12px solid var(--accent-green); }
         .nejdem-border { border-left: 12px solid var(--accent-red); }
@@ -136,7 +123,9 @@
     <div class="clock" id="live-clock">00:00:00</div>
 </div>
 
-<div id="vyjazd-info" class="info-box" style="display:none;"></div>
+<div id="vyjazd-info" class="info-box" style="display:none;">
+    <span id="info-text-inner"></span>
+</div>
 
 <div class="main-container">
     <div class="section">
@@ -152,7 +141,7 @@
 <div class="footer">
     <a href="archiv.html" class="nav-link">Archív</a>
     <div class="timer-container">RESET ZA: <span id="reset-timer">--:--</span></div>
-    <div class="nav-link" style="cursor: default;">Live Systém v1.6</div>
+    <div class="nav-link" style="cursor: default;">Live Systém v1.7</div>
 </div>
 
 <script>
@@ -169,15 +158,12 @@
     const db = firebase.firestore();
     const docRef = db.collection("vyjazdy").doc("active");
 
-    function updateClock() {
-        document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK');
-    }
+    function updateClock() { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('sk-SK'); }
     setInterval(updateClock, 1000);
     updateClock();
 
     async function archiveAndReset(data) {
-        const huraIdem = [];
-        const smolaNejdem = [];
+        const huraIdem = []; const smolaNejdem = [];
         for (const [meno, stav] of Object.entries(data)) {
             if (meno !== 'lastUpdate' && meno !== 'infoText') {
                 if (stav === "IDEM") huraIdem.push(meno);
@@ -188,30 +174,22 @@
             await db.collection("archiv").add({
                 datum: firebase.firestore.FieldValue.serverTimestamp(),
                 info: data.infoText || "BEZ TEXTU",
-                isli: huraIdem,
-                nejdli: smolaNejdem
+                isli: huraIdem, nejdli: smolaNejdem
             });
         }
         const updates = { infoText: "" };
-        Object.keys(data).forEach(key => {
-            if (key !== 'lastUpdate' && key !== 'infoText') updates[key] = "NEZADANÉ";
-        });
+        Object.keys(data).forEach(key => { if (key !== 'lastUpdate' && key !== 'infoText') updates[key] = "NEZADANÉ"; });
         await docRef.update(updates);
     }
 
     const params = new URLSearchParams(window.location.search);
-    const pMeno = params.get('meno');
-    const pAkcia = params.get('akcia');
-    const pInfo = params.get('info');
+    const pMeno = params.get('meno'); const pAkcia = params.get('akcia'); const pInfo = params.get('info');
 
     if (pMeno || pInfo) {
         let updateData = { lastUpdate: firebase.firestore.FieldValue.serverTimestamp() };
         if (pMeno && pAkcia) updateData[pMeno] = pAkcia;
         if (pInfo) updateData.infoText = pInfo.replace(/_/g, ' ');
-
-        docRef.update(updateData).then(() => {
-            window.history.replaceState({}, document.title, window.location.pathname);
-        });
+        docRef.update(updateData).then(() => { window.history.replaceState({}, document.title, window.location.pathname); });
     }
 
     docRef.onSnapshot((doc) => {
@@ -219,16 +197,19 @@
         if (!data) return;
 
         const infoDiv = document.getElementById("vyjazd-info");
+        const infoInner = document.getElementById("info-text-inner");
+
         if (data.infoText && data.infoText.trim() !== "") {
-            infoDiv.innerText = "HLÁSENIE: " + data.infoText;
+            infoInner.innerText = "HLÁSENIE: " + data.infoText;
             infoDiv.style.display = "flex";
 
-            // DYNAMICKÁ ÚPRAVA PÍSMA
-            let fontSize = 40; 
+            // AGRESÍVNY AUTO-FIT
+            let fontSize = 80; // Začíname na obrovskom písme
             infoDiv.style.fontSize = fontSize + "px";
-            // Zmenšujeme, kým je text širší ako vnútro boxu (s rezervou na padding)
-            while (infoDiv.scrollWidth > (infoDiv.clientWidth - 40) && fontSize > 14) {
-                fontSize--;
+            
+            // Zmenšujeme len o nevyhnutné minimum
+            while (infoInner.offsetWidth > (infoDiv.clientWidth - 60) && fontSize > 20) {
+                fontSize -= 2;
                 infoDiv.style.fontSize = fontSize + "px";
             }
         } else {
@@ -242,12 +223,9 @@
         if (data.lastUpdate) {
             const updateTimer = () => {
                 const diff = (data.lastUpdate.toDate().getTime() + 1800000) - new Date().getTime();
-                if (diff <= 0) {
-                    archiveAndReset(data);
-                    document.getElementById("reset-timer").innerText = "00:00";
-                } else {
-                    const m = Math.floor(diff / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
+                if (diff <= 0) { archiveAndReset(data); document.getElementById("reset-timer").innerText = "00:00"; }
+                else {
+                    const m = Math.floor(diff / 60000); const s = Math.floor((diff % 60000) / 1000);
                     document.getElementById("reset-timer").innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
                 }
             };
@@ -255,16 +233,10 @@
             updateTimer();
         }
 
-        const entries = Object.entries(data)
-            .filter(([m]) => m !== 'lastUpdate' && m !== 'infoText')
-            .sort((a, b) => a[0].localeCompare(b[0]));
-
+        const entries = Object.entries(data).filter(([m]) => m !== 'lastUpdate' && m !== 'infoText').sort((a, b) => a[0].localeCompare(b[0]));
         for (const [m, s] of entries) {
-            if (s === "IDEM") {
-                lI.innerHTML += `<div class="name-item idem-border">${m}</div>`;
-            } else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") {
-                lN.innerHTML += `<div class="name-item nejdem-border">${m}</div>`;
-            }
+            if (s === "IDEM") lI.innerHTML += `<div class="name-item idem-border">${m}</div>`;
+            else if (s === "NEMÔŽEM" || s === "NEJDEM" || s === "NEJDE") lN.innerHTML += `<div class="name-item nejdem-border">${m}</div>`;
         }
     });
 </script>
