@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DHZ Lednica - DISPEČING</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -18,13 +18,14 @@
     --yellow:#ffeb3b;
 }
 
-*{box-sizing:border-box; margin:0; padding:0;}
+*{box-sizing:border-box;}
 
 body{
+    margin:0;
     height:100vh;
     display:flex;
     flex-direction:column;
-    font-family:sans-serif;
+    font-family:Segoe UI,sans-serif;
     background:var(--bg);
     color:#fff;
     overflow:hidden;
@@ -35,22 +36,55 @@ body{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:5px 15px;
+    padding:10px 20px;
     background:#000;
-    border-bottom:1px solid #333;
+    border-bottom:2px solid #222;
     flex:0 0 auto;
 }
 
-.brand{ font-size:1.1rem; font-weight:bold; color:#888; }
-.center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); }
-.clock{ font-size:1.4rem; font-family:monospace; font-weight:bold; }
-.reset{ background:#222; color:#fff; border:none; padding:5px 10px; font-size:0.7rem; cursor:pointer;}
+.brand{
+    font-size:1.3rem;
+    font-weight:700;
+    color:#aaa;
+}
 
-/* BANNER - PC (ZMENŠENÝ) */
+.center-timer{
+    font-size:1.6rem;
+    font-family:monospace;
+    color:var(--yellow);
+}
+
+.right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.clock{
+    font-family:monospace;
+    font-size:1.8rem;
+    font-weight:bold;
+}
+
+.reset{
+    background:#222;
+    color:#aaa;
+    border:1px solid #333;
+    padding:4px 10px;
+    cursor:pointer;
+    font-size:0.8rem;
+}
+
+.reset:hover{
+    background:#ff1744;
+    color:#fff;
+}
+
+/* EVENT BANNER - ZMENŠENÝ O 50% NA PC */
 #banner {
     display: none;
     flex: 0 0 auto;
-    padding: 10px;
+    padding: 8px; /* Zmenšený padding */
     text-align: center;
     animation: stroboskop 0.8s infinite;
 }
@@ -61,79 +95,104 @@ body{
     100% { background:#8b0000; color:#fff; }
 }
 
-.event-type{ font-size:1.5rem; font-weight:900; text-transform:uppercase; }
-.event-address{ font-size:1rem; font-weight:bold; }
+.event-type{
+    font-size:1.4rem; /* Zmenšené z 2.8rem */
+    font-weight:900;
+    text-transform:uppercase;
+}
 
-/* HLAVNÁ ČASŤ */
+.event-address{
+    font-size:0.9rem; /* Zmenšené z 1.8rem */
+    font-weight:bold;
+    margin-top:2px;
+}
+
+/* MAIN */
 .main{
     flex:1;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
-    padding:10px;
     overflow:hidden;
+    padding:10px;
+    gap:15px;
 }
 
 .col{
-    background:var(--panel);
     display:flex;
     flex-direction:column;
-    padding:8px;
-    border-radius:5px;
     overflow:hidden;
+    background:var(--panel);
+    border-radius:4px;
+    padding:10px;
 }
 
 .title{
     text-align:center;
-    font-size:1.4rem;
+    font-size:1.8rem;
+    font-weight:800;
+    margin-bottom:10px;
+    border-bottom:2px solid #222;
     padding-bottom:5px;
-    border-bottom:1px solid #333;
-    margin-bottom:8px;
 }
 
+/* LIST */
 .list{
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
     gap:5px;
     overflow-y:auto;
 }
 
 .item{
-    padding:5px;
-    font-size:1.1rem;
+    padding:5px 10px;
+    font-size:1.4rem;
     font-weight:bold;
     text-transform:uppercase;
 }
 
-.idem{ color:var(--green); background:rgba(0,230,118,0.1); }
-.nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+.idem{
+    color:var(--green);
+    background:rgba(0,230,118,0.08);
+}
 
-.footer{ padding:10px; background:#000; text-align:center; color:#555; font-size:0.8rem; cursor:pointer;}
+.nejdem{
+    color:var(--gray);
+    background:rgba(255,255,255,0.03);
+}
 
-/* ======================================= */
-/* 📱 MOBIL - TU IDE VŠETKO O 50% A VIAC DOLE */
-/* ======================================= */
+/* FOOTER */
+.footer{
+    flex:0 0 auto;
+    padding:10px 15px;
+    font-size:0.9rem;
+    color:#444;
+    background:#000;
+    border-top:1px solid #111;
+    cursor:pointer;
+}
 
-@media (max-width: 600px){
-    .header{ padding:3px 8px; flex-wrap: wrap; justify-content: space-around; }
-    .brand{ font-size: 0.65rem; width: 100%; text-align: center; margin-bottom: 2px; }
-    .center-timer{ font-size: 1rem; }
-    .clock{ font-size: 1rem; }
-    .reset{ font-size: 0.55rem; padding: 2px 4px; }
+/* MOBILE FIX - EXTRA MINI BANNER AJ MENÁ */
+@media (max-width: 768px){
+    body{ overflow:hidden; }
+    .header{ flex-direction:column; gap:4px; padding:6px 10px; }
+    .brand{ font-size:0.9rem; text-align:center; }
+    .center-timer{ font-size:1rem; }
+    .clock{ font-size:1rem; }
+    .reset{ font-size:0.65rem; padding:3px 6px; }
 
-    /* BANNER NA MOBILE - MAXIMÁLNE MINI */
-    #banner { padding: 3px !important; }
-    .event-type{ font-size: 0.75rem !important; line-height: 1; }
-    .event-address{ font-size: 0.6rem !important; margin-top: 0; }
+    /* BANNER NA MOBILE - O ĎALŠÍCH 50% MENŠÍ */
+    #banner { padding:3px; }
+    .event-type{ font-size:0.8rem; line-height:1; }
+    .event-address{ font-size:0.6rem; margin-top:0px; }
 
-    .main{ padding: 5px; gap: 5px; }
-    .title{ font-size: 0.75rem; margin-bottom: 4px; }
+    .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
+    .col{ padding:4px; }
+    .title{ font-size:0.7rem; margin-bottom:2px; padding-bottom:1px; }
 
-    /* MENÁ NA MOBILE - MINI DVOJSTĹPEC */
-    .list{ grid-template-columns: 1fr 1fr !important; gap: 2px; }
-    .item{ font-size: 0.6rem !important; padding: 2px 4px !important; line-height: 1; }
-    
-    .footer{ padding: 5px; font-size: 0.65rem; }
+    /* MENÁ V 2 STĹPCOCH - MINI */
+    .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
+    .item{ font-size: 0.6rem; padding: 1px 3px; line-height: 1.0; }
+    .footer{ font-size:0.7rem; padding:5px; text-align:center; }
 }
 </style>
 </head>
@@ -159,13 +218,16 @@ body{
         <div class="title" style="color:var(--green);">IDEM</div>
         <div id="idem" class="list"></div>
     </div>
+
     <div class="col">
         <div class="title" style="color:var(--gray);">NEJDEM</div>
         <div id="nejdem" class="list"></div>
     </div>
 </div>
 
-<div class="footer" onclick="window.location.href='archiv.html'">📂 ARCHÍV VÝJAZDOV</div>
+<div class="footer" onclick="window.location.href='archiv.html'">
+    📂 ARCHÍV VÝJAZDOV
+</div>
 
 <script>
 const firebaseConfig = {
