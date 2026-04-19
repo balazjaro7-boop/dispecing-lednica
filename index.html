@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DHZ Lednica - DISPEČING</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -18,13 +18,14 @@
     --yellow:#ffeb3b;
 }
 
-*{box-sizing:border-box; margin:0; padding:0;}
+*{box-sizing:border-box;}
 
 body{
+    margin:0;
     height:100vh;
     display:flex;
     flex-direction:column;
-    font-family:sans-serif;
+    font-family:Segoe UI,sans-serif;
     background:var(--bg);
     color:#fff;
     overflow:hidden;
@@ -35,23 +36,49 @@ body{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:5px 15px;
+    padding:10px 20px;
     background:#000;
-    border-bottom:1px solid #333;
-    flex:0 0 auto;
+    border-bottom:2px solid #222;
 }
 
-.brand{ font-size:1.1rem; font-weight:bold; color:#888; }
-.center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); }
-.clock{ font-size:1.4rem; font-family:monospace; font-weight:bold; }
-.reset{ background:#222; color:#fff; border:none; padding:5px 10px; font-size:0.7rem; cursor:pointer;}
+.brand{
+    font-size:1.3rem;
+    font-weight:700;
+    color:#aaa;
+}
 
-/* BANNER - PC (ZMENŠENÝ) */
+.center-timer{
+    font-size:1.6rem;
+    font-family:monospace;
+    color:var(--yellow);
+}
+
+.right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.clock{
+    font-family:monospace;
+    font-size:1.8rem;
+    font-weight:bold;
+}
+
+.reset{
+    background:#222;
+    color:#aaa;
+    border:1px solid #333;
+    padding:4px 10px;
+    cursor:pointer;
+    font-size:0.8rem;
+}
+
+/* BANNER */
 #banner {
-    display: none;
-    flex: 0 0 auto;
-    padding: 10px;
-    text-align: center;
+    display:none;
+    padding:8px;
+    text-align:center;
     animation: stroboskop 0.8s infinite;
 }
 
@@ -61,79 +88,108 @@ body{
     100% { background:#8b0000; color:#fff; }
 }
 
-.event-type{ font-size:1.5rem; font-weight:900; text-transform:uppercase; }
-.event-address{ font-size:1rem; font-weight:bold; }
+.event-type{
+    font-size:1.4rem;
+    font-weight:900;
+    text-transform:uppercase;
+}
 
-/* HLAVNÁ ČASŤ */
+.event-address{
+    font-size:0.9rem;
+    font-weight:bold;
+}
+
+/* MAIN */
 .main{
     flex:1;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
     padding:10px;
-    overflow:hidden;
+    gap:15px;
 }
 
 .col{
-    background:var(--panel);
     display:flex;
     flex-direction:column;
-    padding:8px;
-    border-radius:5px;
-    overflow:hidden;
+    background:var(--panel);
+    border-radius:4px;
+    padding:10px;
 }
 
 .title{
     text-align:center;
-    font-size:1.4rem;
+    font-size:1.8rem;
+    font-weight:800;
+    margin-bottom:10px;
+    border-bottom:2px solid #222;
     padding-bottom:5px;
-    border-bottom:1px solid #333;
-    margin-bottom:8px;
 }
 
 .list{
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
     gap:5px;
     overflow-y:auto;
 }
 
 .item{
-    padding:5px;
-    font-size:1.1rem;
+    padding:5px 10px;
+    font-size:1.4rem;
     font-weight:bold;
     text-transform:uppercase;
 }
 
-.idem{ color:var(--green); background:rgba(0,230,118,0.1); }
-.nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+.idem{ color:var(--green); background:rgba(0,230,118,0.08); }
+.nejdem{ color:var(--gray); background:rgba(255,255,255,0.03); }
 
-.footer{ padding:10px; background:#000; text-align:center; color:#555; font-size:0.8rem; cursor:pointer;}
+.footer{
+    padding:10px;
+    font-size:0.9rem;
+    color:#444;
+    background:#000;
+    text-align:center;
+}
 
-/* ======================================= */
-/* 📱 MOBIL - TU IDE VŠETKO O 50% A VIAC DOLE */
-/* ======================================= */
+/* 📱 MOBILE */
+@media (max-width:768px){
 
-@media (max-width: 600px){
-    .header{ padding:3px 8px; flex-wrap: wrap; justify-content: space-around; }
-    .brand{ font-size: 0.65rem; width: 100%; text-align: center; margin-bottom: 2px; }
-    .center-timer{ font-size: 1rem; }
-    .clock{ font-size: 1rem; }
-    .reset{ font-size: 0.55rem; padding: 2px 4px; }
+    body{ overflow:auto; }
 
-    /* BANNER NA MOBILE - MAXIMÁLNE MINI */
-    #banner { padding: 3px !important; }
-    .event-type{ font-size: 0.75rem !important; line-height: 1; }
-    .event-address{ font-size: 0.6rem !important; margin-top: 0; }
+    .header{
+        flex-direction:column;
+        gap:5px;
+        padding:8px;
+    }
 
-    .main{ padding: 5px; gap: 5px; }
-    .title{ font-size: 0.75rem; margin-bottom: 4px; }
+    .brand{ font-size:0.9rem; text-align:center; }
+    .center-timer{ font-size:1.4rem; }
+    .clock{ font-size:1.2rem; }
 
-    /* MENÁ NA MOBILE - MINI DVOJSTĹPEC */
-    .list{ grid-template-columns: 1fr 1fr !important; gap: 2px; }
-    .item{ font-size: 0.6rem !important; padding: 2px 4px !important; line-height: 1; }
-    
-    .footer{ padding: 5px; font-size: 0.65rem; }
+    /* banner menší */
+    #banner{ padding:6px; }
+    .event-type{ font-size:1rem; }
+    .event-address{ font-size:0.8rem; }
+
+    /* layout pod seba */
+    .main{
+        grid-template-columns:1fr;
+        gap:10px;
+        padding:8px;
+    }
+
+    .col:first-child{ order:1; } /* IDEM */
+    .col:last-child{ order:2; }  /* NEJDEM */
+
+    .title{ font-size:1.3rem; }
+
+    .list{ grid-template-columns:1fr; }
+
+    .item{
+        font-size:1.1rem;
+        padding:7px;
+    }
+
+    .footer{ font-size:0.8rem; }
 }
 </style>
 </head>
@@ -159,17 +215,20 @@ body{
         <div class="title" style="color:var(--green);">IDEM</div>
         <div id="idem" class="list"></div>
     </div>
+
     <div class="col">
         <div class="title" style="color:var(--gray);">NEJDEM</div>
         <div id="nejdem" class="list"></div>
     </div>
 </div>
 
-<div class="footer" onclick="window.location.href='archiv.html'">📂 ARCHÍV VÝJAZDOV</div>
+<div class="footer" onclick="window.location.href='archiv.html'">
+    📂 ARCHÍV VÝJAZDOV
+</div>
 
 <script>
 const firebaseConfig = {
-    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    apiKey: "YOUR_KEY",
     authDomain: "hasici-lednica.firebaseapp.com",
     projectId: "hasici-lednica"
 };
@@ -182,34 +241,6 @@ setInterval(()=>{
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
 },1000);
 
-async function spracujVstup(){
-    const params=new URLSearchParams(window.location.search);
-    const u=params.get('udalost');
-    const a=params.get('akcia');
-
-    if(u){
-        let typ=u, adr="";
-        if(u.toLowerCase().includes("adresa:")){
-            const p=u.split(/adresa:/i);
-            typ=p[0].trim();
-            adr=p[1].trim();
-        }
-        await db.collection("vyjazdy").doc("active").set({
-            __metadata:{typ:typ, miesto:adr, timestamp:Date.now()}
-        },{merge:true});
-        window.history.replaceState({},'','/');
-    }
-
-    if(a){
-        let meno=localStorage.getItem('h_meno')||prompt("Zadaj meno:");
-        if(meno){
-            localStorage.setItem('h_meno',meno);
-            await db.collection("vyjazdy").doc("active").set({[meno]:a},{merge:true});
-        }
-        window.history.replaceState({},'','/');
-    }
-}
-
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const idem=document.getElementById("idem");
     const nejdem=document.getElementById("nejdem");
@@ -220,8 +251,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
 
     if(!doc.exists){
         banner.style.display="none";
-        document.getElementById("timer").innerText="--:--";
-        if(timerInterval) clearInterval(timerInterval);
         return;
     }
 
@@ -232,9 +261,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
         banner.style.display="block";
         document.getElementById("typ").innerText=m.typ;
         document.getElementById("adresa").innerText=m.miesto||"";
-        if(m.timestamp) startTimer(m.timestamp);
-    } else {
-        banner.style.display="none";
     }
 
     Object.keys(d).forEach(k=>{
@@ -251,51 +277,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
         }
     });
 });
-
-function startTimer(start){
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval=setInterval(async()=>{
-        const left=1800-Math.floor((Date.now()-start)/1000);
-        if(left<=0){
-            clearInterval(timerInterval);
-            await autoReset();
-            return;
-        }
-        const m=Math.floor(left/60);
-        const s=left%60;
-        document.getElementById("timer").innerText=`${m}:${s.toString().padStart(2,"0")}`;
-    },1000);
-}
-
-async function manualReset(){
-    if(confirm("RESET + ARCHÍV?")){
-        await autoReset();
-    }
-}
-
-async function autoReset(){
-    const ref=db.collection("vyjazdy").doc("active");
-    const snap=await ref.get();
-    if(snap.exists){
-        const d=snap.data();
-        const m=d.__metadata||{};
-        const ide=[],nej=[];
-        Object.keys(d).forEach(k=>{
-            if(k!=="__metadata") (d[k]==="IDEM"?ide:nej).push(k);
-        });
-        if(m.typ){
-            await db.collection("archiv").add({
-                datum:firebase.firestore.Timestamp.now(),
-                info:m.typ+(m.miesto?" ("+m.miesto+")":""),
-                isli:ide,
-                nejdli:nej
-            });
-        }
-        await ref.delete();
-    }
-}
-
-window.onload=spracujVstup;
 </script>
 
 </body>
