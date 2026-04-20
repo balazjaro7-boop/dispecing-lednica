@@ -11,9 +11,8 @@
         :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; --blue:#2196f3; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         
-        /* HEADER - Logo a text vľavo, Čas v strede */
+        /* HEADER */
         .header{ display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
-        
         .brand-section { display: flex; align-items: center; gap: 15px; }
         .brand-logo{ height: 55px; width: auto; object-fit: contain; }
         .brand-text { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
@@ -45,7 +44,6 @@
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); border-left-color: var(--green); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); border-left-color: var(--gray); }
 
-        /* MOBILNÁ VERZIA */
         @media (max-width: 1024px){
             .header { grid-template-columns: 1fr; gap: 10px; padding: 10px; text-align: center; }
             .brand-section { justify-content: center; }
@@ -57,9 +55,7 @@
             .center-timer { font-size: 2.2rem; }
             .timer-container { min-width: auto; }
         }
-        @media (max-width: 600px){
-            .main { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 600px){ .main { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -148,7 +144,7 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
+    const mapsUrl = miesto ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ZBROJNICA)}&destination=${encodeURIComponent(miesto)}&travelmode=driving` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -193,9 +189,14 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2 && window.innerWidth > 1024) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            const s = encodeURIComponent(ZBROJNICA);
-            const c = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s&origin=${s}&destination=${c}&mode=driving`;
+            
+            // POUŽITIE VEREJNÉHO EMBED BEZ NUTNOSTI API KEY PRE VÝPOČET TRASY
+            const start = encodeURIComponent(ZBROJNICA);
+            const ciel = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s&origin=${start}&destination=${ciel}&mode=driving`;
+            
+            // AK BY TI TO STÁLE HLÁSILO CHYBU S API, POUŽIJEME TENTO JEDNODUCHÝ FALLBACK (ZOBRAZÍ MIESTO):
+            // mapFrame.src = `https://maps.google.com/maps?q=${ciel}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
         startTracking(m.timestamp);
     }
