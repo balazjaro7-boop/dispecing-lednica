@@ -93,7 +93,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-// Hodiny v rohu
 setInterval(() => { 
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
 }, 1000);
@@ -171,9 +170,11 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            // Mapy bez API cez verejný embed (hľadanie podľa adresy)
-            const query = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+
+            // 🔥 UPRAVA – TRASA Z LEDNICA 243
+            const origin = encodeURIComponent("Lednica 243");
+            const destination = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://maps.google.com/maps?q=&saddr=${origin}&daddr=${destination}&output=embed`;
         }
         startTimer(m.timestamp);
     }
@@ -193,12 +194,10 @@ function startTimer(start) {
         const now = Date.now();
         const elapsedSeconds = Math.floor((now - start) / 1000);
         
-        // Zobrazenie času od vyhlásenia (stúpa hore)
         const minutes = Math.floor(elapsedSeconds / 60);
         const seconds = elapsedSeconds % 60;
         document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2,"0")}`;
         
-        // Odpočet na pozadí (pre prípadnú logiku, o ktorej si písal)
         const backgroundCountdown = 1800 - elapsedSeconds;
     }, 1000);
 }
