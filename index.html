@@ -15,28 +15,32 @@
         .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
         .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
-        .reset:hover{ background:var(--red); color:#fff; }
         
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
-        .event-type{ font-size:1.4rem; font-weight:900; text-transform:uppercase; }
-        .main{ flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; padding:10px; gap:15px; }
+        /* ROZLOŽENIE PRE PC/TV */
+        .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
+        
+        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        #map-frame { width: 100%; height: 100%; border: none; display: none; }
+        .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
+
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
-        .title{ text-align:center; font-size:1.8rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
-        .list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:5px; overflow-y:auto; }
-        .item{ padding:5px 10px; font-size:1.4rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
 
-        @media (max-width: 768px){
-            .header{ flex-direction:column; padding:5px; gap:5px; }
-            .brand{ font-size:1rem; }
-            .clock{ font-size:1.2rem; }
-            .main{ grid-template-columns:1fr; gap:10px; }
-            .list{ grid-template-columns: 1fr 1fr; }
-            .item{ font-size: 0.8rem; padding:3px; }
-            .title{ font-size:1.2rem; }
+        /* MOBILNÁ VERZIA (BEZ MAPY) */
+        @media (max-width: 1024px){
+            .main { grid-template-columns: 1fr 1fr; }
+            .map-container { display: none; }
+            .header{ flex-direction:column; padding:5px; }
+        }
+        @media (max-width: 600px){
+            .main { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -52,7 +56,7 @@
 </div>
 
 <div id="banner">
-    <div id="typ" class="event-type"></div>
+    <div id="typ" style="font-size:1.4rem; font-weight:900; text-transform:uppercase;"></div>
     <div id="adresa" style="font-weight:bold; font-size:1rem;"></div>
 </div>
 
@@ -61,6 +65,12 @@
         <div class="title" style="color:var(--green);">IDEM</div>
         <div id="idem" class="list"></div>
     </div>
+
+    <div class="map-container">
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <iframe id="map-frame" src=""></iframe>
+    </div>
+
     <div class="col">
         <div class="title" style="color:var(--gray);">NEJDEM</div>
         <div id="nejdem" class="list"></div>
@@ -68,7 +78,6 @@
 </div>
 
 <script>
-// KONFIGURÁCIA FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
     authDomain: "hasici-lednica.firebaseapp.com",
@@ -78,12 +87,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-// Hodiny
-setInterval(() => { 
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
-}, 1000);
+setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
-// SPRACOVANIE VSTUPOV Z URL (Výjazdy aj reakcie)
 async function spracujVstup() {
     const params = new URLSearchParams(window.location.search);
     const u = params.get('udalost'); 
@@ -93,78 +98,54 @@ async function spracujVstup() {
 
     const ref = db.collection("vyjazdy").doc("active");
 
-    // 1. VELITEĽ - SPUSTENIE VÝJAZDU
     if (u) {
-        await ref.set({
-            __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() }
-        }, { merge: true });
-        
+        await ref.set({ __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() } }, { merge: true });
         sendPushover(u, adr, t);
-        
         window.history.replaceState({}, '', window.location.pathname);
     }
 
-    // 2. HASIČ - REAKCIA (IDEM/NEJDEM)
     if (akc) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno pre dispečing:");
+        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
         if (meno) {
             localStorage.setItem('h_meno', meno);
             await ref.set({ [meno]: akc }, { merge: true });
-            alert("Tvoja voľba " + akc + " bola zaznamenaná.");
         }
         window.history.replaceState({}, '', window.location.pathname);
     }
 }
 
-// ODOSLANIE PUSHOVER SPRÁVY S HTML ODKAZMI
 function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
-    const groupVyjazd = "g796q69yjbfy1v2e2kc5enwqn57j1x";
-    const groupAED = "gzv839iw4b249tqay7jicqzaw53w42";
+    const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     
-    const targetGroup = (skupinaTyp === "AED") ? groupAED : groupVyjazd;
-    const titleHeader = (skupinaTyp === "AED") ? "🚨 AED ASISTENCIA" : "🚨 VÝJAZD DHZ";
-
     const baseUrl = "https://hasici-lednica.web.app/index.html";
-    
-    // HTML správa - viditeľné sú len slová IDEM a NEJDEM
-    const msg = `<b>UDALOSŤ:</b> ${udalost}
-<b>MIESTO:</b> ${miesto || "Nezadané"}
-
-<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>
-
-<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-
+    const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
     const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-            token: apiToken,
-            user: targetGroup,
-            message: msg,
-            title: titleHeader,
-            priority: 2,
-            retry: 60,
-            expire: 3600,
-            sound: "siren",
-            html: 1, 
-            url: mapsUrl,
-            url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+            token: apiToken, user: groupVyjazd, message: msg,
+            title: "🚨 DHZ LEDNICA", priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1,
+            url: mapsUrl, url_title: "📍 SPUSTIŤ NAVIGÁCIU"
         })
-    }).catch(e => console.error("Chyba:", e));
+    });
 }
 
-// AKTUALIZÁCIA DISPLEJA (Live Snapshot)
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem");
     const nejdemDiv = document.getElementById("nejdem");
     const banner = document.getElementById("banner");
+    const mapFrame = document.getElementById("map-frame");
+    const mapMsg = document.getElementById("map-msg");
+    
     idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
     if (!doc.exists) {
         banner.style.display = "none";
+        mapFrame.style.display = "none";
+        mapMsg.style.display = "block";
         document.getElementById("timer").innerText = "--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
@@ -177,6 +158,12 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         banner.style.display = "block";
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
+        
+        if (m.miesto && m.miesto.length > 2) {
+            mapMsg.style.display = "none";
+            mapFrame.style.display = "block";
+            mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(m.miesto)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
         startTimer(m.timestamp);
     }
 
@@ -194,16 +181,12 @@ function startTimer(start) {
     timerInterval = setInterval(() => {
         const diff = 1800 - Math.floor((Date.now() - start) / 1000);
         if (diff <= 0) { clearInterval(timerInterval); return; }
-        const min = Math.floor(diff / 60);
-        const sec = diff % 60;
-        document.getElementById("timer").innerText = `${min}:${sec.toString().padStart(2, "0")}`;
+        document.getElementById("timer").innerText = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,"0")}`;
     }, 1000);
 }
 
 async function manualReset() {
-    if (confirm("Ukončiť výjazd a vyčistiť obrazovku?")) {
-        await db.collection("vyjazdy").doc("active").delete();
-    }
+    if (confirm("Resetovať výjazd?")) { await db.collection("vyjazdy").doc("active").delete(); }
 }
 
 window.onload = spracujVstup;
