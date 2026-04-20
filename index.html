@@ -1,208 +1,48 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DHZ Lednica - DISPEČING</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DHZ Lednica - DISPEČING</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-<style>
-:root{
-    --bg:#07090c;
-    --panel:#10141a;
-    --green:#00e676;
-    --gray:#888;
-    --red:#ff1744;
-    --yellow:#ffeb3b;
-}
-
-*{box-sizing:border-box;}
-
-body{
-    margin:0;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    font-family:Segoe UI,sans-serif;
-    background:var(--bg);
-    color:#fff;
-    overflow:hidden;
-}
-
-/* HEADER */
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:10px 20px;
-    background:#000;
-    border-bottom:2px solid #222;
-    flex:0 0 auto;
-}
-
-.brand{
-    font-size:1.3rem;
-    font-weight:700;
-    color:#aaa;
-}
-
-.center-timer{
-    font-size:1.6rem;
-    font-family:monospace;
-    color:var(--yellow);
-}
-
-.right{
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-.clock{
-    font-family:monospace;
-    font-size:1.8rem;
-    font-weight:bold;
-}
-
-.reset{
-    background:#222;
-    color:#aaa;
-    border:1px solid #333;
-    padding:4px 10px;
-    cursor:pointer;
-    font-size:0.8rem;
-}
-
-.reset:hover{
-    background:#ff1744;
-    color:#fff;
-}
-
-/* EVENT BANNER - ZMENŠENÝ O 50% NA PC */
-#banner {
-    display: none;
-    flex: 0 0 auto;
-    padding: 8px; /* Zmenšený padding */
-    text-align: center;
-    animation: stroboskop 0.8s infinite;
-}
-
-@keyframes stroboskop {
-    0% { background:#8b0000; color:#fff; }
-    50% { background:#ffeb3b; color:#000; }
-    100% { background:#8b0000; color:#fff; }
-}
-
-.event-type{
-    font-size:1.4rem; /* Zmenšené z 2.8rem */
-    font-weight:900;
-    text-transform:uppercase;
-}
-
-.event-address{
-    font-size:0.9rem; /* Zmenšené z 1.8rem */
-    font-weight:bold;
-    margin-top:2px;
-}
-
-/* MAIN */
-.main{
-    flex:1;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    overflow:hidden;
-    padding:10px;
-    gap:15px;
-}
-
-.col{
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    background:var(--panel);
-    border-radius:4px;
-    padding:10px;
-}
-
-.title{
-    text-align:center;
-    font-size:1.8rem;
-    font-weight:800;
-    margin-bottom:10px;
-    border-bottom:2px solid #222;
-    padding-bottom:5px;
-}
-
-/* LIST */
-.list{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-    gap:5px;
-    overflow-y:auto;
-}
-
-.item{
-    padding:5px 10px;
-    font-size:1.4rem;
-    font-weight:bold;
-    text-transform:uppercase;
-}
-
-.idem{
-    color:var(--green);
-    background:rgba(0,230,118,0.08);
-}
-
-.nejdem{
-    color:var(--gray);
-    background:rgba(255,255,255,0.03);
-}
-
-/* FOOTER */
-.footer{
-    flex:0 0 auto;
-    padding:10px 15px;
-    font-size:0.9rem;
-    color:#444;
-    background:#000;
-    border-top:1px solid #111;
-    cursor:pointer;
-}
-
-/* MOBILE FIX - EXTRA MINI BANNER AJ MENÁ */
-@media (max-width: 768px){
-    body{ overflow:hidden; }
-    .header{ flex-direction:column; gap:4px; padding:6px 10px; }
-    .brand{ font-size:0.9rem; text-align:center; }
-    .center-timer{ font-size:1rem; }
-    .clock{ font-size:1rem; }
-    .reset{ font-size:0.65rem; padding:3px 6px; }
-
-    /* BANNER NA MOBILE - O ĎALŠÍCH 50% MENŠÍ */
-    #banner { padding:3px; }
-    .event-type{ font-size:0.8rem; line-height:1; }
-    .event-address{ font-size:0.6rem; margin-top:0px; }
-
-    .main{ grid-template-columns:1fr; gap:8px; padding:6px; }
-    .col{ padding:4px; }
-    .title{ font-size:0.7rem; margin-bottom:2px; padding-bottom:1px; }
-
-    /* MENÁ V 2 STĹPCOCH - MINI */
-    .list{ grid-template-columns: repeat(2, 1fr); gap:2px; }
-    .item{ font-size: 0.6rem; padding: 1px 3px; line-height: 1.0; }
-    .footer{ font-size:0.7rem; padding:5px; text-align:center; }
-}
-</style>
+    <style>
+        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
+        body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+        .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
+        .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+        .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; }
+        .reset:hover{ background:var(--red); color:#fff; }
+        #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; }
+        @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
+        .event-type{ font-size:1.4rem; font-weight:900; text-transform:uppercase; }
+        .main{ flex:1; display:grid; grid-template-columns:1fr 1fr; overflow:hidden; padding:10px; gap:15px; }
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.8rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.4rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+        @media (max-width: 768px){
+            .header{ flex-direction:column; padding:5px; gap:5px; }
+            .brand{ font-size:1rem; }
+            .clock{ font-size:1.2rem; }
+            .main{ grid-template-columns:1fr; gap:10px; }
+            .list{ grid-template-columns: 1fr 1fr; }
+            .item{ font-size: 0.8rem; padding:3px; }
+            .title{ font-size:1.2rem; }
+        }
+    </style>
 </head>
-
 <body>
 
 <div class="header">
     <div class="brand">DHZ LEDNICA DISPEČING</div>
     <div id="timer" class="center-timer">--:--</div>
-    <div class="right">
+    <div style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <button class="reset" onclick="manualReset()">RESET</button>
     </div>
@@ -210,23 +50,12 @@ body{
 
 <div id="banner">
     <div id="typ" class="event-type"></div>
-    <div id="adresa" class="event-address"></div>
+    <div id="adresa" style="font-weight:bold; font-size:1rem;"></div>
 </div>
 
 <div class="main">
-    <div class="col">
-        <div class="title" style="color:var(--green);">IDEM</div>
-        <div id="idem" class="list"></div>
-    </div>
-
-    <div class="col">
-        <div class="title" style="color:var(--gray);">NEJDEM</div>
-        <div id="nejdem" class="list"></div>
-    </div>
-</div>
-
-<div class="footer" onclick="window.location.href='archiv.html'">
-    📂 ARCHÍV VÝJAZDOV
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
+    <div class="col"><div class="title" style="color:var(--gray);">NEJDEM</div><div id="nejdem" class="list"></div></div>
 </div>
 
 <script>
@@ -235,130 +64,136 @@ const firebaseConfig = {
     authDomain: "hasici-lednica.firebaseapp.com",
     projectId: "hasici-lednica"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-setInterval(()=>{
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
-},1000);
+// Hodiny v reálnom čase
+setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
-async function spracujVstup(){
-    const params=new URLSearchParams(window.location.search);
-    const u=params.get('udalost');
-    const a=params.get('akcia');
+async function spracujVstup() {
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get('udalost'); 
+    const adr = params.get('miesto');
+    const akc = params.get('akcia');
+    const t = params.get('typ'); // Parameter pre rozlíšenie skupiny (napr. typ=AED)
 
-    if(u){
-        let typ=u, adr="";
-        if(u.toLowerCase().includes("adresa:")){
-            const p=u.split(/adresa:/i);
-            typ=p[0].trim();
-            adr=p[1].trim();
-        }
-        await db.collection("vyjazdy").doc("active").set({
-            __metadata:{typ:typ, miesto:adr, timestamp:Date.now()}
-        },{merge:true});
-        window.history.replaceState({},'','/');
+    const ref = db.collection("vyjazdy").doc("active");
+
+    // AKTIVÁCIA VÝJAZDU (Cez HTTP Shortcut)
+    if (u) {
+        await ref.set({
+            __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() }
+        }, { merge: true });
+        
+        // Odoslanie správ do Pushoveru
+        sendPushover(u, adr, t);
+        
+        window.history.replaceState({}, '', window.location.pathname);
     }
 
-    if(a){
-        let meno=localStorage.getItem('h_meno')||prompt("Zadaj meno:");
-        if(meno){
-            localStorage.setItem('h_meno',meno);
-            await db.collection("vyjazdy").doc("active").set({[meno]:a},{merge:true});
+    // REAKCIA HASIČA (Z odkazu v správe)
+    if (akc) {
+        let meno = localStorage.getItem('h_meno') || prompt("Zadaj svoje meno:");
+        if (meno) {
+            localStorage.setItem('h_meno', meno);
+            await ref.set({ [meno]: akc }, { merge: true });
         }
-        window.history.replaceState({},'','/');
+        window.history.replaceState({}, '', window.location.pathname);
     }
 }
 
-db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
-    const idem=document.getElementById("idem");
-    const nejdem=document.getElementById("nejdem");
-    const banner=document.getElementById("banner");
+function sendPushover(udalost, miesto, skupinaTyp) {
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const groupVyjazd = "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    const groupAED = "gzv839iw4b249tqay7jicqzaw53w42";
+    
+    // Výber skupiny podľa parametra typ
+    const targetGroup = (skupinaTyp === "AED") ? groupAED : groupVyjazd;
+    const nazovAkcie = (skupinaTyp === "AED") ? "🚨 AED ASISTENCIA" : "🚨 VÝJAZD DHZ";
 
-    idem.innerHTML="";
-    nejdem.innerHTML="";
+    const messageBody = `UDALOSŤ: ${udalost}${miesto ? '\nMIESTO: ' + miesto : ''}`;
 
-    if(!doc.exists){
-        banner.style.display="none";
-        document.getElementById("timer").innerText="--:--";
+    fetch("https://api.pushover.net/1/messages.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            token: apiToken,
+            user: targetGroup,
+            message: messageBody,
+            title: nazovAkcie,
+            priority: 2,
+            retry: 60,
+            expire: 3600,
+            sound: "siren",
+            url: "https://hasici-lednica.web.app/index.html?akcia=IDEM",
+            url_title: "IDEM NA VÝJAZD"
+        })
+    }).catch(err => console.error("Chyba Pushover:", err));
+}
+
+// Sledovanie databázy (Live Update)
+db.collection("vyjazdy").doc("active").onSnapshot(doc => {
+    const idemDiv = document.getElementById("idem");
+    const nejdemDiv = document.getElementById("nejdem");
+    const banner = document.getElementById("banner");
+    idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
+
+    if (!doc.exists) {
+        banner.style.display = "none";
+        document.getElementById("timer").innerText = "--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
     }
 
-    const d=doc.data();
-    const m=d.__metadata||{};
+    const d = doc.data();
+    const m = d.__metadata || {};
 
-    if(m.typ){
-        banner.style.display="block";
-        document.getElementById("typ").innerText=m.typ;
-        document.getElementById("adresa").innerText=m.miesto||"";
-        if(m.timestamp) startTimer(m.timestamp);
-    } else {
-        banner.style.display="none";
+    if (m.typ) {
+        banner.style.display = "block";
+        document.getElementById("typ").innerText = m.typ;
+        document.getElementById("adresa").innerText = m.miesto || "";
+        startTimer(m.timestamp);
     }
 
-    Object.keys(d).forEach(k=>{
-        if(k==="__metadata") return;
-        const div=document.createElement("div");
-        div.className="item";
-        div.innerText=k;
-        if(d[k]==="IDEM"){
-            div.classList.add("idem");
-            idem.appendChild(div);
-        }else{
-            div.classList.add("nejdem");
-            nejdem.appendChild(div);
-        }
+    Object.keys(d).forEach(k => {
+        if (k === "__metadata") return;
+        const div = document.createElement("div");
+        div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
+        div.innerText = k;
+        (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
     });
 });
 
-function startTimer(start){
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval=setInterval(async()=>{
-        const left=1800-Math.floor((Date.now()-start)/1000);
-        if(left<=0){
-            clearInterval(timerInterval);
-            await autoReset();
-            return;
-        }
-        const m=Math.floor(left/60);
-        const s=left%60;
-        document.getElementById("timer").innerText=`${m}:${s.toString().padStart(2,"0")}`;
-    },1000);
+function startTimer(start) {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const diff = 1800 - Math.floor((Date.now() - start) / 1000);
+        if (diff <= 0) { clearInterval(timerInterval); return; }
+        const min = Math.floor(diff / 60);
+        const sec = diff % 60;
+        document.getElementById("timer").innerText = `${min}:${sec.toString().padStart(2, "0")}`;
+    }, 1000);
 }
 
-async function manualReset(){
-    if(confirm("RESET + ARCHÍV?")){
-        await autoReset();
-    }
-}
-
-async function autoReset(){
-    const ref=db.collection("vyjazdy").doc("active");
-    const snap=await ref.get();
-    if(snap.exists){
-        const d=snap.data();
-        const m=d.__metadata||{};
-        const ide=[],nej=[];
-        Object.keys(d).forEach(k=>{
-            if(k!=="__metadata") (d[k]==="IDEM"?ide:nej).push(k);
-        });
-        if(m.typ){
+async function manualReset() {
+    if (confirm("Ukončiť výjazd a archivovať?")) {
+        const ref = db.collection("vyjazdy").doc("active");
+        const snap = await ref.get();
+        if (snap.exists) {
+            const d = snap.data();
             await db.collection("archiv").add({
-                datum:firebase.firestore.Timestamp.now(),
-                info:m.typ+(m.miesto?" ("+m.miesto+")":""),
-                isli:ide,
-                nejdli:nej
+                datum: firebase.firestore.Timestamp.now(),
+                udalost: (d.__metadata?.typ || "Neznáme"),
+                miesto: (d.__metadata?.miesto || ""),
+                ucast: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "IDEM")
             });
+            await ref.delete();
         }
-        await ref.delete();
     }
 }
 
-window.onload=spracujVstup;
+window.onload = spracujVstup;
 </script>
-
 </body>
 </html>
