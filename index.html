@@ -19,7 +19,6 @@
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
-        /* ROZLOŽENIE PRE PC/TV */
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
         
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
@@ -33,7 +32,6 @@
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
 
-        /* MOBILNÁ VERZIA (BEZ MAPY) */
         @media (max-width: 1024px){
             .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none; }
@@ -162,7 +160,9 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(m.miesto)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+
+            // ✅ UPRAVENÉ: štart Lednica 243 + trasa autom
+            mapFrame.src = `https://www.google.com/maps?saddr=${encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
         }
         startTimer(m.timestamp);
     }
