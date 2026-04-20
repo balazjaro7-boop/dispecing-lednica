@@ -8,76 +8,56 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; --blue:#2196f3; }
+        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
-        
-        /* HEADER */
-        .header{ display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
-        .brand-section { display: flex; align-items: center; gap: 15px; }
-        .brand-logo{ height: 55px; width: auto; object-fit: contain; }
-        .brand-text { font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
-        
-        .timer-container{ display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 300px; }
-        .timer-label{ font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .center-timer{ font-size:2.8rem; font-family:monospace; color:var(--yellow); font-weight: bold; line-height: 1; margin-top: 5px; }
-        
-        .controls{ display:flex; align-items:center; gap:10px; justify-content: flex-end; }
-        .clock{ font-family:monospace; font-size:1.6rem; font-weight:bold; margin-right: 10px; }
-        
-        .btn-top { padding:6px 12px; cursor:pointer; font-size:0.8rem; border-radius:3px; border:1px solid #333; font-weight: bold; text-transform: uppercase; text-decoration: none; color:inherit; }
-        .reset{ background:#222; color:var(--red); }
-        .archive-btn{ background:#222; color:var(--blue); }
+        .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
+        .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+        .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
         
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
-        .main{ flex:1; display:grid; grid-template-columns: 320px 1fr 320px; overflow:hidden; padding:10px; gap:15px; }
-        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #222; }
+        /* ROZLOŽENIE PRE PC/TV */
+        .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
+        
+        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         #map-frame { width: 100%; height: 100%; border: none; display: none; }
-        .map-placeholder { font-size: 1.2rem; color: #333; text-align: center; font-weight: bold; }
+        .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
 
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
-        .title{ text-align:center; font-size:1.8rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
-        .list{ display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
-        .item{ padding:8px 12px; font-size:1.4rem; font-weight:bold; text-transform:uppercase; border-radius:3px; border-left: 5px solid transparent; }
-        .idem{ color:var(--green); background:rgba(0,230,118,0.1); border-left-color: var(--green); }
-        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); border-left-color: var(--gray); }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
 
+        /* MOBILNÁ VERZIA (BEZ MAPY) */
         @media (max-width: 1024px){
-            .header { grid-template-columns: 1fr; gap: 10px; padding: 10px; text-align: center; }
-            .brand-section { justify-content: center; }
-            .brand-logo { height: 45px; }
-            .brand-text { font-size: 1.1rem; }
-            .controls { justify-content: center; }
             .main { grid-template-columns: 1fr 1fr; }
-            .map-container { display: none !important; }
-            .center-timer { font-size: 2.2rem; }
-            .timer-container { min-width: auto; }
+            .map-container { display: none; }
+            .header{ flex-direction:column; padding:5px; }
         }
-        @media (max-width: 600px){ .main { grid-template-columns: 1fr; } }
+        @media (max-width: 600px){
+            .main { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="brand-section">
-        <img src="logo.png" alt="Logo" class="brand-logo">
-        <div class="brand-text">DHZ Lednica - Dispečing</div>
-    </div>
-    <div class="timer-container">
-        <div id="timer-label" class="timer-label" style="visibility: hidden;">ČAS OD VYHLÁSENIA UDALOSTI</div>
-        <div id="timer" class="center-timer">--:--</div>
-    </div>
-    <div class="controls">
+    <div class="brand">DHZ LEDNICA</div>
+    <div id="timer" class="center-timer">--:--</div>
+    <div style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
-        <a href="archiv.html" class="btn-top archive-btn">ARCHÍV</a>
-        <button class="btn-top reset" onclick="manualReset()">RESET</button>
+        <button class="reset" onclick="manualReset()">RESET</button>
     </div>
 </div>
 
 <div id="banner">
-    <div id="typ" style="font-size:1.8rem; font-weight:900; text-transform:uppercase;"></div>
-    <div id="adresa" style="font-weight:bold; font-size:1.2rem;"></div>
+    <div id="typ" style="font-size:1.4rem; font-weight:900; text-transform:uppercase;"></div>
+    <div id="adresa" style="font-weight:bold; font-size:1rem;"></div>
 </div>
 
 <div class="main">
@@ -87,7 +67,7 @@
     </div>
 
     <div class="map-container">
-        <div id="map-msg" class="map-placeholder">DISPEČING PRIPRAVENÝ</div>
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
         <iframe id="map-frame" src=""></iframe>
     </div>
 
@@ -106,13 +86,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
-const AUTO_RESET_MINUTES = 30;
-// FIXNÝ VÝCHODZÍ BOD PRE TV/PC
-const ZBROJNICA = "Lednica 243, 020 63 Lednica";
 
-setInterval(() => { 
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
-}, 1000);
+setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
 async function spracujVstup() {
     const params = new URLSearchParams(window.location.search);
@@ -142,10 +117,9 @@ async function spracujVstup() {
 function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    
-    // Mobilná navigácia
     const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
@@ -165,7 +139,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const banner = document.getElementById("banner");
     const mapFrame = document.getElementById("map-frame");
     const mapMsg = document.getElementById("map-msg");
-    const timerLabel = document.getElementById("timer-label");
     
     idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
@@ -173,7 +146,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         banner.style.display = "none";
         mapFrame.style.display = "none";
         mapMsg.style.display = "block";
-        timerLabel.style.visibility = "hidden";
         document.getElementById("timer").innerText = "--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
@@ -184,19 +156,15 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
 
     if (m.typ) {
         banner.style.display = "block";
-        timerLabel.style.visibility = "visible";
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
-        if (m.miesto && m.miesto.length > 2 && window.innerWidth > 1024) {
+        if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            // FIX: MAPA NA TV S TRASOU ZO ZBROJNICE AUTOM
-            const start = encodeURIComponent(ZBROJNICA);
-            const destination = encodeURIComponent(m.miesto);
-            mapFrame.src = `maps.google.com/maps?q=...{start}&destination=${destination}&travelmode=driving`;
+            mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(m.miesto)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
-        startTracking(m.timestamp);
+        startTimer(m.timestamp);
     }
 
     Object.keys(d).forEach(k => {
@@ -208,41 +176,17 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     });
 });
 
-function startTracking(start) {
+function startTimer(start) {
     if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(async () => {
-        const now = Date.now();
-        const diffSeconds = Math.floor((now - start) / 1000);
-        const min = Math.floor(diffSeconds / 60);
-        const sec = diffSeconds % 60;
-        document.getElementById("timer").innerText = `${min}:${sec.toString().padStart(2, "0")}`;
-        
-        if (diffSeconds >= AUTO_RESET_MINUTES * 60) {
-            clearInterval(timerInterval);
-            await autoArchiveAndReset();
-        }
+    timerInterval = setInterval(() => {
+        const diff = 1800 - Math.floor((Date.now() - start) / 1000);
+        if (diff <= 0) { clearInterval(timerInterval); return; }
+        document.getElementById("timer").innerText = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,"0")}`;
     }, 1000);
 }
 
-async function autoArchiveAndReset() {
-    const ref = db.collection("vyjazdy").doc("active");
-    const snap = await ref.get();
-    if (snap.exists) {
-        const d = snap.data();
-        await db.collection("archiv").add({
-            datum: firebase.firestore.Timestamp.now(),
-            info: (d.__metadata?.typ || "Neznáma") + " - " + (d.__metadata?.miesto || ""),
-            isli: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "IDEM"),
-            nejdli: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "NEJDEM")
-        });
-        await ref.delete();
-    }
-}
-
 async function manualReset() {
-    if (confirm("Ukončiť výjazd a uložiť do archívu?")) {
-        await autoArchiveAndReset();
-    }
+    if (confirm("Resetovať výjazd?")) { await db.collection("vyjazdy").doc("active").delete(); }
 }
 
 window.onload = spracujVstup;
