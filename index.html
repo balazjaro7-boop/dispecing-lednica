@@ -14,10 +14,10 @@
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
         .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-        .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; }
+        .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
         .reset:hover{ background:var(--red); color:#fff; }
         
-        #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; }
+        #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
         .event-type{ font-size:1.4rem; font-weight:900; text-transform:uppercase; }
@@ -78,26 +78,25 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-// Hodiny v reálnom čase
+// Hodiny
 setInterval(() => { 
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
 }, 1000);
 
-// SPRACOVANIE VSTUPOV Z URL
+// SPRACOVANIE VSTUPOV Z URL (Výjazdy aj reakcie)
 async function spracujVstup() {
     const params = new URLSearchParams(window.location.search);
     const u = params.get('udalost'); 
     const adr = params.get('miesto');
     const akc = params.get('akcia');
-    const t = params.get('typ'); // Rozlíšenie AED/Výjazd
+    const t = params.get('typ'); 
 
     const ref = db.collection("vyjazdy").doc("active");
 
-    // 1. TY (VELITEĽ) - ODOSLANIE VÝJAZDU
+    // 1. VELITEĽ - SPUSTENIE VÝJAZDU
     if (u) {
-        const ts = Date.now();
         await ref.set({
-            __metadata: { typ: u, miesto: adr || "", timestamp: ts }
+            __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() }
         }, { merge: true });
         
         sendPushover(u, adr, t);
@@ -105,18 +104,19 @@ async function spracujVstup() {
         window.history.replaceState({}, '', window.location.pathname);
     }
 
-    // 2. HASIČ - KLIKNUTIE NA ODKAZ V SPRÁVE
+    // 2. HASIČ - REAKCIA (IDEM/NEJDEM)
     if (akc) {
         let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno pre dispečing:");
         if (meno) {
             localStorage.setItem('h_meno', meno);
             await ref.set({ [meno]: akc }, { merge: true });
+            alert("Tvoja voľba " + akc + " bola zaznamenaná.");
         }
         window.history.replaceState({}, '', window.location.pathname);
     }
 }
 
-// FUNKCIA PUSHOVER - ODKAZY PRIAMO V SPRÁVE
+// ODOSLANIE PUSHOVER SPRÁVY S HTML ODKAZMI
 function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = "g796q69yjbfy1v2e2kc5enwqn57j1x";
@@ -126,7 +126,14 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     const titleHeader = (skupinaTyp === "AED") ? "🚨 AED ASISTENCIA" : "🚨 VÝJAZD DHZ";
 
     const baseUrl = "https://hasici-lednica.web.app/index.html";
-    const msg = `UDALOSŤ: ${udalost}\nMIESTO: ${miesto || "Nezadané"}\n\n✅ IDEM:\n${baseUrl}?akcia=IDEM\n\n❌ NEJDEM:\n${baseUrl}?akcia=NEJDEM`;
+    
+    // HTML správa - viditeľné sú len slová IDEM a NEJDEM
+    const msg = `<b>UDALOSŤ:</b> ${udalost}
+<b>MIESTO:</b> ${miesto || "Nezadané"}
+
+<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>
+
+<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
 
     const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
 
@@ -142,13 +149,14 @@ function sendPushover(udalost, miesto, skupinaTyp) {
             retry: 60,
             expire: 3600,
             sound: "siren",
+            html: 1, 
             url: mapsUrl,
             url_title: "📍 SPUSTIŤ NAVIGÁCIU"
         })
-    }).catch(e => console.error(e));
+    }).catch(e => console.error("Chyba:", e));
 }
 
-// SLEDOVANIE ZMIEN V DATABÁZE
+// AKTUALIZÁCIA DISPLEJA (Live Snapshot)
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem");
     const nejdemDiv = document.getElementById("nejdem");
@@ -193,18 +201,8 @@ function startTimer(start) {
 }
 
 async function manualReset() {
-    if (confirm("Ukončiť výjazd a vymazať zoznam?")) {
-        const ref = db.collection("vyjazdy").doc("active");
-        const snap = await ref.get();
-        if (snap.exists) {
-            const d = snap.data();
-            await db.collection("archiv").add({
-                datum: firebase.firestore.Timestamp.now(),
-                info: d.__metadata?.typ || "Neznáme",
-                ucast: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "IDEM")
-            });
-            await ref.delete();
-        }
+    if (confirm("Ukončiť výjazd a vyčistiť obrazovku?")) {
+        await db.collection("vyjazdy").doc("active").delete();
     }
 }
 
