@@ -46,11 +46,11 @@
 <div class="header">
     <div class="brand">
         <img src="logo.png" alt="DHZ">
-        <span>DHZ LEDNICA</span>
+        <span>DHZ LEDNICA - DISPEČING</span>
     </div>
     <div id="timer-container" class="center-timer">
         <span style="font-size: 0.8rem; color: #888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
-        <span id="timer" style="font-size: 1.8rem; font-weight: bold;">0:00</span>
+        <span id="timer" style="font-size: 1.8rem; font-weight: bold;">00:00</span>
     </div>
     <div style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
@@ -78,7 +78,7 @@
     </div>
 
     <div class="col">
-        <div class="title" style="color:var(--gray);">NEJDEM</div>
+        <div class="title" style="color:var(--red);">NEJDEM</div>
         <div id="nejdem" class="list"></div>
     </div>
 </div>
@@ -154,7 +154,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         banner.style.display = "none";
         mapFrame.style.display = "none";
         mapMsg.style.display = "block";
-        document.getElementById("timer").innerText = "0:00";
+        document.getElementById("timer").innerText = "00:00";
         if(timerInterval) clearInterval(timerInterval);
         return;
     }
@@ -174,7 +174,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
             // 🔥 UPRAVA – TRASA Z LEDNICA 243
             const origin = encodeURIComponent("Lednica 243");
             const destination = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://maps.google.com/maps?q=&saddr=${origin}&daddr=${destination}&output=embed`;
+            mapFrame.src = `https://maps.google.com/maps?saddr=${origin}&daddr=${destination}&dirflg=d&output=embed`;
         }
         startTimer(m.timestamp);
     }
