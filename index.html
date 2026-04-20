@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DHZ Lednica - DISPEČING</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -11,43 +11,26 @@
 <style>
 :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --yellow:#ffeb3b; }
 
-body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+body{ margin:0; font-family:Segoe UI; background:var(--bg); color:#fff; }
 
-.header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; }
+.header{ display:flex; justify-content:space-between; align-items:center; padding:10px; background:#000; }
 
-.brand{ display:flex; align-items:center; gap:10px; font-size:1.3rem; font-weight:700; color:#aaa; }
+.brand{ display:flex; align-items:center; gap:10px; font-weight:bold; }
 .brand img{ height:40px; }
 
-.center-box{ text-align:center; }
-.center-title{ font-size:0.9rem; color:#aaa; }
-.center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
+.center{text-align:center;}
+.center-title{font-size:0.8rem;color:#aaa;}
+#timer{font-size:1.6rem;color:var(--yellow);}
 
-.clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+.clock{font-size:1.5rem;}
 
-.reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
-.archive{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
+button{background:#222;color:#aaa;border:1px solid #333;padding:5px;cursor:pointer;}
 
-#banner { display:none; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
-@keyframes stroboskop { 0% { background:#8b0000; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; } }
+.main{display:grid;grid-template-columns:300px 1fr 300px;height:80vh;}
 
-.main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; padding:10px; gap:15px; }
+.map-container{display:flex;align-items:center;justify-content:center;}
+#map-frame{width:100%;height:100%;border:none;}
 
-.map-container { background: var(--panel); border-radius: 4px; display:flex; justify-content:center; align-items:center; }
-#map-frame { width:100%; height:100%; border:none; display:none; }
-.map-placeholder { color:#444; }
-
-.col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; }
-.title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; }
-
-.list{ display:flex; flex-direction:column; gap:5px; overflow:auto; }
-.item{ padding:5px; font-weight:bold; }
-.idem{ color:var(--green); }
-.nejdem{ color:var(--gray); }
-
-@media (max-width:1024px){
-.main{ grid-template-columns:1fr 1fr; }
-.map-container{ display:none; }
-}
 </style>
 </head>
 
@@ -59,57 +42,66 @@ body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:S
         DHZ LEDNICA
     </div>
 
-    <div class="center-box">
+    <div class="center">
         <div class="center-title">Čas od vyhlásenia udalosti:</div>
-        <div id="timer" class="center-timer">0:00</div>
+        <div id="timer">0:00</div>
     </div>
 
-    <div style="display:flex; gap:10px; align-items:center;">
-        <div id="clock" class="clock"></div>
-        <button class="archive" onclick="window.location.href='archiv.html'">Archív</button>
-        <button class="reset" onclick="manualReset()">RESET</button>
+    <div>
+        <span id="clock"></span>
+        <button onclick="window.location.href='archiv.html'">Archív</button>
+        <button onclick="manualReset()">RESET</button>
     </div>
-</div>
-
-<div id="banner">
-    <div id="typ"></div>
-    <div id="adresa"></div>
 </div>
 
 <div class="main">
-    <div class="col">
-        <div class="title" style="color:#00e676;">IDEM</div>
-        <div id="idem" class="list"></div>
-    </div>
+    <div id="idem"></div>
 
     <div class="map-container">
-        <div id="map-msg">ČAKÁM NA ADRESU...</div>
         <iframe id="map-frame"></iframe>
     </div>
 
-    <div class="col">
-        <div class="title" style="color:#888;">NEJDEM</div>
-        <div id="nejdem" class="list"></div>
-    </div>
+    <div id="nejdem"></div>
 </div>
 
 <script>
 const firebaseConfig = {
-    apiKey: "xxx",
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
     authDomain: "hasici-lednica.firebaseapp.com",
     projectId: "hasici-lednica"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-setInterval(()=>{ document.getElementById("clock").innerText=new Date().toLocaleTimeString("sk-SK"); },1000);
+setInterval(()=>{document.getElementById("clock").innerText=new Date().toLocaleTimeString("sk-SK");},1000);
 
 let timerInterval;
 
-db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
-    const mapFrame=document.getElementById("map-frame");
-    const mapMsg=document.getElementById("map-msg");
+async function spracujVstup(){
+    const params=new URLSearchParams(window.location.search);
+    const u=params.get('udalost');
+    const adr=params.get('miesto');
+    const akc=params.get('akcia');
 
+    const ref=db.collection("vyjazdy").doc("active");
+
+    if(u){
+        await ref.set({__metadata:{typ:u,miesto:adr||"",timestamp:Date.now()}},{merge:true});
+        window.history.replaceState({},'',window.location.pathname);
+    }
+
+    if(akc){
+        let meno=localStorage.getItem('h_meno')||prompt("Zadaj meno:");
+        if(meno){
+            localStorage.setItem('h_meno',meno);
+            await ref.set({[meno]:akc},{merge:true});
+        }
+        window.history.replaceState({},'',window.location.pathname);
+    }
+}
+
+db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     if(!doc.exists){
         document.getElementById("timer").innerText="0:00";
         return;
@@ -119,10 +111,8 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
     const m=d.__metadata||{};
 
     if(m.miesto){
-        mapFrame.style.display="block";
-        mapMsg.style.display="none";
-
-        mapFrame.src=`https://www.google.com/maps?saddr=${encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
+        document.getElementById("map-frame").src=
+        `https://www.google.com/maps?saddr=${encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
     }
 
     startTimer(m.timestamp);
@@ -133,8 +123,8 @@ function startTimer(start){
 
     timerInterval=setInterval(()=>{
         const diff=Math.floor((Date.now()-start)/1000);
-        document.getElementById("timer").innerText =
-            `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,"0")}`;
+        document.getElementById("timer").innerText=
+        `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,"0")}`;
     },1000);
 }
 
@@ -143,6 +133,8 @@ async function manualReset(){
         await db.collection("vyjazdy").doc("active").delete();
     }
 }
+
+window.onload=spracujVstup;
 </script>
 
 </body>
