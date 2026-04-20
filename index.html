@@ -11,14 +11,14 @@
         :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; --blue:#2196f3; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         
-        /* HEADER - Vycentrovaný čas */
+        /* HEADER - Absolútne vycentrovanie času */
         .header{ display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.1rem; font-weight:700; color:#aaa; }
-        .timer-container{ display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .timer-container{ display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 300px; }
         .timer-label{ font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .center-timer{ font-size:2.5rem; font-family:monospace; color:var(--yellow); font-weight: bold; line-height: 1; margin-top: 5px; }
+        .center-timer{ font-size:2.8rem; font-family:monospace; color:var(--yellow); font-weight: bold; line-height: 1; margin-top: 5px; }
         .controls{ display:flex; align-items:center; gap:10px; justify-content: flex-end; }
-        .clock{ font-family:monospace; font-size:1.5rem; font-weight:bold; margin-right: 10px; }
+        .clock{ font-family:monospace; font-size:1.6rem; font-weight:bold; margin-right: 10px; }
         
         .btn-top { padding:6px 12px; cursor:pointer; font-size:0.8rem; border-radius:3px; border:1px solid #333; font-weight: bold; text-transform: uppercase; text-decoration: none; color:inherit; }
         .reset{ background:#222; color:var(--red); }
@@ -27,7 +27,7 @@
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
-        /* ZOBRAZENIE PRE PC/TV (3 stĺpce vrátane mapy) */
+        /* ROZLOŽENIE PANELOV PRE PC/TV */
         .main{ flex:1; display:grid; grid-template-columns: 320px 1fr 320px; overflow:hidden; padding:10px; gap:15px; }
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #222; }
         #map-frame { width: 100%; height: 100%; border: none; display: none; }
@@ -40,14 +40,18 @@
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); border-left-color: var(--green); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); border-left-color: var(--gray); }
 
-        /* MOBILNÁ VERZIA - Presne ako predtým (2 stĺpce, bez mapy) */
+        /* MOBILNÁ VERZIA - 2 stĺpce, bez mapy */
         @media (max-width: 1024px){
             .header { grid-template-columns: 1fr; gap: 10px; padding: 10px; text-align: center; }
-            .brand { display: none; } /* Na mobile skryjeme DHZ Lednica pre miesto */
+            .brand { display: none; }
             .controls { justify-content: center; }
-            .main { grid-template-columns: 1fr 1fr; } /* Návrat k dvom stĺpcom */
+            .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none !important; }
-            .center-timer { font-size: 2rem; }
+            .center-timer { font-size: 2.2rem; }
+            .timer-container { min-width: auto; }
+        }
+        @media (max-width: 600px){
+            .main { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -100,6 +104,7 @@ let timerInterval;
 const AUTO_RESET_MINUTES = 30;
 const ZBROJNICA = "Lednica 243, 020 63 Lednica";
 
+// Hodiny v rohu
 setInterval(() => { 
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
 }, 1000);
@@ -176,13 +181,15 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
-        // Zobrazí mapu len ak sme na PC (širka nad 1024px)
+        // Zobrazenie mapy s trasou vozidlom (&dirflg=d) len na PC/TV
         if (m.miesto && m.miesto.length > 2 && window.innerWidth > 1024) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
             const s = encodeURIComponent(ZBROJNICA);
             const c = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://maps.google.com/maps?saddr=${s}&daddr=${c}&output=embed&z=15`;
+            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s&origin=${s}&destination=${c}&mode=driving`;
+            // Poznámka: Ak by bol problém s API key, vrátime sa k: 
+            // mapFrame.src = `https://maps.google.com/maps?saddr=${s}&daddr=${c}&dirflg=d&output=embed`;
         }
         startTracking(m.timestamp);
     }
