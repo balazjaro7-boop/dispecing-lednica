@@ -12,19 +12,19 @@
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display: flex; align-items: center; gap: 10px; }
-        .brand img { height: 40px; width: auto; }
-        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; }
+        .brand img { height: 45px; width: auto; }
+        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-        .btn-action{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; text-decoration: none; display: inline-block; }
-        .btn-action:hover { background: #333; color: #fff; }
+        .btn-action{ background:#222; color:#aaa; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold; }
+        .btn-action:hover { background: #333; color: #fff; border-color: #555; }
         
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
         
-        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-        #map-frame { width: 100%; height: 100%; border: none; display: none; }
+        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
+        #map-frame { width: 100%; height: 100%; border: none; display: none; filter: invert(90%) hue-rotate(180deg); }
         .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
 
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
@@ -37,10 +37,7 @@
         @media (max-width: 1024px){
             .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none; }
-            .header{ flex-direction:column; padding:5px; gap: 10px; }
-        }
-        @media (max-width: 600px){
-            .main { grid-template-columns: 1fr; }
+            .header{ flex-direction:column; padding:10px; gap: 15px; }
         }
     </style>
 </head>
@@ -48,16 +45,16 @@
 
 <div class="header">
     <div class="brand">
-        <img src="logo.png" alt="Logo">
+        <img src="logo.png" alt="DHZ">
         <span>DHZ LEDNICA</span>
     </div>
     <div id="timer-container" class="center-timer">
-        Čas od vyhlásenia udalosti:<br>
-        <span id="timer">0:00</span>
+        <span style="font-size: 0.8rem; color: #888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
+        <span id="timer" style="font-size: 1.8rem; font-weight: bold;">0:00</span>
     </div>
     <div style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
-        <div style="display:flex; gap:5px;">
+        <div style="display:flex; gap:8px;">
             <a href="archiv.html" class="btn-action">ARCHÍV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
@@ -65,8 +62,8 @@
 </div>
 
 <div id="banner">
-    <div id="typ" style="font-size:1.4rem; font-weight:900; text-transform:uppercase;"></div>
-    <div id="adresa" style="font-weight:bold; font-size:1rem;"></div>
+    <div id="typ" style="font-size:1.6rem; font-weight:900; text-transform:uppercase;"></div>
+    <div id="adresa" style="font-weight:bold; font-size:1.2rem;"></div>
 </div>
 
 <div class="main">
@@ -96,7 +93,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
+// Hodiny v rohu
+setInterval(() => { 
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
+}, 1000);
 
 async function spracujVstup() {
     const params = new URLSearchParams(window.location.search);
@@ -171,8 +171,9 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=TVOJKLUČ&origin=Lednica+243&destination=${encodeURIComponent(m.miesto)}&mode=driving`;
-            // Poznámka: Pre funkčné mapy v iframe potrebujete Google Maps Embed API kľúč.
+            // Mapy bez API cez verejný embed (hľadanie podľa adresy)
+            const query = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
         startTimer(m.timestamp);
     }
@@ -190,23 +191,22 @@ function startTimer(start) {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         const now = Date.now();
-        const elapsedTotalSeconds = Math.floor((now - start) / 1000);
+        const elapsedSeconds = Math.floor((now - start) / 1000);
         
-        // Pôvodný odpočet na pozadí (30 minút = 1800 sekúnd)
-        const diff = 1800 - elapsedTotalSeconds;
-        if (diff <= 0) { 
-            // Tu môžeš pridať akciu po vypršaní 30 minút, ak je potrebná
-        }
-
-        // Zobrazenie času OD vyhlásenia (smerom nahor)
-        const minutes = Math.floor(elapsedTotalSeconds / 60);
-        const seconds = elapsedTotalSeconds % 60;
+        // Zobrazenie času od vyhlásenia (stúpa hore)
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
         document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2,"0")}`;
+        
+        // Odpočet na pozadí (pre prípadnú logiku, o ktorej si písal)
+        const backgroundCountdown = 1800 - elapsedSeconds;
     }, 1000);
 }
 
 async function manualReset() {
-    if (confirm("Resetovať výjazd?")) { await db.collection("vyjazdy").doc("active").delete(); }
+    if (confirm("Resetovať výjazd?")) { 
+        await db.collection("vyjazdy").doc("active").delete(); 
+    }
 }
 
 window.onload = spracujVstup;
