@@ -8,22 +8,32 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
+        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; --blue:#2196f3; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+        
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
-        .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); }
-        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-        .reset{ background:#222; color:#aaa; border:1px solid #333; padding:4px 10px; cursor:pointer; font-size:0.8rem; border-radius:3px; }
+        
+        .timer-container{ display: flex; flex-direction: column; align-items: center; }
+        .timer-label{ font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .center-timer{ font-size:2.2rem; font-family:monospace; color:var(--yellow); font-weight: bold; line-height: 1; margin-top: 5px; }
+        
+        .controls{ display:flex; align-items:center; gap:10px; }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; margin-right: 10px; }
+        
+        .btn-top { padding:6px 12px; cursor:pointer; font-size:0.8rem; border-radius:3px; border:1px solid #333; font-weight: bold; text-transform: uppercase; text-decoration: none; display: inline-block; }
+        .reset{ background:#222; color:var(--red); }
+        .reset:hover{ background:var(--red); color:#fff; }
+        .archive-btn{ background:#222; color:var(--blue); }
+        .archive-btn:hover{ background:var(--blue); color:#fff; }
         
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
         .main{ flex:1; display:grid; grid-template-columns: 320px 1fr 320px; overflow:hidden; padding:10px; gap:15px; }
-        
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #222; }
         #map-frame { width: 100%; height: 100%; border: none; display: none; }
-        .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
+        .map-placeholder { font-size: 1.2rem; color: #333; text-align: center; font-weight: bold; }
 
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
         .title{ text-align:center; font-size:1.8rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
@@ -32,14 +42,10 @@
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); border-left-color: var(--green); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); border-left-color: var(--gray); }
 
-        /* MOBILNÁ ÚPRAVA - Skryjeme mapu, necháme len zoznamy */
         @media (max-width: 1100px){
             .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none !important; }
-            .header{ flex-direction:column; padding:5px; }
-        }
-        @media (max-width: 600px){
-            .main { grid-template-columns: 1fr; }
+            .header{ flex-direction:column; padding:10px; gap:10px; }
         }
     </style>
 </head>
@@ -47,10 +53,16 @@
 
 <div class="header">
     <div class="brand">DHZ LEDNICA</div>
-    <div id="timer" class="center-timer">--:--</div>
-    <div style="display:flex; align-items:center; gap:15px;">
+    
+    <div class="timer-container">
+        <div id="timer-label" class="timer-label" style="visibility: hidden;">ČAS OD VYHLÁSENIA UDALOSTI</div>
+        <div id="timer" class="center-timer">--:--</div>
+    </div>
+
+    <div class="controls">
         <div id="clock" class="clock">00:00:00</div>
-        <button class="reset" onclick="manualReset()">RESET</button>
+        <a href="archiv.html" class="btn-top archive-btn">ARCHÍV</a>
+        <button class="btn-top reset" onclick="manualReset()">RESET</button>
     </div>
 </div>
 
@@ -85,10 +97,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
-
-setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
-
+const AUTO_RESET_MINUTES = 30;
 const ZBROJNICA = "Lednica 243, 020 63 Lednica";
+
+setInterval(() => { 
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
+}, 1000);
 
 async function spracujVstup() {
     const params = new URLSearchParams(window.location.search);
@@ -106,7 +120,7 @@ async function spracujVstup() {
     }
 
     if (akc) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
+        let meno = localStorage.getItem('h_meno') || prompt("Zadaj svoje meno:");
         if (meno) {
             localStorage.setItem('h_meno', meno);
             await ref.set({ [meno]: akc }, { merge: true });
@@ -118,11 +132,8 @@ async function spracujVstup() {
 function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
-    
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    
-    // PRE MOBIL: Navigácia len do cieľa (mobil si zistí polohu sám)
     const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
@@ -142,6 +153,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const banner = document.getElementById("banner");
     const mapFrame = document.getElementById("map-frame");
     const mapMsg = document.getElementById("map-msg");
+    const timerLabel = document.getElementById("timer-label");
     
     idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
@@ -149,6 +161,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         banner.style.display = "none";
         mapFrame.style.display = "none";
         mapMsg.style.display = "block";
+        timerLabel.style.visibility = "hidden";
         document.getElementById("timer").innerText = "--:--";
         if(timerInterval) clearInterval(timerInterval);
         return;
@@ -159,10 +172,10 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
 
     if (m.typ) {
         banner.style.display = "block";
+        timerLabel.style.visibility = "visible";
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
-        // PRE TV/PC: Zobrazenie trasy zo zbrojnice
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
@@ -170,7 +183,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
             const c = encodeURIComponent(m.miesto);
             mapFrame.src = `https://maps.google.com/maps?saddr=${s}&daddr=${c}&output=embed&z=15`;
         }
-        startTimer(m.timestamp);
+        startTracking(m.timestamp);
     }
 
     Object.keys(d).forEach(k => {
@@ -182,17 +195,45 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     });
 });
 
-function startTimer(start) {
+function startTracking(start) {
     if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        const diff = 1800 - Math.floor((Date.now() - start) / 1000);
-        if (diff <= 0) { clearInterval(timerInterval); return; }
-        document.getElementById("timer").innerText = `${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,"0")}`;
+    timerInterval = setInterval(async () => {
+        const now = Date.now();
+        const diffSeconds = Math.floor((now - start) / 1000);
+        
+        const min = Math.floor(diffSeconds / 60);
+        const sec = diffSeconds % 60;
+        document.getElementById("timer").innerText = `${min}:${sec.toString().padStart(2, "0")}`;
+        
+        // Automatický ARCHÍV A RESET po 30 minútach
+        if (diffSeconds >= AUTO_RESET_MINUTES * 60) {
+            clearInterval(timerInterval);
+            await autoArchiveAndReset();
+        }
     }, 1000);
 }
 
+async function autoArchiveAndReset() {
+    const ref = db.collection("vyjazdy").doc("active");
+    const snap = await ref.get();
+    
+    if (snap.exists) {
+        const d = snap.data();
+        // Prispôsobené pre tvoj archiv.html (polia datum, info, isli, nejdli)
+        await db.collection("archiv").add({
+            datum: firebase.firestore.Timestamp.now(),
+            info: (d.__metadata?.typ || "Neznáma") + " - " + (d.__metadata?.miesto || ""),
+            isli: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "IDEM"),
+            nejdli: Object.keys(d).filter(k => k !== "__metadata" && d[k] === "NEJDEM")
+        });
+        await ref.delete();
+    }
+}
+
 async function manualReset() {
-    if (confirm("Resetovať systém?")) { await db.collection("vyjazdy").doc("active").delete(); }
+    if (confirm("Ukončiť výjazd a uložiť do archívu?")) {
+        await autoArchiveAndReset();
+    }
 }
 
 window.onload = spracujVstup;
