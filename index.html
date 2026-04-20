@@ -11,7 +11,7 @@
         :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; --blue:#2196f3; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         
-        /* HEADER */
+        /* HEADER - Vycentrovaný čas a Logo */
         .header{ display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand-section { display: flex; align-items: center; gap: 15px; }
         .brand-logo{ height: 55px; width: auto; object-fit: contain; }
@@ -44,6 +44,7 @@
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); border-left-color: var(--green); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); border-left-color: var(--gray); }
 
+        /* MOBILNÁ VERZIA - 2 stĺpce, bez mapy */
         @media (max-width: 1024px){
             .header { grid-template-columns: 1fr; gap: 10px; padding: 10px; text-align: center; }
             .brand-section { justify-content: center; }
@@ -108,7 +109,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 const AUTO_RESET_MINUTES = 30;
-const ZBROJNICA = "Lednica 243, 020 63 Lednica";
 
 setInterval(() => { 
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
@@ -130,7 +130,7 @@ async function spracujVstup() {
     }
 
     if (akc) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj svoje meno:");
+        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
         if (meno) {
             localStorage.setItem('h_meno', meno);
             await ref.set({ [meno]: akc }, { merge: true });
@@ -144,7 +144,9 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    const mapsUrl = miesto ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ZBROJNICA)}&destination=${encodeURIComponent(miesto)}&travelmode=driving` : baseUrl;
+    
+    // POUŽITIE FUNKČNEJ URL PRE MOBILNÚ NAVIGÁCIU
+    const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -152,7 +154,7 @@ function sendPushover(udalost, miesto, skupinaTyp) {
         body: new URLSearchParams({
             token: apiToken, user: groupVyjazd, message: msg,
             title: "🚨 DHZ LEDNICA", priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1,
-            url: mapsUrl, url_title: "📍 OTVORIŤ MAPU"
+            url: mapsUrl, url_title: "📍 SPUSTIŤ NAVIGÁCIU"
         })
     });
 }
@@ -186,17 +188,11 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
+        // POUŽITIE FUNKČNEJ MAPY PRE PC/TV
         if (m.miesto && m.miesto.length > 2 && window.innerWidth > 1024) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            
-            // POUŽITIE VEREJNÉHO EMBED BEZ NUTNOSTI API KEY PRE VÝPOČET TRASY
-            const start = encodeURIComponent(ZBROJNICA);
-            const ciel = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s&origin=${start}&destination=${ciel}&mode=driving`;
-            
-            // AK BY TI TO STÁLE HLÁSILO CHYBU S API, POUŽIJEME TENTO JEDNODUCHÝ FALLBACK (ZOBRAZÍ MIESTO):
-            // mapFrame.src = `https://maps.google.com/maps?q=${ciel}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+            mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(m.miesto)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
         startTracking(m.timestamp);
     }
