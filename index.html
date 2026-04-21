@@ -215,7 +215,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     }
 
     const d = doc.data();
-    const m = d.__metadata || {};
+    const m = d.__metadata || d;
 
     if(m.typ){
 
