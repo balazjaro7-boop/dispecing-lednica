@@ -177,7 +177,7 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
             const origin = encodeURIComponent("Lednica 243");
             const destination = encodeURIComponent(m.miesto);
 
-            mapFrame.src = `https://www.google.com/maps?q=${destination}&saddr=${origin}&output=embed`;
+            mapFrame.src = `https://www.google.com/maps?q=${destination}&output=embed`;
         }
         startTimer(m.timestamp);
     }
