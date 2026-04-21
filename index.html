@@ -1,147 +1,31 @@
-<script>
-const firebaseConfig = {
-    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-    authDomain: "hasici-lednica.firebaseapp.com",
-    projectId: "hasici-lednica"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-let timerInterval;
+.idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+.nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
 
-setInterval(() => { 
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); 
-}, 1000);
-
-// 🔥 TOTO BOLO ZMAZANÉ – VRACIAME NASPÄŤ
-async function spracujVstup() {
-    const params = new URLSearchParams(window.location.search);
-    const u = params.get('udalost'), 
-          adr = params.get('miesto'), 
-          akc = params.get('akcia'), 
-          t = params.get('typ'); 
-
-    const ref = db.collection("vyjazdy").doc("active");
-
-    if (u) {
-        await ref.set({ 
-            __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() } 
-        }, { merge: true });
-
-        sendPushover(u, adr, t);
-        window.history.replaceState({}, '', window.location.pathname);
-    }
-
-    if (akc) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
-        if (meno) {
-            localStorage.setItem('h_meno', meno);
-            await ref.set({ [meno]: akc }, { merge: true });
-        }
-        window.history.replaceState({}, '', window.location.pathname);
-    }
+        /* --- MOBILNÁ VERZIA --- */
+@media (max-width: 1024px){
+.main { grid-template-columns: 1fr 1fr; }
+.map-container { display: none; }
+.header{ flex-direction:column; padding:10px; gap: 15px; }
+#banner { 
+                white-space: normal; /* Povolí viac riadkov */
+                white-space: normal;
+overflow: visible; 
+text-overflow: clip;
+padding: 15px 5px;
 }
-
-// 🔥 AJ TOTO CHÝBALO
-function sendPushover(udalost, miesto, skupinaTyp) {
-    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
-    const groupVyjazd = (skupinaTyp === "AED") 
-        ? "gzv839iw4b249tqay7jicqzaw53w42" 
-        : "g796q69yjbfy1v2e2kc5enwqn57j1x";
-
-    const baseUrl = "https://hasici-lednica.web.app/index.html";
-
-    const msg = `<b>UDALOSŤ:</b> ${udalost}
-<b>MIESTO:</b> ${miesto || "Nezadané"}
-
-<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>
-<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-
-    const mapsUrl = miesto 
-        ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` 
-        : baseUrl;
-
-    fetch("https://api.pushover.net/1/messages.json", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            token: apiToken,
-            user: groupVyjazd,
-            message: msg,
-            title: "🚨 DHZ LEDNICA",
-            priority: 2,
-            retry: 60,
-            expire: 3600,
-            sound: "siren",
-            html: 1,
-            url: mapsUrl,
-            url_title: "📍 SPUSTIŤ NAVIGÁCIU"
-        })
-    });
+#banner div {
+                font-size: 1.4rem !important; /* Mierne menšie písmo aby sa to zmestilo */
+                font-size: 1.4rem !important;
+line-height: 1.3;
 }
-
-// 🔥 MAPA + UI
-db.collection("vyjazdy").doc("active").onSnapshot(doc => {
-    const idemDiv = document.getElementById("idem"), 
-          nejdemDiv = document.getElementById("nejdem");
-    const banner = document.getElementById("banner"), 
-          mapFrame = document.getElementById("map-frame"), 
-          mapMsg = document.getElementById("map-msg");
-
-    idemDiv.innerHTML = ""; 
-    nejdemDiv.innerHTML = "";
-
-    if (!doc.exists) {
-        banner.style.display = "none"; 
-        mapFrame.style.display = "none"; 
-        mapMsg.style.display = "block";
-        document.getElementById("timer").innerText = "00:00";
-        if(timerInterval) clearInterval(timerInterval);
-        return;
-    }
-
-    const d = doc.data(), m = d.__metadata || {};
-
-    if (m.typ) {
-        banner.style.display = "block";
-        document.getElementById("typ").innerText = m.typ;
-        document.getElementById("adresa").innerText = m.miesto || "";
-
-        if (m.miesto && m.miesto.length > 2) {
-            mapMsg.style.display = "none"; 
-            mapFrame.style.display = "block";
-
-            const origin = encodeURIComponent("Lednica 243");
-            const destination = encodeURIComponent(m.miesto);
-
-            mapFrame.src = `https://www.google.com/maps?hl=sk&z=14&output=embed&origin=${origin}&destination=${destination}`;
-        }
-
-        startTimer(m.timestamp);
-    }
-
-    Object.keys(d).forEach(k => {
-        if (k === "__metadata") return;
-        const div = document.createElement("div");
-        div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
-        div.innerText = k;
-        (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
-    });
-});
-
-function startTimer(start) {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - start) / 1000);
-        document.getElementById("timer").innerText =
-            `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2,"0")}`;
-    }, 1000);
 }
+@@ -177,7 +176,8 @@
+mapMsg.style.display = "none"; mapFrame.style.display = "block";
+const origin = encodeURIComponent("Lednica 243");
+const destination = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=${firebaseConfig.apiKey}&origin=${origin}&destination=${destination}&mode=driving`;
 
-async function manualReset() {
-    if (confirm("Resetovať výjazd?"))
-        await db.collection("vyjazdy").doc("active").delete();
+            mapFrame.src = `https://www.google.com/maps?q=${destination}&saddr=${origin}&output=embed`;
 }
-
-// 🔥 TOTO SPÚŠŤA CELÝ SYSTÉM
-window.onload = spracujVstup;
-</script>
+startTimer(m.timestamp);
+}
