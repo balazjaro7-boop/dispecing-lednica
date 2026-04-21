@@ -57,7 +57,13 @@
             .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none; }
             .header{ flex-direction:column; padding:10px; gap: 15px; }
-            #banner { white-space: normal; font-size: 1.2rem; } /* Na mobile povoliť zalomenie ak je text príliš dlhý */
+            #banner { 
+                white-space: normal; 
+                overflow: visible; 
+                text-overflow: clip;
+                font-size: 1.4rem;
+                padding: 15px 5px;
+            }
         }
     </style>
 </head>
@@ -164,10 +170,13 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         document.getElementById("adresa").innerText = m.miesto || "";
         
         if (m.miesto && m.miesto.length > 2) {
-            mapMsg.style.display = "none"; mapFrame.style.display = "block";
+            mapMsg.style.display = "none";
+            mapFrame.style.display = "block";
+
             const origin = encodeURIComponent("Lednica 243");
             const destination = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=${firebaseConfig.apiKey}&origin=${origin}&destination=${destination}&mode=driving`;
+            // Tu sme použili pôvodný formát z "mapa_OK.txt", ktorý ti kreslil trasu
+            mapFrame.src = `https://maps.google.com/maps?q=${origin}&daddr=${destination}&dirflg=d&output=embed`;
         }
         startTimer(m.timestamp);
     }
