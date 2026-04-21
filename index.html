@@ -45,13 +45,24 @@
 
         .btn-action:hover { filter: brightness(1.2); }
         
-        #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
+        #banner { 
+            display:none; 
+            flex:0 0 auto; 
+            padding:12px; 
+            text-align:center; 
+            animation:stroboskop 0.8s infinite; 
+            border-bottom:2px solid #000; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
         
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
-        #map-frame { width: 100%; height: 100%; border: none; display: none; filter: invert(0%) hue-rotate(0deg); }
+        #map-frame { width: 100%; height: 100%; border: none; display: none; }
         .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
 
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
@@ -89,8 +100,9 @@
 </div>
 
 <div id="banner">
-    <div id="typ" style="font-size:1.6rem; font-weight:900; text-transform:uppercase;"></div>
-    <div id="adresa" style="font-weight:bold; font-size:1.2rem;"></div>
+    <div style="font-size:2rem; font-weight:900; text-transform:uppercase;">
+        <span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
+    </div>
 </div>
 
 <div class="main">
@@ -155,7 +167,7 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    const mapsUrl = miesto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}` : baseUrl;
+    const mapsUrl = miesto ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(miesto)}` : baseUrl;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -191,16 +203,26 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
 
     if (m.typ) {
         banner.style.display = "block";
+        
+        // --- Logika prefixu ---
+        const textUdalosti = m.typ.toLowerCase();
+        const prefixElem = document.getElementById("prefix");
+        
+        if (textUdalosti.includes("nehoda") || textUdalosti.includes("voda") || textUdalosti.includes("vody") || textUdalosti.includes("strom") || textUdalosti.includes("technic")) {
+            prefixElem.innerText = "TECHNICKÝ VÝJAZD";
+        } else {
+            prefixElem.innerText = "POŽIAR";
+        }
+        // ----------------------
+
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-
-            const origin = encodeURIComponent("Lednica 243");
             const destination = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://maps.google.com/maps?saddr=${origin}&daddr=${destination}&dirflg=d&output=embed`;
+            mapFrame.src = `https://maps.google.com/maps?q=${destination}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
         }
         startTimer(m.timestamp);
     }
@@ -219,12 +241,9 @@ function startTimer(start) {
     timerInterval = setInterval(() => {
         const now = Date.now();
         const elapsedSeconds = Math.floor((now - start) / 1000);
-        
         const minutes = Math.floor(elapsedSeconds / 60);
         const seconds = elapsedSeconds % 60;
         document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2,"0")}`;
-        
-        const backgroundCountdown = 1800 - elapsedSeconds;
     }, 1000);
 }
 
