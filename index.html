@@ -8,15 +8,42 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
+        :root{
+            --bg:#07090c;
+            --panel:#10141a;
+            --green:#00e676;
+            --gray:#888;
+            --red:#ff1744;
+            --yellow:#ffeb3b;
+
+            /* 🔥 FARBY TLAČIDIEL – MENÍŠ LEN TU */
+            --btn-archiv:#00e676;
+            --btn-reset:#ff1744;
+        }
+
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display: flex; align-items: center; gap: 10px; }
         .brand img { height: 45px; width: auto; }
         .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-        .btn-action{ background:#222; color:#aaa; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold; }
-        .btn-action:hover { background: #333; color: #fff; border-color: #555; }
+
+        .btn-action{
+            color:#fff;
+            border:1px solid #333;
+            padding:6px 12px;
+            cursor:pointer;
+            font-size:0.85rem;
+            border-radius:3px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .btn-action:first-child { background: var(--btn-archiv); }
+        .btn-action:last-child { background: var(--btn-reset); }
+
+        .btn-action:hover { filter: brightness(1.2); }
         
         #banner { display:none; flex:0 0 auto; padding:8px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
@@ -171,7 +198,6 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
 
-            // 🔥 UPRAVA – TRASA Z LEDNICA 243
             const origin = encodeURIComponent("Lednica 243");
             const destination = encodeURIComponent(m.miesto);
             mapFrame.src = `https://maps.google.com/maps?saddr=${origin}&daddr=${destination}&dirflg=d&output=embed`;
