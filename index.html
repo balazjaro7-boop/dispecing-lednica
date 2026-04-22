@@ -71,11 +71,37 @@
         .leaflet-container{ background:#111; }
         .leaflet-routing-alt, .leaflet-control-attribution{ display:none !important; }
 
+        #debug-panel{
+            display:none; position:fixed; right:10px; bottom:10px; z-index:3000;
+            width:360px; max-width:calc(100vw - 20px); max-height:220px; overflow:auto;
+            background:rgba(0,0,0,0.88); border:1px solid #333; border-radius:6px;
+            padding:10px; font:12px/1.4 monospace; color:#ddd;
+        }
+        #debug-panel strong{ color:#ffeb3b; display:block; margin-bottom:6px; }
+        #debug-log{ white-space:pre-wrap; word-break:break-word; }
+
+        #archive-modal{
+            position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
+            background:rgba(0,0,0,0.6); backdrop-filter:blur(3px);
+        }
+        .archive-modal-box{
+            min-width:320px; max-width:90vw; padding:24px 28px; border-radius:10px;
+            background:#111820; border:1px solid #2a313c; text-align:center;
+            box-shadow:0 20px 60px rgba(0,0,0,0.45);
+        }
+        .archive-modal-box strong{
+            display:block; font-size:1.6rem; color:var(--yellow); margin-bottom:8px;
+        }
+        .archive-modal-box span{
+            color:#c7d0d9; font-size:1rem;
+        }
+
         @media (max-width: 1024px){
             .main{ grid-template-columns:1fr 1fr; }
             .map-shell{ display:none; }
             .header{ flex-direction:column; padding:10px; gap:15px; }
             #banner{ white-space:normal; font-size:1.2rem; }
+            #debug-panel{ width:auto; }
         }
     </style>
 </head>
@@ -112,6 +138,18 @@
     <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
 </div>
 
+<div id="debug-panel">
+    <strong>DEBUG REŽIM</strong>
+    <div id="debug-log"></div>
+</div>
+
+<div id="archive-modal">
+    <div class="archive-modal-box">
+        <strong>Ukladám výjazd</strong>
+        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
+    </div>
+</div>
+
 <script>
 const firebaseConfig = {
     apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
@@ -124,6 +162,8 @@ const db = firebase.firestore();
 
 const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
+const RESET_PIN = "1234";
+const AUTO_ARCHIVE_AFTER_MS = 15 * 60 * 1000;
 
 let timerInterval = null;
 let map = null;
@@ -131,10 +171,35 @@ let routeLine = null;
 let startMarker = null;
 let endMarker = null;
 let activeRouteRequest = 0;
+let autoArchiveInProgress = false;
+const urlParams = new URLSearchParams(window.location.search);
+const DEBUG_MODE = urlParams.get("debug") === "1";
 
 setInterval(() => {
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
 }, 1000);
+
+function logDebug(message, data) {
+    const timestamp = new Date().toLocaleTimeString("sk-SK");
+    const formatted = data === undefined
+        ? `[${timestamp}] ${message}`
+        : `[${timestamp}] ${message} ${typeof data === "string" ? data : JSON.stringify(data)}`;
+
+    console.log(formatted);
+
+    if (!DEBUG_MODE) {
+        return;
+    }
+
+    const panel = document.getElementById("debug-panel");
+    const log = document.getElementById("debug-log");
+    panel.style.display = "block";
+    log.textContent = `${formatted}\n${log.textContent}`.slice(0, 5000);
+}
+
+function showArchiveModal(show) {
+    document.getElementById("archive-modal").style.display = show ? "flex" : "none";
+}
 
 function isDesktopMapEnabled() {
     return window.innerWidth > 1024;
@@ -204,23 +269,32 @@ function resetUiState() {
 }
 
 async function spracujVstup() {
-    const params = new URLSearchParams(window.location.search);
-    const u = params.get("udalost");
-    const adr = params.get("miesto");
-    const akc = params.get("akcia");
-    const t = params.get("typ");
+    const u = urlParams.get("udalost");
+    const adr = urlParams.get("miesto");
+    const akc = urlParams.get("akcia");
+    const t = urlParams.get("typ");
     const ref = db.collection("vyjazdy").doc("active");
+
+    logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t });
 
     if (u) {
         await ref.set({
             __metadata: {
                 typ: u,
+                podtyp: t || "",
                 miesto: adr || "",
                 timestamp: Date.now()
             }
         }, { merge: true });
 
-        sendPushover(u, adr, t);
+        logDebug("Udalosť uložená do Firestore");
+
+        try {
+            await sendPushover(u, adr, t);
+        } catch (error) {
+            logDebug("Pushover chyba", error.message || String(error));
+        }
+
         window.history.replaceState({}, "", window.location.pathname);
     }
 
@@ -231,36 +305,47 @@ async function spracujVstup() {
             meno = meno.trim();
             localStorage.setItem("h_meno", meno);
             await ref.set({ [meno]: akc }, { merge: true });
+            logDebug("Zapísaná spätná väzba", { meno, akcia: akc });
         }
 
         window.history.replaceState({}, "", window.location.pathname);
     }
 }
 
-function sendPushover(udalost, miesto, skupinaTyp) {
+async function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
     const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
+    const body = new URLSearchParams({
+        token: apiToken,
+        user: groupVyjazd,
+        message: msg,
+        title: "🚨 DHZ LEDNICA",
+        priority: 2,
+        retry: 60,
+        expire: 3600,
+        sound: "siren",
+        html: 1,
+        url: mapsUrl,
+        url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+    });
 
-    fetch("https://api.pushover.net/1/messages.json", {
+    logDebug("Odosielam Pushover", { skupinaTyp, miesto });
+
+    const response = await fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            token: apiToken,
-            user: groupVyjazd,
-            message: msg,
-            title: "🚨 DHZ LEDNICA",
-            priority: 2,
-            retry: 60,
-            expire: 3600,
-            sound: "siren",
-            html: 1,
-            url: mapsUrl,
-            url_title: "📍 SPUSTIŤ NAVIGÁCIU"
-        })
+        body
     });
+
+    const text = await response.text();
+    logDebug("Pushover odpoveď", text);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${text}`);
+    }
 }
 
 async function geocodeAddress(query) {
@@ -360,7 +445,108 @@ async function renderRouteToAddress(adresa) {
         mapMsg.style.display = "flex";
         mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
         setMapMessage("");
+        logDebug("Chyba mapy", error.message || String(error));
         console.error(error);
+    }
+}
+
+function formatDateParts(timestamp) {
+    const date = new Date(timestamp);
+    return {
+        datum: date.toLocaleDateString("sk-SK"),
+        cas: date.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        iso: date.toISOString()
+    };
+}
+
+function buildArchivePayload(data) {
+    const metadata = data.__metadata || {};
+    const participants = { idem: [], nejdem: [] };
+
+    Object.keys(data).forEach((key) => {
+        if (key === "__metadata") {
+            return;
+        }
+
+        if (data[key] === "IDEM") {
+            participants.idem.push(key);
+        } else if (data[key] === "NEJDEM") {
+            participants.nejdem.push(key);
+        }
+    });
+
+    const eventTimestamp = metadata.timestamp || Date.now();
+    const timeParts = formatDateParts(eventTimestamp);
+    const podtyp = metadata.podtyp || "";
+    const info = [metadata.typ || "", podtyp, metadata.miesto || ""].filter(Boolean).join(" - ");
+
+    return {
+        datum: firebase.firestore.Timestamp.fromMillis(eventTimestamp),
+        datumText: timeParts.datum,
+        cas: timeParts.cas,
+        timestamp: eventTimestamp,
+        archivedAt: Date.now(),
+        archivedAtIso: new Date().toISOString(),
+        udalost: metadata.typ || "",
+        podtyp,
+        adresa: metadata.miesto || "",
+        info,
+        odpovede: participants,
+        isli: participants.idem,
+        nejdli: participants.nejdem,
+        idem: participants.idem,
+        nejdem: participants.nejdem,
+        raw: data
+    };
+}
+
+async function autoArchiveActiveRun() {
+    if (autoArchiveInProgress) {
+        return;
+    }
+
+    autoArchiveInProgress = true;
+    showArchiveModal(true);
+    logDebug("Spúšťam auto-archiváciu");
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const activeRef = db.collection("vyjazdy").doc("active");
+            const activeDoc = await transaction.get(activeRef);
+
+            if (!activeDoc.exists) {
+                return;
+            }
+
+            const activeData = activeDoc.data();
+            const metadata = activeData.__metadata || {};
+
+            if (!metadata.timestamp) {
+                return;
+            }
+
+            if (metadata.archivedAt) {
+                return;
+            }
+
+            if ((Date.now() - metadata.timestamp) < AUTO_ARCHIVE_AFTER_MS) {
+                return;
+            }
+
+            const archiveRef = db.collection("archiv").doc();
+            const archivePayload = buildArchivePayload(activeData);
+
+            transaction.set(archiveRef, archivePayload);
+            transaction.delete(activeRef);
+        });
+
+        logDebug("Auto-archivácia dokončená");
+    } catch (error) {
+        logDebug("Auto-archivácia zlyhala", error.message || String(error));
+        console.error(error);
+    } finally {
+        showArchiveModal(false);
+        autoArchiveInProgress = false;
     }
 }
 
@@ -441,12 +627,28 @@ function startTimer(start) {
     document.getElementById("timer").innerText = formatElapsedTime(start);
     timerInterval = setInterval(() => {
         document.getElementById("timer").innerText = formatElapsedTime(start);
+
+        if ((Date.now() - start) >= AUTO_ARCHIVE_AFTER_MS) {
+            autoArchiveActiveRun();
+        }
     }, 1000);
 }
 
 async function manualReset() {
+    const pin = prompt("Zadaj PIN pre reset:");
+    if (pin === null) {
+        return;
+    }
+
+    if (pin !== RESET_PIN) {
+        alert("Nesprávny PIN.");
+        logDebug("Reset zamietnutý", "Nesprávny PIN");
+        return;
+    }
+
     if (confirm("Resetovať výjazd?")) {
         await db.collection("vyjazdy").doc("active").delete();
+        logDebug("Výjazd bol resetovaný");
     }
 }
 
@@ -456,6 +658,7 @@ window.addEventListener("resize", () => {
     }
 });
 
+logDebug("Aplikácia pripravená", { debug: DEBUG_MODE });
 window.onload = spracujVstup;
 </script>
 </body>
