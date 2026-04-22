@@ -1,167 +1,167 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DHZ Lednica - DISPEČING</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DHZ Lednica - DISPEČING</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
+        body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+        .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display:flex; align-items:center; gap:10px; }
+        .brand img { height: 45px; }
+        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align:center; }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+        .btn-action{ color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:3px; text-decoration:none; font-weight:bold; }
+        .btn-archiv { background: var(--green); }
+        .btn-reset { background: var(--red); border:none; }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<style>
-body{margin:0;height:100vh;display:flex;flex-direction:column;font-family:Segoe UI,sans-serif;background:#07090c;color:#fff;overflow:hidden;}
-.header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#000;border-bottom:2px solid #222;}
-.brand{font-weight:700;color:#aaa;}
-.center-timer{font-family:monospace;color:#ffeb3b;text-align:center;}
-.clock{font-family:monospace;font-size:1.5rem;}
-.btn{padding:6px 12px;border:0;cursor:pointer;font-weight:bold;border-radius:3px;color:#fff;}
-#banner{display:none;padding:10px;text-align:center;background:#8b0000;animation:blink 0.8s infinite;}
-@keyframes blink{50%{background:#ffeb3b;color:#000;}}
-
-.main{flex:1;display:grid;grid-template-columns:300px 1fr 300px;gap:10px;padding:10px;overflow:hidden;}
-.col{background:#10141a;padding:10px;overflow:auto;}
-.title{text-align:center;font-weight:bold;margin-bottom:10px;}
-.item{padding:5px;margin:2px 0;font-weight:bold;}
-.idem{color:#00e676;}
-.nejdem{color:#888;}
-
-#map{width:100%;height:100%;display:none;}
-.map-box{background:#10141a;display:flex;align-items:center;justify-content:center;}
-</style>
+        #banner { display:none; padding:12px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
+        @keyframes stroboskop { 0%, 100% { background:#8b0000; color:#fff; } 50% { background:var(--yellow); color:#000; } }
+        
+        .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; padding:10px; gap:15px; overflow:hidden; }
+        #map { background: #eee; border-radius:4px; border:1px solid #222; height:100%; width:100%; }
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .item{ padding:8px 12px; font-size:1.3rem; font-weight:bold; text-transform:uppercase; border-radius:3px; margin-bottom:5px; }
+        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+    </style>
 </head>
-
 <body>
 
 <div class="header">
-<div class="brand">DHZ LEDNICA</div>
-<div class="center-timer">ČAS: <span id="timer">00:00</span></div>
-<div class="clock" id="clock"></div>
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA</span></div>
+    <div class="center-timer">VÝJAZD TRVÁ<br><span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span></div>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <div id="clock" class="clock">00:00:00</div>
+        <div style="display:flex; gap:8px;">
+            <a href="archiv.html" class="btn-action btn-archiv">ARCHÍV</a>
+            <button class="btn-action btn-reset" onclick="manualReset()">RESET</button>
+        </div>
+    </div>
 </div>
 
 <div id="banner">
-<strong><span id="typ"></span></strong> : <span id="adresa"></span>
+    <div style="font-size:1.8rem; font-weight:900;"><span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span></div>
 </div>
 
 <div class="main">
-<div class="col">
-<div class="title">IDEM</div>
-<div id="idem"></div>
-</div>
-
-<div class="map-box">
-<div id="map-msg">ČAKÁM NA VÝJAZD...</div>
-<div id="map"></div>
-</div>
-
-<div class="col">
-<div class="title">NEJDEM</div>
-<div id="nejdem"></div>
-</div>
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem"></div></div>
+    <div id="map"></div>
+    <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem"></div></div>
 </div>
 
 <script>
-// FIREBASE
-const firebaseConfig = {
-apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-authDomain: "hasici-lednica.firebaseapp.com",
-projectId: "hasici-lednica"
-};
-
+const firebaseConfig = { apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s", authDomain: "hasici-lednica.firebaseapp.com", projectId: "hasici-lednica" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// CLOCK
-setInterval(()=>document.getElementById("clock").innerText=new Date().toLocaleTimeString(),1000);
+let timerInterval, map, routeLayer, markerCiel;
+const hasicaren = [49.1111, 18.2324]; // Súradnice zbrojnice Lednica
 
-// MAPA
-let map = L.map('map').setView([49.0165,18.3010],13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'&copy; OpenStreetMap'
-}).addTo(map);
-
-let routeLayer;
-
-const START = [49.0165,18.3010]; // Lednica 243
-
-async function drawRoute(dest) {
-const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest)}`);
-const d = await r.json();
-if(!d.length) return;
-
-const end = [parseFloat(d[0].lat),parseFloat(d[0].lon)];
-
-const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${START[1]},${START[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`);
-const data = await route.json();
-
-const coords = data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-
-if(routeLayer) map.removeLayer(routeLayer);
-
-routeLayer = L.polyline(coords,{weight:5}).addTo(map);
-
-L.marker(START).addTo(map).bindPopup("DHZ Lednica");
-L.marker(end).addTo(map).bindPopup(dest);
-
-map.fitBounds(routeLayer.getBounds());
+function initMap() {
+    map = L.map('map', { zoomControl: false }).setView(hasicaren, 14);
+    // KLASICKÝ SVETLÝ VZHĽAD MAPY
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+    L.marker(hasicaren).addTo(map).bindPopup("Zbrojnica").openPopup();
 }
+initMap();
 
-// FIRESTORE LIVE
-db.collection("vyjazdy").doc("active").onSnapshot(async doc=>{
+setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
-const idem=document.getElementById("idem");
-const nejdem=document.getElementById("nejdem");
+db.collection("vyjazdy").doc("active").onSnapshot(async doc => {
+    const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
+    const banner = document.getElementById("banner");
+    idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
-idem.innerHTML="";
-nejdem.innerHTML="";
+    if (!doc.exists) {
+        banner.style.display = "none";
+        if(routeLayer) map.removeLayer(routeLayer);
+        if(markerCiel) map.removeLayer(markerCiel);
+        document.getElementById("timer").innerText = "00:00";
+        if(timerInterval) clearInterval(timerInterval);
+        return;
+    }
 
-if(!doc.exists){
-document.getElementById("map-msg").style.display="block";
-document.getElementById("map").style.display="none";
-document.getElementById("banner").style.display="none";
-return;
-}
+    const data = doc.data(), m = data.__metadata || {};
+    if (m.typ) {
+        banner.style.display = "block";
+        document.getElementById("typ").innerText = m.typ;
+        document.getElementById("adresa").innerText = m.miesto || "";
+        document.getElementById("prefix").innerText = m.typ.toLowerCase().includes("poziar") ? "POŽIAR" : "TECHNICKÝ VÝJAZD";
+        
+        if (m.miesto) drawRoute(m.miesto);
+        startTimer(m.timestamp);
+    }
 
-const d=doc.data();
-const m=d.__metadata||{};
-
-document.getElementById("banner").style.display="block";
-document.getElementById("typ").innerText=m.typ||"";
-document.getElementById("adresa").innerText=m.miesto||"";
-
-document.getElementById("map-msg").style.display="none";
-document.getElementById("map").style.display="block";
-
-if(m.miesto) drawRoute(m.miesto);
-
-// timer
-startTimer(m.timestamp||Date.now());
-
-// listy
-Object.keys(d).forEach(k=>{
-if(k==="__metadata")return;
-let div=document.createElement("div");
-div.className="item "+(d[k]==="IDEM"?"idem":"nejdem");
-div.innerText=k;
-(d[k]==="IDEM"?idem:nejdem).appendChild(div);
+    Object.keys(data).forEach(k => {
+        if (k === "__metadata") return;
+        const div = document.createElement("div");
+        div.className = "item " + (data[k] === "IDEM" ? "idem" : "nejdem");
+        div.innerText = k;
+        (data[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
+    });
 });
 
-});
+async function drawRoute(miesto) {
+    try {
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(miesto + ", Slovensko")}`);
+        const geo = await resp.json();
+        if (geo.length > 0) {
+            const ciel = [geo[0].lat, geo[0].lon];
+            const routeResp = await fetch(`https://router.project-osrm.org/route/v1/driving/${hasicaren[1]},${hasicaren[0]};${ciel[1]},${ciel[0]}?overview=full&geometries=geojson`);
+            const routeData = await routeResp.json();
+            
+            if(routeLayer) map.removeLayer(routeLayer);
+            if(markerCiel) map.removeLayer(markerCiel);
 
-// TIMER
-let t;
-function startTimer(start){
-if(t)clearInterval(t);
-t=setInterval(()=>{
-let s=Math.floor((Date.now()-start)/1000);
-document.getElementById("timer").innerText=
-Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
-},1000);
+            routeLayer = L.geoJSON(routeData.routes[0].geometry, { style: { color: '#ff1744', weight: 6, opacity: 0.8 } }).addTo(map);
+            markerCiel = L.marker(ciel).addTo(map).bindPopup("MIESTO ZÁSAHU");
+            
+            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+        }
+    } catch (e) { console.error("Chyba trasy", e); }
+}
+
+function startTimer(s) {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const e = Math.floor((Date.now() - s) / 1000);
+        document.getElementById("timer").innerText = `${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
+        if (e >= 900) autoArchiveAndReset();
+    }, 1000);
+}
+
+async function autoArchiveAndReset() {
+    const docRef = db.collection("vyjazdy").doc("active");
+    const doc = await docRef.get();
+    if (doc.exists) {
+        const data = doc.data();
+        await db.collection("archiv").add({ 
+            ...data, 
+            datum_vyjazdu: new Date().toLocaleDateString("sk-SK"),
+            cas_vyjazdu: new Date().toLocaleTimeString("sk-SK"),
+            timestamp_archiv: Date.now() 
+        });
+        await docRef.delete();
+    }
+}
+
+async function manualReset() {
+    const pw = prompt("Zadaj heslo pre reset a archiváciu:");
+    if (pw === "1122") {
+        if (confirm("Chceš výjazd uzavrieť a uložiť do archívu?")) autoArchiveAndReset();
+    } else if (pw !== null) { alert("Nesprávne heslo!"); }
 }
 </script>
-
 </body>
 </html>
