@@ -82,18 +82,18 @@
 
         #archive-modal{
             position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
-            background:rgba(0,0,0,0.6); backdrop-filter:blur(3px);
+            background:rgba(0,0,0,0.78); backdrop-filter:blur(4px);
         }
         .archive-modal-box{
-            min-width:320px; max-width:90vw; padding:24px 28px; border-radius:10px;
-            background:#111820; border:1px solid #2a313c; text-align:center;
-            box-shadow:0 20px 60px rgba(0,0,0,0.45);
+            min-width:520px; max-width:90vw; padding:38px 46px; border-radius:14px;
+            background:#111820; border:3px solid #ffeb3b; text-align:center;
+            box-shadow:0 24px 70px rgba(0,0,0,0.55);
         }
         .archive-modal-box strong{
-            display:block; font-size:1.6rem; color:var(--yellow); margin-bottom:8px;
+            display:block; font-size:3rem; color:var(--yellow); margin-bottom:12px; text-transform:uppercase;
         }
         .archive-modal-box span{
-            color:#c7d0d9; font-size:1rem;
+            color:#ffffff; font-size:1.4rem; font-weight:700;
         }
 
         @media (max-width: 1024px){
@@ -199,6 +199,10 @@ function logDebug(message, data) {
 
 function showArchiveModal(show) {
     document.getElementById("archive-modal").style.display = show ? "flex" : "none";
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isDesktopMapEnabled() {
@@ -536,6 +540,7 @@ async function autoArchiveActiveRun() {
     }
 
     autoArchiveInProgress = true;
+    const modalShownAt = Date.now();
     showArchiveModal(true);
     logDebug("Spúšťam auto-archiváciu");
 
@@ -575,6 +580,10 @@ async function autoArchiveActiveRun() {
         logDebug("Auto-archivácia zlyhala", error.message || String(error));
         console.error(error);
     } finally {
+        const visibleFor = Date.now() - modalShownAt;
+        if (visibleFor < 3000) {
+            await wait(3000 - visibleFor);
+        }
         showArchiveModal(false);
         autoArchiveInProgress = false;
     }
