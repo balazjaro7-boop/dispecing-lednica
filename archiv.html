@@ -9,6 +9,7 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; text-align: center; margin: 0; }
         .header { background-color: #333; padding: 20px; font-weight: bold; }
+        .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 20px; }
         .entry { background-color: #000; border: 1px solid #444; margin: 10px auto; padding: 15px; max-width: 800px; border-radius: 8px; text-align: left; }
         .date { color: #888; font-size: 14px; }
         .info { color: #ffeb3b; font-size: 18px; font-weight: bold; margin: 8px 0; }
@@ -16,12 +17,20 @@
         .green { color: #4caf50; }
         .red { color: #f44336; }
         .back { display: inline-block; margin: 20px; color: #d32f2f; text-decoration: none; }
+        .danger {
+            display: inline-block; margin: 20px 0; color: #fff; background: #b71c1c;
+            border: 1px solid #ef5350; padding: 10px 16px; border-radius: 6px; cursor: pointer;
+            font-weight: bold;
+        }
         .empty { color: #bbb; margin-top: 30px; }
     </style>
 </head>
 <body>
     <div class="header">KNIHA VÝJAZDOV</div>
-    <a href="index.html" class="back">← Späť na dispečing</a>
+    <div class="actions">
+        <a href="index.html" class="back">← Späť na dispečing</a>
+        <button class="danger" onclick="deleteArchive()">VYMAZAŤ CELÝ ARCHÍV</button>
+    </div>
     <div id="archiv-list">Načítavam archív...</div>
 
 <script>
@@ -30,6 +39,7 @@
         authDomain: "hasici-lednica.firebaseapp.com",
         projectId: "hasici-lednica"
     };
+    const RESET_PIN = "1234";
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -59,6 +69,46 @@
     function getNames(data, primaryKey, fallbackKey) {
         const value = data[primaryKey] || data[fallbackKey];
         return Array.isArray(value) && value.length ? value.join(", ") : "Nikto";
+    }
+
+    async function deleteArchive() {
+        const pin = prompt("Zadaj PIN pre vymazanie archívu:");
+        if (pin === null) {
+            return;
+        }
+
+        if (pin !== RESET_PIN) {
+            alert("Nesprávny PIN.");
+            return;
+        }
+
+        if (!confirm("Naozaj chceš vymazať celý archív?")) {
+            return;
+        }
+
+        try {
+            const snapshot = await db.collection("archiv").get();
+
+            if (snapshot.empty) {
+                alert("Archív je už prázdny.");
+                return;
+            }
+
+            const batchSize = 400;
+            let docs = snapshot.docs.slice();
+
+            while (docs.length) {
+                const batch = db.batch();
+                docs.slice(0, batchSize).forEach((doc) => batch.delete(doc.ref));
+                await batch.commit();
+                docs = docs.slice(batchSize);
+            }
+
+            alert("Archív bol vymazaný.");
+            window.location.reload();
+        } catch (error) {
+            alert("Nepodarilo sa vymazať archív: " + error.message);
+        }
     }
 
     db.collection("archiv").orderBy("datum", "desc").get().then((querySnapshot) => {
