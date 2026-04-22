@@ -71,45 +71,66 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
+// Hodiny
 setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
-// Sledovanie DB
+// Sledovanie DB v reálnom čase
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
     const banner = document.getElementById("banner"), mapFrame = document.getElementById("map-frame"), mapMsg = document.getElementById("map-msg");
-    idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
+    
+    idemDiv.innerHTML = ""; 
+    nejdemDiv.innerHTML = "";
 
     if (!doc.exists) {
-        banner.style.display = "none"; mapFrame.style.display = "none"; mapMsg.style.display = "block";
-        document.getElementById("timer").innerText = "00:00"; if(timerInterval) clearInterval(timerInterval); return;
+        banner.style.display = "none"; 
+        mapFrame.style.display = "none"; 
+        mapMsg.style.display = "block";
+        document.getElementById("timer").innerText = "00:00"; 
+        if(timerInterval) clearInterval(timerInterval); 
+        return;
     }
 
-    const d = doc.data(), m = d.__metadata || {};
+    const d = doc.data();
+    const m = d.__metadata || {};
+
     if (m.typ) {
         banner.style.display = "block";
-        const text = m.typ.toLowerCase();
-        document.getElementById("prefix").innerText = (text.includes("poziar") || text.includes("požiar")) ? "POŽIAR" : "TECHNICKÝ VÝJAZD";
+        const textUdalosti = m.typ.toLowerCase();
+        document.getElementById("prefix").innerText = (textUdalosti.includes("poziar") || textUdalosti.includes("požiar")) ? "POŽIAR" : "TECHNICKÝ VÝJAZD";
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin=Lednica+243&destination=${encodeURIComponent(m.miesto)}&mode=driving`;
+            // Pôvodná trasa z Lednica 243
+            mapFrame.src = `https://www.google.com/maps?saddr=${encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
         }
         startTimer(m.timestamp);
     }
-    Object.keys(d).forEach(k => { if (k !== "__metadata") { const div = document.createElement("div"); div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem"); div.innerText = k; (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div); }});
+
+    // Členovia - spracovanie IDEM/NEJDEM
+    Object.keys(d).forEach(k => {
+        if (k === "__metadata") return;
+        const div = document.createElement("div");
+        div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
+        div.innerText = k;
+        if (d[k] === "IDEM") idemDiv.appendChild(div);
+        else nejdemDiv.appendChild(div);
+    });
 });
 
-// ✅ OPRAVENÝ ČASOVAČ (Reset po 15 minútach)
+// ✅ ČASOVAČ S AUTOMATICKÝM RESETOM (15 MINÚT)
 function startTimer(start) {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - start) / 1000);
+        
+        // Zobrazenie času (Minúty:Sekundy)
         document.getElementById("timer").innerText = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2,"0")}`;
 
-        // 15 minút = 900 sekúnd
+        // Ak prejde 15 minút (900 sekúnd), automaticky vymazať DB
         if (elapsed >= 900) {
             clearInterval(timerInterval);
             db.collection("vyjazdy").doc("active").delete();
@@ -117,11 +138,13 @@ function startTimer(start) {
     }, 1000);
 }
 
-// ✅ RESET S HESLOM (1122)
+// ✅ RESET S HESLOM (1234)
 async function manualReset() {
-    const pw = prompt("Zadaj heslo pre reset:");
-    if (pw === "1122") {
-        if (confirm("Resetovať výjazd?")) await db.collection("vyjazdy").doc("active").delete();
+    const pw = prompt("Zadaj heslo pre reset dispečingu:");
+    if (pw === "1234") {
+        if (confirm("Naozaj vymazať aktuálny výjazd?")) {
+            await db.collection("vyjazdy").doc("active").delete();
+        }
     } else if (pw !== null) {
         alert("Nesprávne heslo!");
     }
