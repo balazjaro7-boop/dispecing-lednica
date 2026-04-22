@@ -8,140 +8,59 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root{
-            --bg:#07090c;
-            --panel:#10141a;
-            --green:#00e676;
-            --gray:#888;
-            --red:#ff1744;
-            --yellow:#ffeb3b;
-            --btn-archiv:#00e676;
-            --btn-reset:#ff1744;
-        }
-
+        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
-        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display: flex; align-items: center; gap: 10px; }
-        .brand img { height: 45px; width: auto; }
-        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
+        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-
-        .btn-action{
-            color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
-            border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold;
-        }
-        .btn-action:first-child { background: var(--btn-archiv); }
-        .btn-action:last-child { background: var(--btn-reset); }
-
-        #banner { 
-            display:none; flex:0 0 auto; padding:12px; text-align:center; 
-            animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
+        .btn-reset{ background:var(--red); color:#fff; border:none; padding:8px 15px; cursor:pointer; font-weight:bold; border-radius:3px; }
+        
+        #banner { display:none; flex:0 0 auto; padding:15px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
+        @keyframes stroboskop { 0% { background:#8b0000; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; } }
         
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
-        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
+        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #222; }
+        #map-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         
-        /* Zmena: map-frame bude teraz IMG (fotka), nie IFRAME */
-        #map-img { width: 100%; height: 100%; object-fit: contain; display: none; background: #1a1e24; }
-        
-        .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
-
-        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
-        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
-        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
-        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:15px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:10px; margin-bottom:15px; }
+        .item{ padding:8px 12px; font-size:1.3rem; font-weight:bold; text-transform:uppercase; border-radius:3px; margin-bottom:8px; }
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
-
-        @media (max-width: 1024px){
-            .main { grid-template-columns: 1fr 1fr; }
-            .map-container { display: none; }
-            .header{ flex-direction:column; padding:10px; gap: 15px; }
-            #banner { white-space: normal; overflow: visible; font-size: 1.4rem; padding: 15px 5px; }
-        }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
-    <div id="timer-container" class="center-timer">
-        <span style="font-size: 0.8rem; color: #888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
-        <span id="timer" style="font-size: 1.8rem; font-weight: bold;">00:00</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:15px;">
+    <div class="brand">DHZ LEDNICA</div>
+    <div class="center-timer">ČAS VÝJAZDU: <span id="timer">00:00</span></div>
+    <div style="display:flex; align-items:center; gap:20px;">
         <div id="clock" class="clock">00:00:00</div>
-        <div style="display:flex; gap:8px;">
-            <a href="archiv.html" class="btn-action">ARCHÍV</a>
-            <button class="btn-action" onclick="manualReset()">RESET</button>
-        </div>
+        <button class="btn-reset" onclick="manualReset()">RESET</button>
     </div>
 </div>
 
 <div id="banner">
-    <div style="font-size:1.8rem; font-weight:900; text-transform:uppercase;">
-        <span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
-    </div>
+    <div style="font-size:2rem; font-weight:900;"><span id="typ"></span> : <span id="adresa"></span></div>
 </div>
 
 <div class="main">
-    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem"></div></div>
     <div class="map-container">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-        <img id="map-img" src="" alt="Mapa výjazdu">
+        <div id="map-msg" style="color:#444; font-weight:bold;">ČAKÁM NA ÚDAJE...</div>
+        <img id="map-img" src="">
     </div>
-    <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
+    <div class="col"><div class="title" style="color:var(--gray);">NEJDEM</div><div id="nejdem"></div></div>
 </div>
 
 <script>
-const firebaseConfig = {
-    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-    authDomain: "hasici-lednica.firebaseapp.com",
-    projectId: "hasici-lednica"
-};
+const firebaseConfig = { apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s", authDomain: "hasici-lednica.firebaseapp.com", projectId: "hasici-lednica" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
 setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
-
-async function spracujVstup() {
-    const params = new URLSearchParams(window.location.search);
-    const u = params.get('udalost'), adr = params.get('miesto'), akc = params.get('akcia'), t = params.get('typ'); 
-    const ref = db.collection("vyjazdy").doc("active");
-
-    if (u) {
-        await ref.set({ __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() } }, { merge: true });
-        sendPushover(u, adr, t);
-        window.history.replaceState({}, '', window.location.pathname);
-    }
-    if (akc) {
-        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
-        if (meno) { localStorage.setItem('h_meno', meno); await ref.set({ [meno]: akc }, { merge: true }); }
-        window.history.replaceState({}, '', window.location.pathname);
-    }
-}
-
-function sendPushover(udalost, miesto, skupinaTyp) {
-    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
-    const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
-    const baseUrl = "https://hasici-lednica.web.app/index.html";
-    
-    const msg = `🔥 <b>${udalost}</b>\n📍 Adresa: ${miesto || "Nezadané"}\n\n` +
-                `_______<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>_______<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>\n\n` +
-                `🗺️ <a href="https://www.google.com/maps/dir/?api=1&origin=Lednica+243&destination=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
-
-    fetch("https://api.pushover.net/1/messages.json", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            token: apiToken, user: groupVyjazd, message: msg, title: `🏠 ${udalost}`, priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1
-        })
-    });
-}
 
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
@@ -156,28 +75,17 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const d = doc.data(), m = d.__metadata || {};
     if (m.typ) {
         banner.style.display = "block";
-        const textUdalosti = m.typ.toLowerCase();
-        const prefixElem = document.getElementById("prefix");
-        
-        if (textUdalosti.includes("nehoda") || textUdalosti.includes("voda") || textUdalosti.includes("vody") || textUdalosti.includes("strom") || textUdalosti.includes("technic")) {
-            prefixElem.innerText = "TECHNICKÝ VÝJAZD";
-        } else {
-            prefixElem.innerText = "POŽIAR";
-        }
-
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
-        
-        if (m.miesto && m.miesto.length > 2) {
+
+        if (m.miesto) {
             mapMsg.style.display = "none";
             mapImg.style.display = "block";
             
-            // ✅ GENERUJE FOTKU TRASY (Lednica 243 -> Cieľ)
-            const start = encodeURIComponent("Lednica 243");
-            const ciel = encodeURIComponent(m.miesto);
-            
-            // Používame statické API Mapy.cz, ktoré vyrobí JPG obrázok trasy
-            mapImg.src = `https://api.mapy.cz/v1/screen?url=${encodeURIComponent('https://mapy.cz/zakladni?q=' + ciel + '&source=route&start=' + start)}`;
+            // ✅ STATICKÁ MAPA (Yandex - nepotrebuje kľúč a funguje všade)
+            // Ukáže bod výjazdu a okolie Lednice
+            const adr = encodeURIComponent(m.miesto + ", Slovensko");
+            mapImg.src = `https://static-maps.yandex.ru/1.x/?lang=sk_SK&ll=18.232,49.111&z=13&l=map&pt=18.2324,49.1111,pm2rdm~${adr},pm2gnm&size=650,450`;
         }
         startTimer(m.timestamp);
     }
@@ -191,16 +99,15 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     });
 });
 
-function startTimer(start) {
+function startTimer(s) {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - start) / 1000);
-        document.getElementById("timer").innerText = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2,"0")}`;
+        const e = Math.floor((Date.now() - s) / 1000);
+        document.getElementById("timer").innerText = `${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
     }, 1000);
 }
 
-async function manualReset() { if (confirm("Resetovať výjazd?")) await db.collection("vyjazdy").doc("active").delete(); }
-window.onload = spracujVstup;
+async function manualReset() { if (confirm("Reset?")) await db.collection("vyjazdy").doc("active").delete(); }
 </script>
 </body>
 </html>
