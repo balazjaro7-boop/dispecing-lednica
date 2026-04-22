@@ -1,232 +1,30 @@
-<!DOCTYPE html>
-<html lang="sk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DHZ Lednica - DISPEČING</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+        : "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    const baseUrl = "https://hasici-lednica.web.app/index.html";
+    const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+    const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
+    const mapsUrl = miesto ? `https://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<style>
-:root{
---bg:#07090c;
---panel:#10141a;
---green:#00e676;
---gray:#888;
---red:#ff1744;
---yellow:#ffeb3b;
---btn-archiv:#00e676;
---btn-reset:#ff1744;
+    fetch("https://api.pushover.net/1/messages.json", {
+        method: "POST",
+    });
 }
 
-body{margin:0;height:100vh;display:flex;flex-direction:column;font-family:Segoe UI;background:var(--bg);color:#fff;overflow:hidden;}
-
-.header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#000;border-bottom:2px solid #222;}
-
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#aaa;}
-.brand img{height:45px;}
-
-.center-timer{font-family:monospace;color:var(--yellow);text-align:center;}
-.clock{font-family:monospace;font-size:1.5rem;font-weight:bold;}
-
-.btn-action{color:#fff;padding:6px 12px;border:1px solid #333;border-radius:3px;cursor:pointer;}
-.btn-action:first-child{background:var(--btn-archiv);}
-.btn-action:last-child{background:var(--btn-reset);}
-
-#banner{display:none;padding:12px;text-align:center;background:#8b0000;}
-
-.main{flex:1;display:grid;grid-template-columns:300px 1fr 300px;gap:10px;padding:10px;}
-
-.map-container{background:var(--panel);border-radius:4px;overflow:hidden;position:relative;}
-#map{width:100%;height:100%;}
-
-.col{background:var(--panel);padding:10px;border-radius:4px;}
-.item{padding:5px;font-weight:bold;}
-.idem{color:var(--green);}
-.nejdem{color:var(--gray);}
-</style>
-</head>
-
-<body>
-
-<div class="header">
-<div class="brand"><img src="logo.png"> DHZ LEDNICA</div>
-
-<div class="center-timer">
-ČAS<br><span id="timer">00:00</span>
-</div>
-
-<div style="display:flex;gap:8px;">
-<a href="archiv.html" class="btn-action">ARCHÍV</a>
-<button class="btn-action" onclick="manualReset()">RESET</button>
-</div>
-</div>
-
-<div id="banner">
-<span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
-</div>
-
-<div class="main">
-<div class="col"><div>IDEM</div><div id="idem"></div></div>
-<div class="map-container"><div id="map"></div></div>
-<div class="col"><div>NEJDEM</div><div id="nejdem"></div></div>
-</div>
-
-<script>
-
-const firebaseConfig = {
-apiKey:"AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-authDomain:"hasici-lednica.firebaseapp.com",
-projectId:"hasici-lednica"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-let map, routeLayer, markerCiel, timerInterval;
-const hasicaren = [49.109077, 18.214097];
-
-function initMap(){
-map = L.map('map').setView(hasicaren,15);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-L.marker(hasicaren).addTo(map).bindPopup("HASIČI");
+function buildMapEmbedUrl(adresa) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(adresa)}&hl=sk&z=16&output=embed`;
 }
 
-async function drawRoute(miesto){
-try{
-const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(miesto+", Slovakia")}`);
-const data = await geo.json();
-if(!data.length) return;
+db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
+    const idemDiv = document.getElementById("idem");
+    const nejdemDiv = document.getElementById("nejdem");
+        if (m.miesto && m.miesto.length > 2) {
+            mapMsg.style.display = "none";
+            mapFrame.style.display = "block";
 
-const ciel = [data[0].lat, data[0].lon];
+            const origin = encodeURIComponent("Lednica 243");
+            const destination = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=${firebaseConfig.apiKey}&origin=${origin}&destination=${destination}&mode=driving`;
+            mapFrame.src = buildMapEmbedUrl(m.miesto);
+        }
 
-const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${hasicaren[1]},${hasicaren[0]};${ciel[1]},${ciel[0]}?overview=full&geometries=geojson`);
-const r = await route.json();
-
-if(routeLayer) map.removeLayer(routeLayer);
-if(markerCiel) map.removeLayer(markerCiel);
-
-routeLayer = L.geoJSON(r.routes[0].geometry,{style:{color:"#ff1744",weight:5}}).addTo(map);
-markerCiel = L.marker(ciel).addTo(map);
-
-map.fitBounds(routeLayer.getBounds(),{padding:[50,50]});
-
-}catch(e){console.log(e);}
-}
-
-async function spracujVstup(){
-const p = new URLSearchParams(window.location.search);
-const u = p.get("udalost");
-const adr = p.get("miesto");
-const akc = p.get("akcia");
-const t = p.get("typ");
-
-const ref = db.collection("vyjazdy").doc("active");
-
-if(u){
-await ref.set({
-__metadata:{
-typ:u,
-miesto:adr||"",
-timestamp:Date.now()
-}
-},{merge:true});
-
-sendPushover(u,adr,t);
-}
-
-if(akc){
-let meno = localStorage.getItem("h_meno") || prompt("Zadaj meno:");
-if(meno){
-localStorage.setItem("h_meno",meno);
-await ref.set({[meno]:akc},{merge:true});
-}
-}
-
-window.history.replaceState({},'',location.pathname);
-}
-
-function sendPushover(u,adr,t){
-const apiToken="arrtgeqpd5uczfjk1x918fgziguqp9";
-const group=(t==="AED")?"gzv839iw4b249tqay7jicqzaw53w42":"g796q69yjbfy1v2e2kc5enwqn57j1x";
-
-fetch("https://api.pushover.net/1/messages.json",{
-method:"POST",
-headers:{"Content-Type":"application/x-www-form-urlencoded"},
-body:new URLSearchParams({
-token:apiToken,
-user:group,
-message:`UDALOSŤ: ${u}\nMIESTO: ${adr}`,
-title:"DHZ LEDNICA",
-priority:2,
-sound:"siren",
-html:1
-})
-});
-}
-
-db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
-const idem=document.getElementById("idem");
-const nejdem=document.getElementById("nejdem");
-idem.innerHTML="";nejdem.innerHTML="";
-
-if(!doc.exists) return;
-
-const d=doc.data();
-const m=d.__metadata||{};
-
-if(m.typ){
-document.getElementById("banner").style.display="block";
-document.getElementById("typ").innerText=m.typ;
-document.getElementById("adresa").innerText=m.miesto||"";
-
-if(m.miesto) drawRoute(m.miesto);
-startTimer(m.timestamp);
-}
-
-Object.keys(d).forEach(k=>{
-if(k==="__metadata") return;
-let div=document.createElement("div");
-div.className="item "+(d[k]==="IDEM"?"idem":"nejdem");
-div.innerText=k;
-(d[k]==="IDEM"?idem:nejdem).appendChild(div);
-});
-});
-
-function startTimer(s){
-if(timerInterval) clearInterval(timerInterval);
-timerInterval=setInterval(()=>{
-const e=Math.floor((Date.now()-s)/1000);
-document.getElementById("timer").innerText=
-`${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
-},1000);
-}
-
-async function manualReset(){
-const h = prompt("Heslo:");
-if(h==="1122"){
-const ref=db.collection("vyjazdy").doc("active");
-const doc=await ref.get();
-
-if(doc.exists){
-await db.collection("archiv").add({
-...doc.data(),
-datum:new Date().toLocaleString("sk-SK")
-});
-await ref.delete();
-}
-}else alert("Zlé heslo!");
-}
-
-window.onload=()=>{
-initMap();
-spracujVstup();
-};
-
-</script>
-</body>
-</html>
+        if (typeof m.timestamp === "number") {
