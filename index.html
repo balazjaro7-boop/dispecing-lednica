@@ -334,13 +334,18 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
-    const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+    const safeMiesto = miesto || "Nezadané";
+    const msg =
+        `<b>${udalost}</b>\n` +
+        `Adresa: ${safeMiesto}\n\n` +
+        `<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;` +
+        `<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
     const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
         message: msg,
-        title: "🚨 DHZ LEDNICA",
+        title: `${skupinaTyp === "AED" ? "🫀" : "🚨"} ${udalost}`,
         priority: 2,
         retry: 60,
         expire: 3600,
