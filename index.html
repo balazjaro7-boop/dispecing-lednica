@@ -102,6 +102,15 @@
             .header{ flex-direction:column; padding:10px; gap:15px; }
             #banner{ white-space:normal; font-size:1.2rem; }
             #debug-panel{ width:auto; }
+            .archive-modal-box{
+                min-width:auto; width:90vw; padding:28px 22px;
+            }
+            .archive-modal-box strong{
+                font-size:2.1rem;
+            }
+            .archive-modal-box span{
+                font-size:1.1rem;
+            }
         }
     </style>
 </head>
@@ -540,8 +549,9 @@ async function autoArchiveActiveRun() {
     }
 
     autoArchiveInProgress = true;
-    const modalShownAt = Date.now();
     showArchiveModal(true);
+    await wait(150);
+    const modalShownAt = Date.now();
     logDebug("Spúšťam auto-archiváciu");
 
     try {
