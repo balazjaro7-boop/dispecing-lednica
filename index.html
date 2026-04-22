@@ -8,29 +8,57 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root{ --bg:#07090c; --panel:#10141a; --green:#00e676; --gray:#888; --red:#ff1744; --yellow:#ffeb3b; }
+        :root{
+            --bg:#07090c;
+            --panel:#10141a;
+            --green:#00e676;
+            --gray:#888;
+            --red:#ff1744;
+            --yellow:#ffeb3b;
+            --btn-archiv:#00e676;
+            --btn-reset:#ff1744;
+        }
+
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display: flex; align-items: center; gap: 10px; }
         .brand img { height: 45px; width: auto; }
         .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
-        .btn-action{ color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem; border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold; }
-        .btn-action:first-child { background: #00e676; }
-        .btn-action:last-child { background: #ff1744; }
-        #banner { display:none; flex:0 0 auto; padding:12px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .btn-action{
+            color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
+            border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold;
+        }
+        .btn-action:first-child { background: var(--btn-archiv); }
+        .btn-action:last-child { background: var(--btn-reset); }
+
+        #banner { 
+            display:none; flex:0 0 auto; padding:12px; text-align:center; 
+            animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
         @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
+        
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
-        #map-frame { width: 100%; height: 100%; border: none; display: none; background: #1a1e24; }
+        #map-frame { width: 100%; height: 100%; border: none; display: none; }
         .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
+
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
         .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
         .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
         .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
-        @media (max-width: 1024px){ .main { grid-template-columns: 1fr 1fr; } .map-container { display: none; } .header{ flex-direction:column; padding:10px; gap: 15px; } #banner { white-space: normal; overflow: visible; font-size: 1.4rem; padding: 15px 5px; } }
+
+        @media (max-width: 1024px){
+            .main { grid-template-columns: 1fr 1fr; }
+            .map-container { display: none; }
+            .header{ flex-direction:column; padding:10px; gap: 15px; }
+            #banner { white-space: normal; font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
@@ -60,77 +88,106 @@
     <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-container">
         <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-        <iframe id="map-frame"></iframe>
+        <iframe id="map-frame" src=""></iframe>
     </div>
     <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
 </div>
 
 <script>
-const firebaseConfig = { apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s", authDomain: "hasici-lednica.firebaseapp.com", projectId: "hasici-lednica" };
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
-// Hodiny
 setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
-// Sledovanie DB v reálnom čase
+async function spracujVstup() {
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get('udalost'), adr = params.get('miesto'), akc = params.get('akcia'), t = params.get('typ'); 
+    const ref = db.collection("vyjazdy").doc("active");
+
+    if (u) {
+        await ref.set({ __metadata: { typ: u, miesto: adr || "", timestamp: Date.now() } }, { merge: true });
+        sendPushover(u, adr, t);
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (akc) {
+        let meno = localStorage.getItem('h_meno') || prompt("Zadaj meno:");
+        if (meno) { localStorage.setItem('h_meno', meno); await ref.set({ [meno]: akc }, { merge: true }); }
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+}
+
+function sendPushover(udalost, miesto, skupinaTyp) {
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    const baseUrl = "https://hasici-lednica.web.app/index.html";
+    const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+    const mapsUrl = miesto ? `https://www.google.com/maps/dir/?api=1&origin=Lednica+243&destination=${encodeURIComponent(miesto)}` : baseUrl;
+
+    fetch("https://api.pushover.net/1/messages.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            token: apiToken, user: groupVyjazd, message: msg, title: "🚨 DHZ LEDNICA", priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1, url: mapsUrl, url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+        })
+    });
+}
+
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
     const banner = document.getElementById("banner"), mapFrame = document.getElementById("map-frame"), mapMsg = document.getElementById("map-msg");
-    
-    idemDiv.innerHTML = ""; 
-    nejdemDiv.innerHTML = "";
+    idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
     if (!doc.exists) {
-        banner.style.display = "none"; 
-        mapFrame.style.display = "none"; 
-        mapMsg.style.display = "block";
-        document.getElementById("timer").innerText = "00:00"; 
-        if(timerInterval) clearInterval(timerInterval); 
-        return;
+        banner.style.display = "none"; mapFrame.style.display = "none"; mapMsg.style.display = "block";
+        document.getElementById("timer").innerText = "00:00"; if(timerInterval) clearInterval(timerInterval); return;
     }
 
-    const d = doc.data();
-    const m = d.__metadata || {};
-
+    const d = doc.data(), m = d.__metadata || {};
     if (m.typ) {
         banner.style.display = "block";
         const textUdalosti = m.typ.toLowerCase();
-        document.getElementById("prefix").innerText = (textUdalosti.includes("poziar") || textUdalosti.includes("požiar")) ? "POŽIAR" : "TECHNICKÝ VÝJAZD";
+        const prefixElem = document.getElementById("prefix");
+        
+        if (textUdalosti.includes("nehoda") || textUdalosti.includes("voda") || textUdalosti.includes("vody") || textUdalosti.includes("strom") || textUdalosti.includes("technic")) {
+            prefixElem.innerText = "TECHNICKÝ VÝJAZD";
+        } else {
+            prefixElem.innerText = "POŽIAR";
+        }
+
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
         
         if (m.miesto && m.miesto.length > 2) {
-            mapMsg.style.display = "none";
-            mapFrame.style.display = "block";
-            // Pôvodná trasa z Lednica 243
-            mapFrame.src = `https://www.google.com/maps?saddr=${encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
+            mapMsg.style.display = "none"; mapFrame.style.display = "block";
+            const origin = encodeURIComponent("Lednica 243");
+            const destination = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://www.google.com/maps/embed/v1/directions?key=${firebaseConfig.apiKey}&origin=${origin}&destination=${destination}&mode=driving`;
         }
         startTimer(m.timestamp);
     }
 
-    // Členovia - spracovanie IDEM/NEJDEM
     Object.keys(d).forEach(k => {
         if (k === "__metadata") return;
         const div = document.createElement("div");
         div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
         div.innerText = k;
-        if (d[k] === "IDEM") idemDiv.appendChild(div);
-        else nejdemDiv.appendChild(div);
+        (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
     });
 });
 
-// ✅ ČASOVAČ S AUTOMATICKÝM RESETOM (15 MINÚT)
 function startTimer(start) {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - start) / 1000);
-        
-        // Zobrazenie času (Minúty:Sekundy)
         document.getElementById("timer").innerText = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2,"0")}`;
-
-        // Ak prejde 15 minút (900 sekúnd), automaticky vymazať DB
+        
+        // AUTOMATICKÝ RESET PO 15 MINÚTACH (900 sekúnd)
         if (elapsed >= 900) {
             clearInterval(timerInterval);
             db.collection("vyjazdy").doc("active").delete();
@@ -138,17 +195,16 @@ function startTimer(start) {
     }, 1000);
 }
 
-// ✅ RESET S HESLOM (1234)
-async function manualReset() {
-    const pw = prompt("Zadaj heslo pre reset dispečingu:");
-    if (pw === "1234") {
-        if (confirm("Naozaj vymazať aktuálny výjazd?")) {
-            await db.collection("vyjazdy").doc("active").delete();
-        }
-    } else if (pw !== null) {
+async function manualReset() { 
+    const pass = prompt("Zadaj heslo pre reset:");
+    if (pass === "1122") {
+        if (confirm("Naozaj vymazať výjazd?")) await db.collection("vyjazdy").doc("active").delete();
+    } else if (pass !== null) {
         alert("Nesprávne heslo!");
     }
 }
+
+window.onload = spracujVstup;
 </script>
 </body>
 </html>
