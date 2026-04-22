@@ -230,7 +230,7 @@ function setMapMessage(message) {
     note.style.display = message ? "block" : "none";
 }
 
-function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds) {
+function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
     const bounds = L.latLngBounds([startCoords, endCoords]);
 
     if (routeBounds && routeBounds.isValid()) {
@@ -241,10 +241,13 @@ function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds) {
         return;
     }
 
+    const isShortRoute = routeDistanceMeters > 0 && routeDistanceMeters <= 1000;
+    const isMediumRoute = routeDistanceMeters > 1000 && routeDistanceMeters <= 5000;
+
     mapInstance.fitBounds(bounds, {
-        paddingTopLeft: [6, 6],
-        paddingBottomRight: [6, 28],
-        maxZoom: 17
+        paddingTopLeft: isShortRoute ? [2, 2] : isMediumRoute ? [6, 6] : [10, 10],
+        paddingBottomRight: isShortRoute ? [2, 18] : isMediumRoute ? [6, 24] : [10, 30],
+        maxZoom: isShortRoute ? 18 : isMediumRoute ? 17 : 16
     });
 }
 
@@ -449,7 +452,7 @@ async function renderRouteToAddress(adresa) {
         startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
         endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
 
-        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds());
+        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
 
         const km = (route.distance / 1000).toFixed(1);
         const min = Math.round(route.duration / 60);
@@ -457,7 +460,7 @@ async function renderRouteToAddress(adresa) {
 
         setTimeout(() => {
             mapInstance.invalidateSize();
-            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds());
+            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
         }, 100);
     } catch (error) {
         if (currentRequest !== activeRouteRequest) {
