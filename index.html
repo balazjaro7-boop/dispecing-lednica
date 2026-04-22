@@ -57,13 +57,7 @@
             .main { grid-template-columns: 1fr 1fr; }
             .map-container { display: none; }
             .header{ flex-direction:column; padding:10px; gap: 15px; }
-            #banner { 
-                white-space: normal; 
-                overflow: visible; 
-                text-overflow: clip;
-                font-size: 1.4rem;
-                padding: 15px 5px;
-            }
+            #banner { white-space: normal; overflow: visible; font-size: 1.4rem; padding: 15px 5px; }
         }
     </style>
 </head>
@@ -132,14 +126,17 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
-    const msg = `<b>UDALOSŤ:</b> ${udalost}\n<b>MIESTO:</b> ${miesto || "Nezadané"}\n\n<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>\n<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
-    const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
+    
+    // Tlačidlá rozťahané do strán pomocou čiar pre lepšie triafanie
+    const msg = `🔥 <b>${udalost}</b>\n📍 Adresa: ${miesto || "Nezadané"}\n\n` +
+                `_______<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>_______<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>\n\n` +
+                `🗺️ <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-            token: apiToken, user: groupVyjazd, message: msg, title: "🚨 DHZ LEDNICA", priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1, url: mapsUrl, url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+            token: apiToken, user: groupVyjazd, message: msg, title: `🏠 ${udalost}`, priority: 2, retry: 60, expire: 3600, sound: "siren", html: 1
         })
     });
 }
@@ -172,11 +169,10 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-
-            const origin = encodeURIComponent("Lednica 243");
-            const destination = encodeURIComponent(m.miesto);
-            // Tu sme použili pôvodný formát z "mapa_OK.txt", ktorý ti kreslil trasu
-            mapFrame.src = `https://maps.google.com/maps?q=${origin}&daddr=${destination}&dirflg=d&output=embed`;
+            // Mapy.cz trasa zo zbrojnice (Lednica 243) do cieľa
+            const startCoord = "18.2324,49.1111"; // Lednica 243
+            const dest = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://frame.mapy.cz/s/route?start=${startCoord}&end=${dest}&type=fast&texture=p`;
         }
         startTimer(m.timestamp);
     }
