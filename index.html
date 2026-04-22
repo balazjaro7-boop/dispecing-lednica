@@ -242,9 +242,9 @@ function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds) {
     }
 
     mapInstance.fitBounds(bounds, {
-        paddingTopLeft: [30, 30],
-        paddingBottomRight: [30, 80],
-        maxZoom: 14
+        paddingTopLeft: [10, 10],
+        paddingBottomRight: [10, 40],
+        maxZoom: 16
     });
 }
 
@@ -337,9 +337,8 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     const safeMiesto = miesto || "Nezadané";
     const msg =
         `<b>${udalost}</b>\n` +
-        `Adresa: ${safeMiesto}\n\n` +
-        `<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;` +
-        `<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+        `Adresa: ${safeMiesto}\n` +
+        `___<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
     const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
     const body = new URLSearchParams({
         token: apiToken,
