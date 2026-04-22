@@ -2,18 +2,16 @@
 <html lang="sk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DHZ Lednica - DISPEČING</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<!-- NOVÉ MAPY -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-/* NIČ NEMENENÉ */
 :root{
 --bg:#07090c;
 --panel:#10141a;
@@ -25,88 +23,61 @@
 --btn-reset:#ff1744;
 }
 
-body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
-.header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
-.brand{ font-size:1.3rem; font-weight:700; color:#aaa; display: flex; align-items: center; gap: 10px; }
-.brand img { height: 45px; width: auto; }
-.center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
-.clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+body{margin:0;height:100vh;display:flex;flex-direction:column;font-family:Segoe UI;background:var(--bg);color:#fff;overflow:hidden;}
 
-.btn-action{
-color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
-border-radius:3px; text-decoration: none; display: inline-block; font-weight: bold;
-}
-.btn-action:first-child { background: var(--btn-archiv); }
-.btn-action:last-child { background: var(--btn-reset); }
+.header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#000;border-bottom:2px solid #222;}
 
-#banner { 
-display:none; flex:0 0 auto; padding:12px; text-align:center; 
-animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; 
-white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#aaa;}
+.brand img{height:45px;}
 
-@keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
+.center-timer{font-family:monospace;color:var(--yellow);text-align:center;}
+.clock{font-family:monospace;font-size:1.5rem;font-weight:bold;}
 
-.main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
+.btn-action{color:#fff;padding:6px 12px;border:1px solid #333;border-radius:3px;cursor:pointer;}
+.btn-action:first-child{background:var(--btn-archiv);}
+.btn-action:last-child{background:var(--btn-reset);}
 
-.map-container { background: var(--panel); border-radius: 4px; overflow: hidden; position: relative; border: 1px solid #222; }
-#map { width:100%; height:100%; display:none; }
+#banner{display:none;padding:12px;text-align:center;background:#8b0000;}
 
-.map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
+.main{flex:1;display:grid;grid-template-columns:300px 1fr 300px;gap:10px;padding:10px;}
 
-.col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
-.title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
-.list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
-.item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
-.idem{ color:var(--green); background:rgba(0,230,118,0.1); }
-.nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+.map-container{background:var(--panel);border-radius:4px;overflow:hidden;position:relative;}
+#map{width:100%;height:100%;}
 
-@media (max-width: 1024px){
-.main { grid-template-columns: 1fr 1fr; }
-.map-container { display: none; }
-.header{ flex-direction:column; padding:10px; gap: 15px; }
-#banner { white-space: normal; font-size: 1.2rem; }
-}
+.col{background:var(--panel);padding:10px;border-radius:4px;}
+.item{padding:5px;font-weight:bold;}
+.idem{color:var(--green);}
+.nejdem{color:var(--gray);}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<div class="brand"><img src="logo.png"><span>DHZ LEDNICA - DISPEČING</span></div>
+<div class="brand"><img src="logo.png"> DHZ LEDNICA</div>
 
-<div id="timer-container" class="center-timer">
-<span style="font-size: 0.8rem; color: #888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
-<span id="timer">00:00</span>
+<div class="center-timer">
+ČAS<br><span id="timer">00:00</span>
 </div>
 
-<div style="display:flex; align-items:center; gap:15px;">
-<div id="clock" class="clock"></div>
-<div style="display:flex; gap:8px;">
+<div style="display:flex;gap:8px;">
 <a href="archiv.html" class="btn-action">ARCHÍV</a>
 <button class="btn-action" onclick="manualReset()">RESET</button>
 </div>
 </div>
-</div>
 
 <div id="banner">
-<div style="font-size:1.8rem; font-weight:900;">
 <span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
-</div>
 </div>
 
 <div class="main">
-<div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
-
-<div class="map-container">
-<div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-<div id="map"></div>
-</div>
-
-<div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
+<div class="col"><div>IDEM</div><div id="idem"></div></div>
+<div class="map-container"><div id="map"></div></div>
+<div class="col"><div>NEJDEM</div><div id="nejdem"></div></div>
 </div>
 
 <script>
+
 const firebaseConfig = {
 apiKey:"AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
 authDomain:"hasici-lednica.firebaseapp.com",
@@ -116,101 +87,146 @@ projectId:"hasici-lednica"
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let timerInterval, map, routeLayer, markerCiel;
+let map, routeLayer, markerCiel, timerInterval;
 const hasicaren = [49.109077, 18.214097];
 
 function initMap(){
 map = L.map('map').setView(hasicaren,15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-L.marker(hasicaren).addTo(map).bindPopup("HASIČSKÁ ZBROJNICA");
+L.marker(hasicaren).addTo(map).bindPopup("HASIČI");
 }
 
 async function drawRoute(miesto){
 try{
-const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(miesto+", Slovensko")}`);
+const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(miesto+", Slovakia")}`);
 const data = await geo.json();
 if(!data.length) return;
 
 const ciel = [data[0].lat, data[0].lon];
 
-const routeResp = await fetch(`https://router.project-osrm.org/route/v1/driving/${hasicaren[1]},${hasicaren[0]};${ciel[1]},${ciel[0]}?overview=full&geometries=geojson`);
-const routeData = await routeResp.json();
+const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${hasicaren[1]},${hasicaren[0]};${ciel[1]},${ciel[0]}?overview=full&geometries=geojson`);
+const r = await route.json();
 
 if(routeLayer) map.removeLayer(routeLayer);
 if(markerCiel) map.removeLayer(markerCiel);
 
-routeLayer = L.geoJSON(routeData.routes[0].geometry,{style:{color:'#ff1744',weight:6}}).addTo(map);
+routeLayer = L.geoJSON(r.routes[0].geometry,{style:{color:"#ff1744",weight:5}}).addTo(map);
 markerCiel = L.marker(ciel).addTo(map);
 
 map.fitBounds(routeLayer.getBounds(),{padding:[50,50]});
 
-}catch(e){}
+}catch(e){console.log(e);}
 }
 
-setInterval(()=>{document.getElementById("clock").innerText=new Date().toLocaleTimeString("sk-SK")},1000);
+async function spracujVstup(){
+const p = new URLSearchParams(window.location.search);
+const u = p.get("udalost");
+const adr = p.get("miesto");
+const akc = p.get("akcia");
+const t = p.get("typ");
+
+const ref = db.collection("vyjazdy").doc("active");
+
+if(u){
+await ref.set({
+__metadata:{
+typ:u,
+miesto:adr||"",
+timestamp:Date.now()
+}
+},{merge:true});
+
+sendPushover(u,adr,t);
+}
+
+if(akc){
+let meno = localStorage.getItem("h_meno") || prompt("Zadaj meno:");
+if(meno){
+localStorage.setItem("h_meno",meno);
+await ref.set({[meno]:akc},{merge:true});
+}
+}
+
+window.history.replaceState({},'',location.pathname);
+}
+
+function sendPushover(u,adr,t){
+const apiToken="arrtgeqpd5uczfjk1x918fgziguqp9";
+const group=(t==="AED")?"gzv839iw4b249tqay7jicqzaw53w42":"g796q69yjbfy1v2e2kc5enwqn57j1x";
+
+fetch("https://api.pushover.net/1/messages.json",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:new URLSearchParams({
+token:apiToken,
+user:group,
+message:`UDALOSŤ: ${u}\nMIESTO: ${adr}`,
+title:"DHZ LEDNICA",
+priority:2,
+sound:"siren",
+html:1
+})
+});
+}
 
 db.collection("vyjazdy").doc("active").onSnapshot(doc=>{
-const idemDiv=document.getElementById("idem"),nejdemDiv=document.getElementById("nejdem");
-const banner=document.getElementById("banner"),mapMsg=document.getElementById("map-msg");
+const idem=document.getElementById("idem");
+const nejdem=document.getElementById("nejdem");
+idem.innerHTML="";nejdem.innerHTML="";
 
-idemDiv.innerHTML="";nejdemDiv.innerHTML="";
+if(!doc.exists) return;
 
-if(!doc.exists){
-banner.style.display="none";
-mapMsg.style.display="block";
-document.getElementById("map").style.display="none";
-return;
-}
-
-const d=doc.data(),m=d.__metadata||{};
+const d=doc.data();
+const m=d.__metadata||{};
 
 if(m.typ){
-banner.style.display="block";
+document.getElementById("banner").style.display="block";
 document.getElementById("typ").innerText=m.typ;
 document.getElementById("adresa").innerText=m.miesto||"";
 
-if(m.miesto){
-mapMsg.style.display="none";
-document.getElementById("map").style.display="block";
-drawRoute(m.miesto);
-}
-
+if(m.miesto) drawRoute(m.miesto);
 startTimer(m.timestamp);
 }
 
 Object.keys(d).forEach(k=>{
 if(k==="__metadata") return;
-const div=document.createElement("div");
+let div=document.createElement("div");
 div.className="item "+(d[k]==="IDEM"?"idem":"nejdem");
 div.innerText=k;
-(d[k]==="IDEM"?idemDiv:nejdemDiv).appendChild(div);
+(d[k]==="IDEM"?idem:nejdem).appendChild(div);
 });
 });
 
-function startTimer(start){
+function startTimer(s){
 if(timerInterval) clearInterval(timerInterval);
 timerInterval=setInterval(()=>{
-const e=Math.floor((Date.now()-start)/1000);
-document.getElementById("timer").innerText=`${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
+const e=Math.floor((Date.now()-s)/1000);
+document.getElementById("timer").innerText=
+`${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
 },1000);
 }
 
 async function manualReset(){
-const heslo = prompt("Heslo:");
-if(heslo==="1122"){
+const h = prompt("Heslo:");
+if(h==="1122"){
 const ref=db.collection("vyjazdy").doc("active");
 const doc=await ref.get();
+
 if(doc.exists){
-await db.collection("archiv").add({...doc.data(),datum:new Date().toLocaleString("sk-SK")});
+await db.collection("archiv").add({
+...doc.data(),
+datum:new Date().toLocaleString("sk-SK")
+});
 await ref.delete();
 }
-}else{
-alert("Zlé heslo!");
-}
+}else alert("Zlé heslo!");
 }
 
-window.onload=()=>{initMap(); spracujVstup();};
+window.onload=()=>{
+initMap();
+spracujVstup();
+};
+
 </script>
-
 </body>
 </html>
