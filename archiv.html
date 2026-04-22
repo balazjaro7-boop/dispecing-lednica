@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARCHÍV VÝJAZDOV - DHZ LEDNICA</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: Arial; background-color: #1a1a1a; color: white; text-align: center; }
+        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; text-align: center; margin: 0; }
         .header { background-color: #333; padding: 20px; font-weight: bold; }
         .entry { background-color: #000; border: 1px solid #444; margin: 10px auto; padding: 15px; max-width: 800px; border-radius: 8px; text-align: left; }
         .date { color: #888; font-size: 14px; }
-        .info { color: #ffeb3b; font-size: 18px; font-weight: bold; margin: 5px 0; }
-        .names { font-size: 16px; }
+        .info { color: #ffeb3b; font-size: 18px; font-weight: bold; margin: 8px 0; }
+        .names { font-size: 16px; line-height: 1.6; }
         .green { color: #4caf50; }
         .red { color: #f44336; }
         .back { display: inline-block; margin: 20px; color: #d32f2f; text-decoration: none; }
+        .empty { color: #bbb; margin-top: 30px; }
     </style>
 </head>
 <body>
@@ -24,35 +25,70 @@
     <div id="archiv-list">Načítavam archív...</div>
 
 <script>
-    // TU PONECHAJ SVOJU KONFIGURÁCIU
     const firebaseConfig = {
-        apiKey: "TVOJ_API_KEY",
+        apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
         authDomain: "hasici-lednica.firebaseapp.com",
-        projectId: "hasici-lednica",
-        storageBucket: "hasici-lednica.appspot.com",
-        messagingSenderId: "747340639310",
-        appId: "TVOJE_APP_ID"
+        projectId: "hasici-lednica"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    function formatArchiveDate(value, fallbackDate, fallbackTime) {
+        if (value && typeof value.toDate === "function") {
+            return value.toDate().toLocaleString("sk-SK");
+        }
+
+        if (fallbackDate || fallbackTime) {
+            return [fallbackDate || "", fallbackTime || ""].join(" ").trim();
+        }
+
+        return "Neznámy čas";
+    }
+
+    function getInfoText(data) {
+        if (data.info) {
+            return data.info;
+        }
+
+        return [data.udalost || "", data.podtyp || "", data.adresa || ""]
+            .filter(Boolean)
+            .join(" - ") || "Bez detailov";
+    }
+
+    function getNames(data, primaryKey, fallbackKey) {
+        const value = data[primaryKey] || data[fallbackKey];
+        return Array.isArray(value) && value.length ? value.join(", ") : "Nikto";
+    }
+
     db.collection("archiv").orderBy("datum", "desc").get().then((querySnapshot) => {
         const listDiv = document.getElementById("archiv-list");
         listDiv.innerHTML = "";
+
+        if (querySnapshot.empty) {
+            listDiv.innerHTML = '<div class="empty">Archív je zatiaľ prázdny.</div>';
+            return;
+        }
+
         querySnapshot.forEach((doc) => {
             const d = doc.data();
-            const date = d.datum ? d.datum.toDate().toLocaleString('sk-SK') : "Neznámy čas";
+            const date = formatArchiveDate(d.datum, d.datumText, d.cas);
+            const info = getInfoText(d);
+            const isli = getNames(d, "isli", "idem");
+            const nejdli = getNames(d, "nejdli", "nejdem");
+
             listDiv.innerHTML += `
                 <div class="entry">
                     <div class="date">${date}</div>
-                    <div class="info">${d.info}</div>
+                    <div class="info">${info}</div>
                     <div class="names">
-                        <span class="green">✔ IDEM:</span> ${d.isli.join(", ") || "Nikto"} <br>
-                        <span class="red">✖ NEJDEM:</span> ${d.nejdli.join(", ") || "Nikto"}
+                        <span class="green">✔ IDEM:</span> ${isli}<br>
+                        <span class="red">✖ NEJDEM:</span> ${nejdli}
                     </div>
                 </div>`;
         });
+    }).catch((error) => {
+        document.getElementById("archiv-list").innerHTML = `<div class="empty">Nepodarilo sa načítať archív: ${error.message}</div>`;
     });
 </script>
 </body>
