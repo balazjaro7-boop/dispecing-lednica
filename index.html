@@ -43,7 +43,10 @@
         
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
         .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
-        #map-frame { width: 100%; height: 100%; border: none; display: none; }
+        
+        /* Zmena: map-frame bude teraz IMG (fotka), nie IFRAME */
+        #map-img { width: 100%; height: 100%; object-fit: contain; display: none; background: #1a1e24; }
+        
         .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
 
         .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
@@ -88,7 +91,7 @@
     <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-container">
         <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-        <iframe id="map-frame" src=""></iframe>
+        <img id="map-img" src="" alt="Mapa výjazdu">
     </div>
     <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
 </div>
@@ -127,10 +130,9 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
     
-    // Špeciálne formátované správy pre Pushover s veľkými tlačidlami
     const msg = `🔥 <b>${udalost}</b>\n📍 Adresa: ${miesto || "Nezadané"}\n\n` +
                 `_______<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>_______<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>\n\n` +
-                `🗺️ <a href="http://googleusercontent.com/maps.google.com/9{encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
+                `🗺️ <a href="https://www.google.com/maps/dir/?api=1&origin=Lednica+243&destination=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -143,11 +145,11 @@ function sendPushover(udalost, miesto, skupinaTyp) {
 
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
-    const banner = document.getElementById("banner"), mapFrame = document.getElementById("map-frame"), mapMsg = document.getElementById("map-msg");
+    const banner = document.getElementById("banner"), mapImg = document.getElementById("map-img"), mapMsg = document.getElementById("map-msg");
     idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
     if (!doc.exists) {
-        banner.style.display = "none"; mapFrame.style.display = "none"; mapMsg.style.display = "block";
+        banner.style.display = "none"; mapImg.style.display = "none"; mapMsg.style.display = "block";
         document.getElementById("timer").innerText = "00:00"; if(timerInterval) clearInterval(timerInterval); return;
     }
 
@@ -168,9 +170,14 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
-            mapFrame.style.display = "block";
-            // ✅ Použitie tvojho overeného formátu mapy
-            mapFrame.src = `https://www.google.com/maps/search/?api=1&query=$0{encodeURIComponent("Lednica 243")}&daddr=${encodeURIComponent(m.miesto)}&dirflg=d&output=embed`;
+            mapImg.style.display = "block";
+            
+            // ✅ GENERUJE FOTKU TRASY (Lednica 243 -> Cieľ)
+            const start = encodeURIComponent("Lednica 243");
+            const ciel = encodeURIComponent(m.miesto);
+            
+            // Používame statické API Mapy.cz, ktoré vyrobí JPG obrázok trasy
+            mapImg.src = `https://api.mapy.cz/v1/screen?url=${encodeURIComponent('https://mapy.cz/zakladni?q=' + ciel + '&source=route&start=' + start)}`;
         }
         startTimer(m.timestamp);
     }
