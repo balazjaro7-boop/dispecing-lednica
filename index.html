@@ -230,6 +230,24 @@ function setMapMessage(message) {
     note.style.display = message ? "block" : "none";
 }
 
+function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds) {
+    const bounds = L.latLngBounds([startCoords, endCoords]);
+
+    if (routeBounds && routeBounds.isValid()) {
+        bounds.extend(routeBounds);
+    }
+
+    if (!bounds.isValid()) {
+        return;
+    }
+
+    mapInstance.fitBounds(bounds, {
+        paddingTopLeft: [30, 30],
+        paddingBottomRight: [30, 80],
+        maxZoom: 14
+    });
+}
+
 function clearRoute() {
     if (!map) {
         return;
@@ -427,7 +445,7 @@ async function renderRouteToAddress(adresa) {
         startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
         endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
 
-        mapInstance.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds());
 
         const km = (route.distance / 1000).toFixed(1);
         const min = Math.round(route.duration / 60);
@@ -435,6 +453,7 @@ async function renderRouteToAddress(adresa) {
 
         setTimeout(() => {
             mapInstance.invalidateSize();
+            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds());
         }, 100);
     } catch (error) {
         if (currentRequest !== activeRouteRequest) {
