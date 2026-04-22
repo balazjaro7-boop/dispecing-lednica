@@ -129,7 +129,7 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     
     const msg = `🔥 <b>${udalost}</b>\n📍 Adresa: ${miesto || "Nezadané"}\n\n` +
                 `_______<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>_______<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>\n\n` +
-                `🗺️ <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
+                `🗺️ <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -168,8 +168,11 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            // Oficiálny Google Embed mód, ktorý funguje bez blokovania na TV
-            mapFrame.src = `https://www.google.com/maps/embed/v1/place?key=AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s&q=${encodeURIComponent(m.miesto)}`;
+            // Mapy.cz "oklamané" cez ich widget, ktorý je povolený.
+            // Nastavená trasa zo zbrojnice (Lednica 243) do cieľa.
+            const startPoint = encodeURIComponent("Lednica 243");
+            const endPoint = encodeURIComponent(m.miesto);
+            mapFrame.src = `https://share.mapy.cz/s/route?start=${startPoint}&end=${endPoint}&type=fast`;
         }
         startTimer(m.timestamp);
     }
