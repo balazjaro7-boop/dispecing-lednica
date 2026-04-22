@@ -12,20 +12,22 @@
         body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
         .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
         .brand{ font-size:1.3rem; font-weight:700; color:#aaa; }
-        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align: center; }
+        .center-timer{ font-size:1.6rem; font-family:monospace; color:var(--yellow); text-align: center; line-height: 1.2; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
         .btn-reset{ background:var(--red); color:#fff; border:none; padding:8px 15px; cursor:pointer; font-weight:bold; border-radius:3px; }
         
-        #banner { display:none; flex:0 0 auto; padding:15px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
-        @keyframes stroboskop { 0% { background:#8b0000; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; } }
+        #banner { display:none; flex:0 0 auto; padding:12px; text-align:center; animation:stroboskop 0.8s infinite; border-bottom:2px solid #000; }
+        @keyframes stroboskop { 0% { background:#8b0000; color:#fff; } 50% { background:#ffeb3b; color:#000; } 100% { background:#8b0000; color:#fff; } }
         
         .main{ flex:1; display:grid; grid-template-columns: 300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
-        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #222; }
-        #map-img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:15px; overflow:hidden; }
-        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:10px; margin-bottom:15px; }
-        .item{ padding:8px 12px; font-size:1.3rem; font-weight:bold; text-transform:uppercase; border-radius:3px; margin-bottom:8px; }
+        .map-container { background: var(--panel); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px solid #222; }
+        #map-frame { width: 100%; height: 100%; border: none; display: none; }
+        .map-placeholder { font-size: 1.2rem; color: #444; text-align: center; font-weight: bold; }
+
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
         .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
         .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
     </style>
@@ -34,41 +36,49 @@
 
 <div class="header">
     <div class="brand">DHZ LEDNICA</div>
-    <div class="center-timer">ČAS VÝJAZDU: <span id="timer">00:00</span></div>
-    <div style="display:flex; align-items:center; gap:20px;">
+    <div class="center-timer">ČAS VÝJAZDU<br><span id="timer">00:00</span></div>
+    <div style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <button class="btn-reset" onclick="manualReset()">RESET</button>
     </div>
 </div>
 
 <div id="banner">
-    <div style="font-size:2rem; font-weight:900;"><span id="typ"></span> : <span id="adresa"></span></div>
+    <div style="font-size:1.8rem; font-weight:900; text-transform:uppercase;">
+        VÝJAZD : <span id="typ"></span> : <span id="adresa"></span>
+    </div>
 </div>
 
 <div class="main">
-    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem"></div></div>
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-container">
-        <div id="map-msg" style="color:#444; font-weight:bold;">ČAKÁM NA ÚDAJE...</div>
-        <img id="map-img" src="">
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <iframe id="map-frame"></iframe>
     </div>
-    <div class="col"><div class="title" style="color:var(--gray);">NEJDEM</div><div id="nejdem"></div></div>
+    <div class="col"><div class="title" style="color:var(--gray);">NEJDEM</div><div id="nejdem" class="list"></div></div>
 </div>
 
 <script>
-const firebaseConfig = { apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s", authDomain: "hasici-lednica.firebaseapp.com", projectId: "hasici-lednica" };
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let timerInterval;
 
+// Reálny čas na hodinách
 setInterval(() => { document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK"); }, 1000);
 
+// Sledovanie zmeny v databáze
 db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     const idemDiv = document.getElementById("idem"), nejdemDiv = document.getElementById("nejdem");
-    const banner = document.getElementById("banner"), mapImg = document.getElementById("map-img"), mapMsg = document.getElementById("map-msg");
+    const banner = document.getElementById("banner"), mapFrame = document.getElementById("map-frame"), mapMsg = document.getElementById("map-msg");
     idemDiv.innerHTML = ""; nejdemDiv.innerHTML = "";
 
     if (!doc.exists) {
-        banner.style.display = "none"; mapImg.style.display = "none"; mapMsg.style.display = "block";
+        banner.style.display = "none"; mapFrame.style.display = "none"; mapMsg.style.display = "block";
         document.getElementById("timer").innerText = "00:00"; if(timerInterval) clearInterval(timerInterval); return;
     }
 
@@ -77,15 +87,12 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         banner.style.display = "block";
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
-
-        if (m.miesto) {
+        
+        if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
-            mapImg.style.display = "block";
-            
-            // ✅ STATICKÁ MAPA (Yandex - nepotrebuje kľúč a funguje všade)
-            // Ukáže bod výjazdu a okolie Lednice
-            const adr = encodeURIComponent(m.miesto + ", Slovensko");
-            mapImg.src = `https://static-maps.yandex.ru/1.x/?lang=sk_SK&ll=18.232,49.111&z=13&l=map&pt=18.2324,49.1111,pm2rdm~${adr},pm2gnm&size=650,450`;
+            mapFrame.style.display = "block";
+            // Použitie DuckDuckGo máp ako základného riešenia (bez blokovania)
+            mapFrame.src = `https://duckduckgo.com/assets/icons/map.svg?q=${encodeURIComponent(m.miesto)}&ia=maps&iaxm=maps`;
         }
         startTimer(m.timestamp);
     }
@@ -99,15 +106,35 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
     });
 });
 
-function startTimer(s) {
+// Časovač s automatickým resetom po 15 minútach
+function startTimer(start) {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
-        const e = Math.floor((Date.now() - s) / 1000);
-        document.getElementById("timer").innerText = `${Math.floor(e/60)}:${(e%60).toString().padStart(2,"0")}`;
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        
+        // Zobrazenie času
+        document.getElementById("timer").innerText = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2,"0")}`;
+
+        // ✅ AUTOMATICKÝ RESET PO 15 MINÚTACH (900 sekúnd)
+        if (elapsed >= 900) {
+            clearInterval(timerInterval);
+            db.collection("vyjazdy").doc("active").delete();
+        }
     }, 1000);
 }
 
-async function manualReset() { if (confirm("Reset?")) await db.collection("vyjazdy").doc("active").delete(); }
+// ✅ MANUÁLNY RESET CHRÁNENÝ HESLOM
+async function manualReset() {
+    const heslo = prompt("Zadaj heslo pre RESET:");
+    
+    if (heslo === "1122") { // <--- Tu si môžeš zmeniť heslo
+        if (confirm("Naozaj vymazať aktuálny výjazd?")) {
+            await db.collection("vyjazdy").doc("active").delete();
+        }
+    } else if (heslo !== null) {
+        alert("Nesprávne heslo!");
+    }
+}
 </script>
 </body>
 </html>
