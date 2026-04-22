@@ -129,7 +129,7 @@ function sendPushover(udalost, miesto, skupinaTyp) {
     
     const msg = `🔥 <b>${udalost}</b>\n📍 Adresa: ${miesto || "Nezadané"}\n\n` +
                 `_______<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>_______<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>\n\n` +
-                `🗺️ <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
+                `🗺️ <a href="https://maps.google.com/maps?saddr=${encodeURIComponent(miesto)}">SPUSTIŤ NAVIGÁCIU</a>`;
 
     fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -168,11 +168,10 @@ db.collection("vyjazdy").doc("active").onSnapshot(doc => {
         if (m.miesto && m.miesto.length > 2) {
             mapMsg.style.display = "none";
             mapFrame.style.display = "block";
-            // Mapy.cz "oklamané" cez ich widget, ktorý je povolený.
-            // Nastavená trasa zo zbrojnice (Lednica 243) do cieľa.
-            const startPoint = encodeURIComponent("Lednica 243");
-            const endPoint = encodeURIComponent(m.miesto);
-            mapFrame.src = `https://share.mapy.cz/s/route?start=${startPoint}&end=${endPoint}&type=fast`;
+            // Použijeme Bing Maps Embed, ktorý je pre TV stabilný a ukazuje trasu
+            // Štart: Lednica 243, Cieľ: dynamická adresa
+            const q = encodeURIComponent(`from:Lednica 243 to:${m.miesto}`);
+            mapFrame.src = `https://www.bing.com/maps/embed?h=600&w=800&cp=49.1111~18.2324&lvl=13&typ=d&sty=r&src=shell&FORM=MBEDV8&query=${q}`;
         }
         startTimer(m.timestamp);
     }
