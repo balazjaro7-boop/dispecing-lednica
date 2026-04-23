@@ -119,6 +119,17 @@
             font-weight:900;
             background:linear-gradient(180deg, #223040, #16202b);
             border:1px solid rgba(255,255,255,0.08);
+            cursor:pointer;
+        }
+
+        button.btn-link{
+            font-family:inherit;
+            font-size:1rem;
+        }
+
+        .btn-link-danger{
+            background:linear-gradient(180deg, #ff4166, #d60d37);
+            border-color:rgba(255,255,255,0.1);
         }
 
         .page{
@@ -457,7 +468,8 @@
     <div class="header-right">
         <div id="mode-pill" class="mode-pill">TV REŽIM</div>
         <div id="clock" class="clock">00:00:00</div>
-        <a id="dispatch-link" href="index.html?tv=1" class="btn-link">DISPEČING</a>
+        <a id="dispatch-link" href="./?tv=1" class="btn-link">DISPEČING</a>
+        <button id="archive-reset-btn" class="btn-link btn-link-danger" type="button" onclick="resetArchive()">RESET ARCHÍVU</button>
     </div>
 </div>
 
@@ -503,6 +515,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const RESET_PIN = "1234";
 
 function normalizeSearch(search) {
     if (!search) {
@@ -575,7 +588,64 @@ function buildPersistentParams() {
 
 function configureNavigation() {
     const params = buildPersistentParams();
-    document.getElementById("dispatch-link").href = `index.html?${params.toString()}`;
+    document.getElementById("dispatch-link").href = `./?${params.toString()}`;
+}
+
+async function deleteArchiveBatch(batchSize = 200) {
+    while (true) {
+        const snapshot = await db.collection("archiv").limit(batchSize).get();
+
+        if (snapshot.empty) {
+            return;
+        }
+
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+
+        if (snapshot.size < batchSize) {
+            return;
+        }
+    }
+}
+
+async function resetArchive() {
+    const pin = prompt("Zadaj PIN pre reset archívu:");
+    if (pin === null) {
+        return;
+    }
+
+    if (pin !== RESET_PIN) {
+        alert("Nesprávny PIN.");
+        logDebug("Reset archívu zamietnutý", "Nesprávny PIN");
+        return;
+    }
+
+    if (!confirm("Naozaj chceš vymazať celý archív?")) {
+        return;
+    }
+
+    const button = document.getElementById("archive-reset-btn");
+    const originalText = button.innerText;
+
+    button.disabled = true;
+    button.innerText = "MAŽEM ARCHÍV...";
+
+    try {
+        await deleteArchiveBatch();
+        logDebug("Archív bol vymazaný");
+        alert("Archív bol vymazaný.");
+    } catch (error) {
+        logDebug("Reset archívu zlyhal", error.message || String(error));
+        console.error(error);
+        alert("Reset archívu zlyhal.");
+    } finally {
+        button.disabled = false;
+        button.innerText = originalText;
+    }
 }
 
 function getDispatchCategory(udalost, podtyp) {
