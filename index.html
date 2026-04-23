@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DHZ Lednica - DISPECING</title>
+    <title>DHZ Lednica - DISPEČING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -128,9 +128,9 @@
 <body>
 
 <div class="header">
-    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPECING</span></div>
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
     <div id="timer-container" class="center-timer">
-        <span style="font-size:0.8rem; color:#888;">CAS OD VYHLASENIA UDALOSTI</span><br>
+        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
         <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
     </div>
     <div class="toolbar" style="gap:15px;">
@@ -152,7 +152,7 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">CAKAM NA ADRESU VYJAZDU...</div>
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
         <div id="map"></div>
         <div id="map-note" class="map-note"></div>
     </div>
@@ -166,8 +166,8 @@
 
 <div id="archive-modal">
     <div class="archive-modal-box">
-        <strong>Ukladam vyjazd</strong>
-        <span>Cakaj chvilu, prebieha presun do archivu...</span>
+        <strong>Ukladám výjazd</strong>
+        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
     </div>
 </div>
 
@@ -507,10 +507,10 @@ function getDispatchCategory(udalost, podtyp) {
         text.includes("strom") ||
         text.includes("technic")
     ) {
-        return "TECHNICKY VYJAZD";
+        return "TECHNICKÝ VÝJAZD";
     }
 
-    return "POZIAR";
+    return "POŽIAR";
 }
 
 function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
@@ -638,7 +638,7 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         sound: "persistent",
         html: 1,
         url: mapsUrl,
-        url_title: "SPUSTIT NAVIGACIU"
+        url_title: "SPUSTIŤ NAVIGÁCIU"
     });
 
     logDebug("Odosielam Pushover", { skupinaTyp, miesto });
@@ -753,7 +753,7 @@ async function renderRouteToAddress(adresa) {
 
         mapElement.style.display = "none";
         mapMsg.style.display = "flex";
-        mapMsg.innerText = "NEPODARILO SA NACITAT TRASU.";
+        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
         setMapMessage("");
         logDebug("Chyba mapy", error.message || String(error));
         console.error(error);
