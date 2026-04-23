@@ -268,6 +268,39 @@
             gap:18px;
         }
 
+        .mobile-footer-actions{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+            margin-top:4px;
+            padding-top:4px;
+        }
+
+        .mobile-footer-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-height:58px;
+            padding:12px 14px;
+            border:none;
+            border-radius:16px;
+            color:#fff;
+            text-decoration:none;
+            font-size:1.05rem;
+            font-weight:900;
+            cursor:pointer;
+        }
+
+        .mobile-footer-btn-archive{
+            background:linear-gradient(180deg, #31a9ff, #146fd4);
+            box-shadow:0 14px 34px rgba(49,169,255,0.22);
+        }
+
+        .mobile-footer-btn-reset{
+            background:linear-gradient(180deg, #ff4166, #d60d37);
+            box-shadow:0 14px 34px rgba(255,23,68,0.24);
+        }
+
         .mobile-field{
             display:flex;
             flex-direction:column;
@@ -484,8 +517,125 @@
             font-weight:700;
         }
 
+        .selector-view{
+            display:none;
+            flex:1;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            background:
+                radial-gradient(circle at top right, rgba(56,207,255,0.08), transparent 28%),
+                radial-gradient(circle at top left, rgba(255,23,68,0.08), transparent 24%),
+                var(--bg);
+        }
+
+        .selector-card{
+            width:min(760px, 100%);
+            padding:28px;
+            border-radius:22px;
+            border:1px solid #263241;
+            background:linear-gradient(180deg, rgba(21,29,38,0.98), rgba(10,14,19,0.98));
+            box-shadow:0 24px 70px rgba(0,0,0,0.4);
+            text-align:center;
+        }
+
+        .selector-logo{
+            width:auto;
+            height:74px;
+        }
+
+        .selector-kicker{
+            margin-top:16px;
+            color:var(--yellow);
+            font-size:0.88rem;
+            font-weight:900;
+            letter-spacing:0.12em;
+            text-transform:uppercase;
+        }
+
+        .selector-title{
+            margin-top:10px;
+            font-size:2rem;
+            font-weight:900;
+            line-height:1.1;
+            text-transform:uppercase;
+        }
+
+        .selector-text{
+            margin-top:12px;
+            color:#d2dae4;
+            font-size:1rem;
+            line-height:1.6;
+        }
+
+        .selector-actions{
+            margin-top:24px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+
+        .selector-btn{
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            min-height:144px;
+            padding:18px;
+            border-radius:20px;
+            text-decoration:none;
+            color:#fff;
+            font-weight:900;
+            border:1px solid rgba(255,255,255,0.08);
+            box-shadow:0 18px 46px rgba(0,0,0,0.22);
+        }
+
+        .selector-btn strong{
+            font-size:1.28rem;
+            letter-spacing:0.04em;
+        }
+
+        .selector-btn span{
+            display:block;
+            margin-top:10px;
+            color:rgba(255,255,255,0.88);
+            font-size:0.95rem;
+            line-height:1.45;
+            font-weight:700;
+        }
+
+        .selector-btn-tv{
+            background:linear-gradient(180deg, #2db4ff, #156ed6);
+        }
+
+        .selector-btn-mobile{
+            background:linear-gradient(180deg, #0de57d, #00b35b);
+        }
+
+        .selector-note{
+            margin-top:18px;
+            color:#8e9cab;
+            font-size:0.92rem;
+            font-weight:700;
+        }
+
         body.mode-mobile{
             overflow:auto;
+        }
+
+        body.mode-selector{
+            overflow:auto;
+        }
+
+        body.mode-selector .header,
+        body.mode-selector #banner,
+        body.mode-selector .main,
+        body.mode-selector #mobile-view{
+            display:none !important;
+        }
+
+        body.mode-selector .selector-view{
+            display:flex;
         }
 
         body.mode-mobile .main,
@@ -515,7 +665,7 @@
         body.mode-mobile .header-meta{
             width:100%;
             display:flex;
-            justify-content:space-between;
+            justify-content:center;
             align-items:center;
         }
 
@@ -525,6 +675,8 @@
 
         body.mode-mobile .clock{
             font-size:1.45rem;
+            width:100%;
+            text-align:center;
         }
 
         body.mode-tv .map-shell{
@@ -564,10 +716,20 @@
         }
 
         @media (max-width: 720px){
+            .selector-actions,
             .mobile-actions,
+            .mobile-footer-actions,
             .mobile-summary-grid,
             .mobile-list-grid{
                 grid-template-columns:1fr;
+            }
+
+            .selector-card{
+                padding:24px 18px;
+            }
+
+            .selector-title{
+                font-size:1.65rem;
             }
 
             .mobile-typ{ font-size:1.45rem; }
@@ -576,6 +738,29 @@
     </style>
 </head>
 <body>
+
+<div id="selector-view" class="selector-view">
+    <div class="selector-card">
+        <img class="selector-logo" src="logo.png" alt="DHZ">
+        <div class="selector-kicker">Výber zobrazenia</div>
+        <div class="selector-title">DHZ Lednica - Dispečing</div>
+        <div class="selector-text">
+            Vyber si režim, v ktorom chceš web otvoriť.
+            TV verzia zobrazuje veľký dispečing s mapou a mobilná verzia slúži na rýchlu odpoveď IDEM / NEJDEM.
+        </div>
+        <div class="selector-actions">
+            <a id="selector-tv-link" class="selector-btn selector-btn-tv" href="?tv=1">
+                <strong>TV VERZIA</strong>
+                <span>Veľké zobrazenie s mapou trasy udalosti.</span>
+            </a>
+            <a id="selector-mobile-link" class="selector-btn selector-btn-mobile" href="?mobil=1">
+                <strong>MOBILNÁ VERZIA</strong>
+                <span>Mobilné ovládanie s odpoveďou IDEM alebo NEJDEM.</span>
+            </a>
+        </div>
+        <div class="selector-note">Po otvorení bez parametrov sa vždy zobrazí tento výber.</div>
+    </div>
+</div>
 
 <div class="header">
     <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
@@ -586,7 +771,7 @@
     <div class="header-meta" style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <div class="header-actions" style="display:flex; gap:8px;">
-            <a id="archive-link" href="archiv.html?tv=1" class="btn-action">ARCHÍV</a>
+            <a id="archive-link" href="archive.html?tv=1" class="btn-action">ARCHÍV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
     </div>
@@ -607,7 +792,6 @@
             <div id="mobile-adresa" class="mobile-adresa">Po vyhlásení výjazdu sa tu zobrazí typ a adresa udalosti.</div>
             <div class="mobile-toolbar">
                 <a id="mobile-map-link" class="mobile-link" href="#" target="_blank" rel="noopener" aria-disabled="true">OTVORIŤ NAVIGÁCIU</a>
-                <a id="mobile-archive-link" class="mobile-link" href="archiv.html?mobil=1">ARCHÍV</a>
             </div>
         </div>
         <div class="mobile-body">
@@ -643,6 +827,11 @@
                     <div class="mobile-list-title nejdem">NEJDEM</div>
                     <div id="mobile-nejdem-list" class="mobile-name-list"></div>
                 </div>
+            </div>
+
+            <div class="mobile-footer-actions">
+                <a id="mobile-bottom-archive-link" class="mobile-footer-btn mobile-footer-btn-archive" href="archive.html?mobil=1">ARCHÍV</a>
+                <button class="mobile-footer-btn mobile-footer-btn-reset" type="button" onclick="manualReset()">RESET</button>
             </div>
         </div>
     </div>
@@ -684,7 +873,7 @@ const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
-const APP_BASE_URL = "https://hasici-lednica.web.app/index.html";
+const APP_BASE_URL = "https://hasici-lednica.web.app";
 
 let timerInterval = null;
 let map = null;
@@ -707,8 +896,13 @@ function normalizeSearch(search) {
 const normalizedSearch = normalizeSearch(window.location.search);
 const urlParams = new URLSearchParams(normalizedSearch);
 const DEBUG_MODE = urlParams.get("debug") === "1";
-const IS_MOBILE_MODE = urlParams.get("mobil") === "1";
-const IS_TV_MODE = !IS_MOBILE_MODE && urlParams.get("tv") === "1";
+const HAS_EXPLICIT_MOBILE_MODE = urlParams.get("mobil") === "1";
+const HAS_EXPLICIT_TV_MODE = urlParams.get("tv") === "1";
+const HAS_ACTION_QUERY = urlParams.has("akcia");
+const HAS_EVENT_QUERY = urlParams.has("udalost") || urlParams.has("miesto") || urlParams.has("typ");
+const IS_MOBILE_MODE = HAS_EXPLICIT_MOBILE_MODE || (!HAS_EXPLICIT_TV_MODE && HAS_ACTION_QUERY);
+const IS_TV_MODE = !IS_MOBILE_MODE && (HAS_EXPLICIT_TV_MODE || HAS_EVENT_QUERY);
+const IS_SELECTOR_MODE = !IS_MOBILE_MODE && !IS_TV_MODE;
 
 if (normalizedSearch && normalizedSearch !== window.location.search) {
     window.history.replaceState({}, "", `${window.location.pathname}${normalizedSearch}${window.location.hash}`);
@@ -717,6 +911,7 @@ if (normalizedSearch && normalizedSearch !== window.location.search) {
 applyModeClass();
 initializeMobileForm();
 configureArchiveLink();
+configureSelectorLinks();
 
 setInterval(() => {
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
@@ -741,11 +936,14 @@ function logDebug(message, data) {
 }
 
 function applyModeClass() {
+    document.body.classList.toggle("mode-selector", IS_SELECTOR_MODE);
     document.body.classList.toggle("mode-mobile", IS_MOBILE_MODE);
     document.body.classList.toggle("mode-tv", IS_TV_MODE);
-    document.body.classList.toggle("mode-default", !IS_MOBILE_MODE && !IS_TV_MODE);
+    document.body.classList.toggle("mode-default", !IS_SELECTOR_MODE && !IS_MOBILE_MODE && !IS_TV_MODE);
 
-    if (IS_MOBILE_MODE) {
+    if (IS_SELECTOR_MODE) {
+        document.title = "DHZ Lednica - Výber verzie";
+    } else if (IS_MOBILE_MODE) {
         document.title = "DHZ Lednica - Mobil";
     } else if (IS_TV_MODE) {
         document.title = "DHZ Lednica - TV";
@@ -763,6 +961,22 @@ function initializeMobileForm() {
             localStorage.setItem("h_meno", value);
         }
     });
+}
+
+function buildRootModeUrl(mode) {
+    const params = new URLSearchParams();
+    params.set(mode, "1");
+
+    if (DEBUG_MODE) {
+        params.set("debug", "1");
+    }
+
+    return `./?${params.toString()}`;
+}
+
+function configureSelectorLinks() {
+    document.getElementById("selector-tv-link").href = buildRootModeUrl("tv");
+    document.getElementById("selector-mobile-link").href = buildRootModeUrl("mobil");
 }
 
 function buildPersistentParams() {
@@ -794,13 +1008,13 @@ function buildArchiveLinkUrl() {
         params.set("debug", "1");
     }
 
-    return `archiv.html?${params.toString()}`;
+    return `archive.html?${params.toString()}`;
 }
 
 function configureArchiveLink() {
     const url = buildArchiveLinkUrl();
     document.getElementById("archive-link").href = url;
-    document.getElementById("mobile-archive-link").href = url;
+    document.getElementById("mobile-bottom-archive-link").href = url;
 }
 
 function replaceHistoryPreservingMode() {
