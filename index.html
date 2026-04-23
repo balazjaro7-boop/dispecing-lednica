@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DHZ Lednica - DISPEČING</title>
+    <title>DHZ Lednica - DISPECING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -36,14 +36,14 @@
         .btn-action:first-child{ background:var(--btn-archiv); }
         .btn-action:last-child{ background:var(--btn-reset); }
 
-        .icon-btn{
-            width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+        .speech-btn{
+            min-width:148px; height:38px; display:inline-flex; align-items:center; justify-content:center;
             background:#1a1f27; color:#fff; border:1px solid #333; border-radius:4px; cursor:pointer;
-            font-size:1.05rem; line-height:1;
+            font-size:0.82rem; line-height:1; font-weight:700; padding:0 12px; white-space:nowrap;
         }
-        .icon-btn[data-state="blocked"]{ background:#5d3b00; border-color:#8c6500; }
-        .icon-btn[data-state="ready"]{ background:#0f5132; border-color:#1d6f42; }
-        .icon-btn[data-state="off"]{ background:#4a1f28; border-color:#6c2a38; }
+        .speech-btn[data-state="blocked"]{ background:#5d3b00; border-color:#8c6500; }
+        .speech-btn[data-state="ready"]{ background:#0f5132; border-color:#1d6f42; }
+        .speech-btn[data-state="off"]{ background:#4a1f28; border-color:#6c2a38; }
 
         #banner{
             display:none; flex:0 0 auto; padding:12px; text-align:center;
@@ -127,16 +127,16 @@
 <body>
 
 <div class="header">
-    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPECING</span></div>
     <div id="timer-container" class="center-timer">
-        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
+        <span style="font-size:0.8rem; color:#888;">CAS OD VYHLASENIA UDALOSTI</span><br>
         <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
     </div>
     <div class="toolbar" style="gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <div style="display:flex; gap:8px;">
-            <button id="speech-toggle" class="icon-btn" type="button" title="Zapnúť hlas" aria-label="Zapnúť hlas" data-state="blocked">🔈</button>
-            <a href="archiv.html" class="btn-action">ARCHÍV</a>
+            <button id="speech-toggle" class="speech-btn" type="button" title="Zapnut hlas" aria-label="Zapnut hlas" data-state="blocked">ZAPNUT HLAS</button>
+            <a href="archiv.html" class="btn-action">ARCHIV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
     </div>
@@ -151,7 +151,7 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <div id="map-msg" class="map-placeholder">CAKAM NA ADRESU VYJAZDU...</div>
         <div id="map"></div>
         <div id="map-note" class="map-note"></div>
     </div>
@@ -159,14 +159,14 @@
 </div>
 
 <div id="debug-panel">
-    <strong>DEBUG REŽIM</strong>
+    <strong>DEBUG REZIM</strong>
     <div id="debug-log"></div>
 </div>
 
 <div id="archive-modal">
     <div class="archive-modal-box">
-        <strong>Ukladám výjazd</strong>
-        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
+        <strong>Ukladam vyjazd</strong>
+        <span>Cakaj chvilu, prebieha presun do archivu...</span>
     </div>
 </div>
 
@@ -185,6 +185,7 @@ const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const SPEECH_REPEAT_MS = 10 * 1000;
+const SPEECH_ENABLED_STORAGE_KEY = "dhz_speech_enabled";
 
 let timerInterval = null;
 let map = null;
@@ -266,6 +267,23 @@ function buildBannerSpeechText(prefix, typ, adresa) {
     return [prefix, typ, adresa].filter(Boolean).join(". ") + ".";
 }
 
+function rememberSpeechPreference(enabled) {
+    try {
+        localStorage.setItem(SPEECH_ENABLED_STORAGE_KEY, enabled ? "1" : "0");
+    } catch (error) {
+        logDebug("Ulozenie hlasu zlyhalo", error.message || String(error));
+    }
+}
+
+function shouldRestoreSpeechPreference() {
+    try {
+        return localStorage.getItem(SPEECH_ENABLED_STORAGE_KEY) === "1";
+    } catch (error) {
+        logDebug("Nacitanie hlasu zlyhalo", error.message || String(error));
+        return false;
+    }
+}
+
 function stopBannerSpeech() {
     if (speechInterval) {
         clearInterval(speechInterval);
@@ -284,13 +302,13 @@ function stopBannerSpeech() {
 
 function speakBannerNow(text) {
     if (!isDesktopSpeechEnabled() || !text) {
-        logDebug("Hlas preskočený", { enabled: isDesktopSpeechEnabled(), hasText: !!text });
+        logDebug("Hlas preskoceny", { enabled: isDesktopSpeechEnabled(), hasText: !!text });
         return;
     }
 
     if (!speechUnlocked) {
         pendingSpeechText = text;
-        logDebug("Hlas čaká na odomknutie");
+        logDebug("Hlas caka na odomknutie");
         updateSpeechButton();
         return;
     }
@@ -310,13 +328,14 @@ function speakBannerNow(text) {
     utterance.pitch = 1;
     utterance.volume = 1;
     utterance.onstart = () => {
-        logDebug("Hlas spustený", { text, voice: utterance.voice ? utterance.voice.name : utterance.lang });
+        logDebug("Hlas spusteny", { text, voice: utterance.voice ? utterance.voice.name : utterance.lang });
         updateSpeechButton();
     };
     utterance.onerror = (event) => {
         logDebug("Hlas zlyhal", event.error || "unknown");
         if (event.error === "not-allowed") {
             speechUnlocked = false;
+            rememberSpeechPreference(false);
             pendingSpeechText = text;
         }
         updateSpeechButton();
@@ -370,16 +389,16 @@ function updateSpeechButton() {
 
     if (!speechUnlocked) {
         button.dataset.state = "blocked";
-        button.textContent = "🔈";
-        button.title = "Zapnúť hlas";
-        button.setAttribute("aria-label", "Zapnúť hlas");
+        button.textContent = "ZAPNUT HLAS";
+        button.title = "Zapnut hlas";
+        button.setAttribute("aria-label", "Zapnut hlas");
         return;
     }
 
     button.dataset.state = currentSpeechText ? "ready" : "off";
-    button.textContent = currentSpeechText ? "🔊" : "🔉";
-    button.title = currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený";
-    button.setAttribute("aria-label", currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený");
+    button.textContent = currentSpeechText ? "HLAS AKTIVNY" : "HLAS PRIPRAVENY";
+    button.title = currentSpeechText ? "Hlas je aktivny" : "Hlas pripraveny";
+    button.setAttribute("aria-label", currentSpeechText ? "Hlas je aktivny" : "Hlas pripraveny");
 }
 
 function unlockSpeech(forceTest = false) {
@@ -390,8 +409,9 @@ function unlockSpeech(forceTest = false) {
 
     loadSpeechVoices();
     speechUnlocked = true;
+    rememberSpeechPreference(true);
     updateSpeechButton();
-    logDebug("Hlas odomknutý");
+    logDebug("Hlas odomknuty");
 
     if (forceTest) {
         const probe = new SpeechSynthesisUtterance("");
@@ -401,11 +421,27 @@ function unlockSpeech(forceTest = false) {
             window.speechSynthesis.cancel();
         } catch (error) {
             speechUnlocked = false;
+            rememberSpeechPreference(false);
             logDebug("Test hlasu zlyhal", error.message || String(error));
             updateSpeechButton();
             return;
         }
     }
+
+    if (pendingSpeechText) {
+        const text = pendingSpeechText;
+        pendingSpeechText = "";
+        speakBannerNow(text);
+    }
+}
+
+function tryRestoreSpeech() {
+    if (!shouldRestoreSpeechPreference()) {
+        return;
+    }
+
+    logDebug("Pokus o obnovu hlasu po starte");
+    unlockSpeech(false);
 
     if (pendingSpeechText) {
         const text = pendingSpeechText;
@@ -451,7 +487,7 @@ function getDispatchCategory(udalost, podtyp) {
     const upperUdalost = (udalost || "").toUpperCase();
 
     if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
-        return "VÝJAZD";
+        return "VYJAZD";
     }
 
     const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
@@ -462,10 +498,10 @@ function getDispatchCategory(udalost, podtyp) {
         text.includes("strom") ||
         text.includes("technic")
     ) {
-        return "TECHNICKÝ VÝJAZD";
+        return "TECHNICKY VYJAZD";
     }
 
-    return "POŽIAR";
+    return "POZIAR";
 }
 
 function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
@@ -547,7 +583,7 @@ async function spracujVstup() {
             }
         });
 
-        logDebug("Udalosť uložená do Firestore");
+        logDebug("Udalost ulozena do Firestore");
 
         try {
             await sendPushover(u, adr, t);
@@ -565,7 +601,7 @@ async function spracujVstup() {
             meno = meno.trim();
             localStorage.setItem("h_meno", meno);
             await ref.set({ [meno]: akc }, { merge: true });
-            logDebug("Zapísaná spätná väzba", { meno, akcia: akc });
+            logDebug("Zapisana spatna vazba", { meno, akcia: akc });
         }
 
         window.history.replaceState({}, "", window.location.pathname);
@@ -576,24 +612,24 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const baseUrl = "https://hasici-lednica.web.app/index.html";
-    const safeMiesto = miesto || "Nezadané";
+    const safeMiesto = miesto || "Nezadane";
     const msg =
         `<b>${udalost}</b>\n` +
         `Adresa: ${safeMiesto}\n` +
-        `___<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+        `___<a href="${baseUrl}?akcia=IDEM">IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">NEJDEM</a>`;
     const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
         message: msg,
-        title: `${skupinaTyp === "AED" ? "🫀" : "🚨"} ${udalost}`,
+        title: `${skupinaTyp === "AED" ? "AED" : "ALARM"} ${udalost}`,
         priority: 2,
         retry: 60,
         expire: 3600,
         sound: "persistent",
         html: 1,
         url: mapsUrl,
-        url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+        url_title: "SPUSTIT NAVIGACIU"
     });
 
     logDebug("Odosielam Pushover", { skupinaTyp, miesto });
@@ -605,7 +641,7 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     });
 
     const text = await response.text();
-    logDebug("Pushover odpoveď", text);
+    logDebug("Pushover odpoved", text);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${text}`);
@@ -620,12 +656,12 @@ async function geocodeAddress(query) {
     });
 
     if (!response.ok) {
-        throw new Error("Geokódovanie zlyhalo.");
+        throw new Error("Geokodovanie zlyhalo.");
     }
 
     const results = await response.json();
     if (!results.length) {
-        throw new Error("Adresa sa nenašla.");
+        throw new Error("Adresa sa nenasla.");
     }
 
     return [parseFloat(results[0].lat), parseFloat(results[0].lon)];
@@ -638,12 +674,12 @@ async function getRoute(startCoords, endCoords) {
     const response = await fetch(url);
 
     if (!response.ok) {
-        throw new Error("Výpočet trasy zlyhal.");
+        throw new Error("Vypocet trasy zlyhal.");
     }
 
     const data = await response.json();
     if (!data.routes || !data.routes.length) {
-        throw new Error("Trasa sa nenašla.");
+        throw new Error("Trasa sa nenasla.");
     }
 
     return data.routes[0];
@@ -661,7 +697,7 @@ async function renderRouteToAddress(adresa) {
 
     mapMsg.style.display = "none";
     mapElement.style.display = "block";
-    setMapMessage("Načítavam trasu...");
+    setMapMessage("Nacitavam trasu...");
     clearRoute();
 
     try {
@@ -688,14 +724,14 @@ async function renderRouteToAddress(adresa) {
             }
         }).addTo(mapInstance);
 
-        startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
+        startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Start: Lednica 243", { permanent: false });
         endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
 
         fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
 
         const km = (route.distance / 1000).toFixed(1);
         const min = Math.round(route.duration / 60);
-        setMapMessage(`Trasa ${km} km • cca ${min} min`);
+        setMapMessage(`Trasa ${km} km | cca ${min} min`);
 
         setTimeout(() => {
             mapInstance.invalidateSize();
@@ -708,7 +744,7 @@ async function renderRouteToAddress(adresa) {
 
         mapElement.style.display = "none";
         mapMsg.style.display = "flex";
-        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
+        mapMsg.innerText = "NEPODARILO SA NACITAT TRASU.";
         setMapMessage("");
         logDebug("Chyba mapy", error.message || String(error));
         console.error(error);
@@ -781,7 +817,7 @@ async function autoArchiveActiveRun() {
     showArchiveModal(true);
     await wait(150);
     const modalShownAt = Date.now();
-    logDebug("Spúšťam auto-archiváciu");
+    logDebug("Spustam auto-archivaciu");
 
     try {
         await db.runTransaction(async (transaction) => {
@@ -814,9 +850,9 @@ async function autoArchiveActiveRun() {
             transaction.delete(activeRef);
         });
 
-        logDebug("Auto-archivácia dokončená");
+        logDebug("Auto-archivacia dokoncena");
     } catch (error) {
-        logDebug("Auto-archivácia zlyhala", error.message || String(error));
+        logDebug("Auto-archivacia zlyhala", error.message || String(error));
         console.error(error);
     } finally {
         const visibleFor = Date.now() - modalShownAt;
@@ -834,7 +870,7 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     idemDiv.innerHTML = "";
     nejdemDiv.innerHTML = "";
-    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    document.getElementById("map-msg").innerText = "CAKAM NA ADRESU VYJAZDU...";
     resetUiState();
 
     if (!doc.exists) {
@@ -906,15 +942,15 @@ async function manualReset() {
     }
 
     if (pin !== RESET_PIN) {
-        alert("Nesprávny PIN.");
-        logDebug("Reset zamietnutý", "Nesprávny PIN");
+        alert("Nespravny PIN.");
+        logDebug("Reset zamietnuty", "Nespravny PIN");
         return;
     }
 
-    if (confirm("Resetovať výjazd?")) {
+    if (confirm("Resetovat vyjazd?")) {
         stopBannerSpeech();
         await db.collection("vyjazdy").doc("active").delete();
-        logDebug("Výjazd bol resetovaný");
+        logDebug("Vyjazd bol resetovany");
     }
 }
 
@@ -948,8 +984,11 @@ bindSpeechUnlock();
 updateSpeechButton();
 window.addEventListener("beforeunload", stopBannerSpeech);
 
-logDebug("Aplikácia pripravená", { debug: DEBUG_MODE });
-window.onload = spracujVstup;
+logDebug("Aplikacia pripravena", { debug: DEBUG_MODE });
+window.onload = async () => {
+    await spracujVstup();
+    tryRestoreSpeech();
+};
 </script>
 </body>
 </html>
