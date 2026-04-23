@@ -137,7 +137,7 @@
         <div id="clock" class="clock">00:00:00</div>
         <div style="display:flex; gap:8px;">
             <button id="speech-toggle" class="speech-btn" type="button" title="Zapnut hlas" aria-label="Zapnut hlas" data-state="blocked">🔊</button>
-            <a href="archiv.html" class="btn-action">ARCHIV</a>
+            <a href="archiv.html" class="btn-action">ARCHÍV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
     </div>
@@ -879,7 +879,7 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     idemDiv.innerHTML = "";
     nejdemDiv.innerHTML = "";
-    document.getElementById("map-msg").innerText = "CAKAM NA ADRESU VYJAZDU...";
+    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
     resetUiState();
 
     if (!doc.exists) {
