@@ -243,6 +243,25 @@ function setMapMessage(message) {
     note.style.display = message ? "block" : "none";
 }
 
+function getDispatchCategory(udalost, podtyp) {
+    if ((podtyp || "").toUpperCase() === "AED") {
+        return "VÝJAZD";
+    }
+
+    const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
+    if (
+        text.includes("nehoda") ||
+        text.includes("voda") ||
+        text.includes("vody") ||
+        text.includes("strom") ||
+        text.includes("technic")
+    ) {
+        return "TECHNICKÝ VÝJAZD";
+    }
+
+    return "POŽIAR";
+}
+
 function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
     const bounds = L.latLngBounds([startCoords, endCoords]);
 
@@ -517,6 +536,7 @@ function buildArchivePayload(data) {
     const eventTimestamp = metadata.timestamp || Date.now();
     const timeParts = formatDateParts(eventTimestamp);
     const podtyp = metadata.podtyp || "";
+    const kategoriaVyjazdu = getDispatchCategory(metadata.typ || "", podtyp);
     const info = [metadata.typ || "", podtyp, metadata.miesto || ""].filter(Boolean).join(" - ");
 
     return {
@@ -529,6 +549,7 @@ function buildArchivePayload(data) {
         udalost: metadata.typ || "",
         podtyp,
         typUdalosti: podtyp,
+        kategoriaVyjazdu: (podtyp || "").toUpperCase() === "AED" ? "AED" : kategoriaVyjazdu,
         adresa: metadata.miesto || "",
         miesto: metadata.miesto || "",
         info,
@@ -618,20 +639,8 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
     if (m.typ) {
         document.getElementById("banner").style.display = "block";
 
-        const textUdalosti = m.typ.toLowerCase();
         const prefixElem = document.getElementById("prefix");
-
-        if (
-            textUdalosti.includes("nehoda") ||
-            textUdalosti.includes("voda") ||
-            textUdalosti.includes("vody") ||
-            textUdalosti.includes("strom") ||
-            textUdalosti.includes("technic")
-        ) {
-            prefixElem.innerText = "TECHNICKÝ VÝJAZD";
-        } else {
-            prefixElem.innerText = "POŽIAR";
-        }
+        prefixElem.innerText = getDispatchCategory(m.typ, m.podtyp || "");
 
         document.getElementById("typ").innerText = m.typ;
         document.getElementById("adresa").innerText = m.miesto || "";
