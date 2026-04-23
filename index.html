@@ -244,7 +244,10 @@ function setMapMessage(message) {
 }
 
 function getDispatchCategory(udalost, podtyp) {
-    if ((podtyp || "").toUpperCase() === "AED") {
+    const upperPodtyp = (podtyp || "").toUpperCase();
+    const upperUdalost = (udalost || "").toUpperCase();
+
+    if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
         return "VÝJAZD";
     }
 
