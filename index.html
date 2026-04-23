@@ -586,7 +586,7 @@
     <div class="header-meta" style="display:flex; align-items:center; gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <div class="header-actions" style="display:flex; gap:8px;">
-            <a href="archiv.html" class="btn-action">ARCHÍV</a>
+            <a id="archive-link" href="archiv.html?tv=1" class="btn-action">ARCHÍV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
     </div>
@@ -607,6 +607,7 @@
             <div id="mobile-adresa" class="mobile-adresa">Po vyhlásení výjazdu sa tu zobrazí typ a adresa udalosti.</div>
             <div class="mobile-toolbar">
                 <a id="mobile-map-link" class="mobile-link" href="#" target="_blank" rel="noopener" aria-disabled="true">OTVORIŤ NAVIGÁCIU</a>
+                <a id="mobile-archive-link" class="mobile-link" href="archiv.html?mobil=1">ARCHÍV</a>
             </div>
         </div>
         <div class="mobile-body">
@@ -715,6 +716,7 @@ if (normalizedSearch && normalizedSearch !== window.location.search) {
 
 applyModeClass();
 initializeMobileForm();
+configureArchiveLink();
 
 setInterval(() => {
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
@@ -777,6 +779,28 @@ function buildPersistentParams() {
     }
 
     return params;
+}
+
+function buildArchiveLinkUrl() {
+    const params = new URLSearchParams();
+
+    if (IS_MOBILE_MODE) {
+        params.set("mobil", "1");
+    } else {
+        params.set("tv", "1");
+    }
+
+    if (DEBUG_MODE) {
+        params.set("debug", "1");
+    }
+
+    return `archiv.html?${params.toString()}`;
+}
+
+function configureArchiveLink() {
+    const url = buildArchiveLinkUrl();
+    document.getElementById("archive-link").href = url;
+    document.getElementById("mobile-archive-link").href = url;
 }
 
 function replaceHistoryPreservingMode() {
