@@ -2,144 +2,833 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARCHÍV VÝJAZDOV - DHZ LEDNICA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DHZ Lednica - Archív</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
-        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; text-align: center; margin: 0; }
-        .header { background-color: #333; padding: 20px; font-weight: bold; }
-        .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 20px; }
-        .entry { background-color: #000; border: 1px solid #444; margin: 10px auto; padding: 15px; max-width: 800px; border-radius: 8px; text-align: left; }
-        .date { color: #888; font-size: 14px; }
-        .info { color: #ffeb3b; font-size: 18px; font-weight: bold; margin: 8px 0; }
-        .names { font-size: 16px; line-height: 1.6; }
-        .green { color: #4caf50; }
-        .red { color: #f44336; }
-        .back { display: inline-block; margin: 20px; color: #d32f2f; text-decoration: none; }
-        .danger {
-            display: inline-block; margin: 20px 0; color: #fff; background: #b71c1c;
-            border: 1px solid #ef5350; padding: 10px 16px; border-radius: 6px; cursor: pointer;
-            font-weight: bold;
+        :root{
+            --bg:#05070b;
+            --panel:#0f141b;
+            --panel-2:#151c24;
+            --line:#212a35;
+            --text:#f6f9fc;
+            --muted:#98a6b6;
+            --green:#00e676;
+            --red:#ff1744;
+            --yellow:#ffeb3b;
+            --cyan:#38cfff;
         }
-        .empty { color: #bbb; margin-top: 30px; }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            min-height:100vh;
+            background:
+                radial-gradient(circle at top right, rgba(56,207,255,0.08), transparent 28%),
+                radial-gradient(circle at top left, rgba(255,23,68,0.08), transparent 24%),
+                var(--bg);
+            color:var(--text);
+            font-family:Segoe UI,sans-serif;
+        }
+
+        .header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+            padding:14px 20px;
+            border-bottom:1px solid var(--line);
+            background:rgba(0,0,0,0.72);
+            backdrop-filter:blur(12px);
+            position:sticky;
+            top:0;
+            z-index:50;
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            min-width:0;
+        }
+
+        .brand img{
+            width:auto;
+            height:46px;
+        }
+
+        .brand-copy{
+            display:flex;
+            flex-direction:column;
+            gap:2px;
+            min-width:0;
+        }
+
+        .brand-copy strong{
+            font-size:1.25rem;
+            letter-spacing:0.04em;
+        }
+
+        .brand-copy span{
+            color:var(--muted);
+            font-size:0.92rem;
+        }
+
+        .header-right{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+        }
+
+        .mode-pill{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:8px 12px;
+            border-radius:999px;
+            font-size:0.82rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            background:rgba(255,255,255,0.08);
+            border:1px solid rgba(255,255,255,0.08);
+            color:#dce8f4;
+        }
+
+        .clock{
+            font-family:monospace;
+            font-size:1.25rem;
+            font-weight:800;
+            color:var(--yellow);
+        }
+
+        .btn-link{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-height:40px;
+            padding:10px 14px;
+            border-radius:12px;
+            text-decoration:none;
+            color:#fff;
+            font-weight:900;
+            background:linear-gradient(180deg, #223040, #16202b);
+            border:1px solid rgba(255,255,255,0.08);
+        }
+
+        .page{
+            padding:18px;
+            display:flex;
+            flex-direction:column;
+            gap:18px;
+        }
+
+        .summary-grid{
+            display:grid;
+            grid-template-columns:repeat(3, minmax(0, 1fr));
+            gap:14px;
+        }
+
+        .summary-card{
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid var(--line);
+            border-radius:18px;
+            padding:18px;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+        }
+
+        .summary-label{
+            color:var(--muted);
+            font-size:0.85rem;
+            font-weight:800;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+
+        .summary-value{
+            margin-top:8px;
+            font-size:2rem;
+            font-weight:900;
+            line-height:1.05;
+        }
+
+        .summary-note{
+            margin-top:10px;
+            color:#d2dae4;
+            font-size:0.96rem;
+            line-height:1.45;
+        }
+
+        .view{
+            display:none;
+        }
+
+        .cards-tv{
+            display:grid;
+            grid-template-columns:repeat(2, minmax(0, 1fr));
+            gap:16px;
+        }
+
+        .cards-mobile{
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+        }
+
+        .archive-card{
+            background:linear-gradient(180deg, rgba(18,24,31,0.98), rgba(10,14,18,0.98));
+            border:1px solid var(--line);
+            border-radius:20px;
+            padding:18px;
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+            box-shadow:0 18px 48px rgba(0,0,0,0.28);
+        }
+
+        .archive-card.mobile{
+            padding:16px;
+            border-radius:18px;
+        }
+
+        .archive-card-top{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:12px;
+        }
+
+        .category-badge{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:7px 12px;
+            border-radius:999px;
+            font-size:0.8rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            color:#061018;
+            background:var(--yellow);
+        }
+
+        .category-badge.aed{
+            background:#ff7b7b;
+            color:#fff;
+        }
+
+        .category-badge.technicky{
+            background:var(--cyan);
+            color:#04121a;
+        }
+
+        .archive-datetime{
+            text-align:right;
+            color:#dce5ef;
+            font-weight:800;
+            line-height:1.4;
+        }
+
+        .archive-datetime span{
+            display:block;
+            color:var(--muted);
+            font-size:0.92rem;
+            font-weight:700;
+        }
+
+        .archive-title{
+            font-size:1.45rem;
+            font-weight:900;
+            line-height:1.12;
+            text-transform:uppercase;
+        }
+
+        .archive-card.mobile .archive-title{
+            font-size:1.18rem;
+        }
+
+        .archive-subtitle{
+            color:var(--yellow);
+            font-weight:800;
+            text-transform:uppercase;
+            letter-spacing:0.05em;
+            font-size:0.94rem;
+        }
+
+        .archive-address{
+            color:#d5dce5;
+            font-size:1rem;
+            line-height:1.5;
+        }
+
+        .archive-counts{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+        }
+
+        .count-box{
+            padding:13px 14px;
+            border-radius:16px;
+            background:#0c1117;
+            border:1px solid #1e2731;
+        }
+
+        .count-box strong{
+            display:block;
+            font-size:0.8rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            color:var(--muted);
+        }
+
+        .count-box span{
+            display:block;
+            margin-top:6px;
+            font-size:1.8rem;
+            font-weight:900;
+        }
+
+        .count-box.idem span{ color:var(--green); }
+        .count-box.nejdem span{ color:var(--red); }
+
+        .names-grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+        }
+
+        .names-box{
+            padding:14px;
+            border-radius:16px;
+            background:#0b1015;
+            border:1px solid #1c2630;
+            min-height:128px;
+        }
+
+        .names-box strong{
+            display:block;
+            margin-bottom:10px;
+            font-size:0.86rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+
+        .names-box.idem strong{ color:var(--green); }
+        .names-box.nejdem strong{ color:var(--red); }
+
+        .name-list{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+        }
+
+        .name-pill{
+            padding:8px 11px;
+            border-radius:999px;
+            font-size:0.9rem;
+            font-weight:800;
+            text-transform:uppercase;
+        }
+
+        .name-pill.idem{
+            color:var(--green);
+            background:rgba(0,230,118,0.11);
+        }
+
+        .name-pill.nejdem{
+            color:#ffb2c1;
+            background:rgba(255,23,68,0.12);
+        }
+
+        .empty-list{
+            color:#708090;
+            font-weight:700;
+        }
+
+        .empty-state{
+            padding:34px 20px;
+            text-align:center;
+            border-radius:20px;
+            border:1px dashed #334252;
+            background:rgba(12,17,23,0.82);
+            color:#d5dde7;
+            font-size:1.05rem;
+            font-weight:700;
+        }
+
+        #debug-panel{
+            display:none;
+            position:fixed;
+            right:10px;
+            bottom:10px;
+            z-index:200;
+            width:360px;
+            max-width:calc(100vw - 20px);
+            max-height:220px;
+            overflow:auto;
+            background:rgba(0,0,0,0.88);
+            border:1px solid #333;
+            border-radius:6px;
+            padding:10px;
+            font:12px/1.4 monospace;
+            color:#ddd;
+        }
+
+        #debug-panel strong{ color:#ffeb3b; display:block; margin-bottom:6px; }
+        #debug-log{ white-space:pre-wrap; word-break:break-word; }
+
+        body.mode-mobile #mobile-view{
+            display:block;
+        }
+
+        body:not(.mode-mobile) #tv-view{
+            display:block;
+        }
+
+        @media (max-width: 1200px){
+            .cards-tv{
+                grid-template-columns:1fr;
+            }
+        }
+
+        @media (max-width: 860px){
+            .summary-grid{
+                grid-template-columns:1fr;
+            }
+
+            .header{
+                flex-direction:column;
+                align-items:stretch;
+            }
+
+            .header-right{
+                justify-content:space-between;
+            }
+        }
+
+        @media (max-width: 680px){
+            .page{
+                padding:14px;
+            }
+
+            .archive-card-top,
+            .names-grid,
+            .archive-counts{
+                grid-template-columns:1fr;
+                display:grid;
+            }
+
+            .archive-card-top{
+                gap:10px;
+            }
+
+            .archive-datetime{
+                text-align:left;
+            }
+
+            .brand-copy strong{
+                font-size:1.08rem;
+            }
+
+            .brand-copy span{
+                font-size:0.84rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="header">KNIHA VÝJAZDOV</div>
-    <div class="actions">
-        <a href="index.html" class="back">← Späť na dispečing</a>
-        <button class="danger" onclick="deleteArchive()">VYMAZAŤ CELÝ ARCHÍV</button>
+
+<div class="header">
+    <div class="brand">
+        <img src="logo.png" alt="DHZ">
+        <div class="brand-copy">
+            <strong>DHZ LEDNICA - ARCHÍV</strong>
+            <span id="header-subtitle">Archív výjazdov</span>
+        </div>
     </div>
-    <div id="archiv-list">Načítavam archív...</div>
+    <div class="header-right">
+        <div id="mode-pill" class="mode-pill">TV REŽIM</div>
+        <div id="clock" class="clock">00:00:00</div>
+        <a id="dispatch-link" href="index.html?tv=1" class="btn-link">DISPEČING</a>
+    </div>
+</div>
+
+<div class="page">
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Počet záznamov</div>
+            <div id="summary-total" class="summary-value">0</div>
+            <div class="summary-note">Celkový počet archivovaných výjazdov načítaných v zozname.</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Posledný výjazd</div>
+            <div id="summary-latest-date" class="summary-value">-</div>
+            <div id="summary-latest-title" class="summary-note">Bez údajov</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Posledná aktualizácia</div>
+            <div id="summary-updated" class="summary-value">--:--:--</div>
+            <div class="summary-note">Archív sa obnovuje automaticky z Firestore kolekcie <strong>archiv</strong>.</div>
+        </div>
+    </div>
+
+    <div id="tv-view" class="view">
+        <div id="archive-tv-list" class="cards-tv"></div>
+    </div>
+
+    <div id="mobile-view" class="view">
+        <div id="archive-mobile-list" class="cards-mobile"></div>
+    </div>
+</div>
+
+<div id="debug-panel">
+    <strong>DEBUG REŽIM</strong>
+    <div id="debug-log"></div>
+</div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
-        authDomain: "hasici-lednica.firebaseapp.com",
-        projectId: "hasici-lednica"
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+function normalizeSearch(search) {
+    if (!search) {
+        return "";
+    }
+
+    const raw = search.startsWith("?") ? search.slice(1) : search;
+    return raw ? `?${raw.replace(/\?/g, "&")}` : "";
+}
+
+const normalizedSearch = normalizeSearch(window.location.search);
+const urlParams = new URLSearchParams(normalizedSearch);
+const DEBUG_MODE = urlParams.get("debug") === "1";
+const IS_MOBILE_MODE = urlParams.get("mobil") === "1";
+const IS_TV_MODE = !IS_MOBILE_MODE;
+
+if (normalizedSearch && normalizedSearch !== window.location.search) {
+    window.history.replaceState({}, "", `${window.location.pathname}${normalizedSearch}${window.location.hash}`);
+}
+
+applyModeClass();
+configureNavigation();
+
+setInterval(() => {
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
+}, 1000);
+
+function logDebug(message, data) {
+    const timestamp = new Date().toLocaleTimeString("sk-SK");
+    const formatted = data === undefined
+        ? `[${timestamp}] ${message}`
+        : `[${timestamp}] ${message} ${typeof data === "string" ? data : JSON.stringify(data)}`;
+
+    console.log(formatted);
+
+    if (!DEBUG_MODE) {
+        return;
+    }
+
+    const panel = document.getElementById("debug-panel");
+    const log = document.getElementById("debug-log");
+    panel.style.display = "block";
+    log.textContent = `${formatted}\n${log.textContent}`.slice(0, 5000);
+}
+
+function applyModeClass() {
+    document.body.classList.toggle("mode-mobile", IS_MOBILE_MODE);
+    document.body.classList.toggle("mode-tv", IS_TV_MODE);
+    document.getElementById("mode-pill").innerText = IS_MOBILE_MODE ? "MOBILNÝ REŽIM" : "TV REŽIM";
+    document.getElementById("header-subtitle").innerText = IS_MOBILE_MODE
+        ? "Mobilný prehľad archivovaných výjazdov"
+        : "TV prehľad archivovaných výjazdov";
+}
+
+function buildPersistentParams() {
+    const params = new URLSearchParams();
+
+    if (IS_MOBILE_MODE) {
+        params.set("mobil", "1");
+    } else {
+        params.set("tv", "1");
+    }
+
+    if (DEBUG_MODE) {
+        params.set("debug", "1");
+    }
+
+    return params;
+}
+
+function configureNavigation() {
+    const params = buildPersistentParams();
+    document.getElementById("dispatch-link").href = `index.html?${params.toString()}`;
+}
+
+function getDispatchCategory(udalost, podtyp) {
+    const upperPodtyp = (podtyp || "").toUpperCase();
+    const upperUdalost = (udalost || "").toUpperCase();
+
+    if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
+        return "AED";
+    }
+
+    const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
+    if (
+        text.includes("nehoda") ||
+        text.includes("voda") ||
+        text.includes("vody") ||
+        text.includes("strom") ||
+        text.includes("technic")
+    ) {
+        return "TECHNICKÝ VÝJAZD";
+    }
+
+    return "POŽIAR";
+}
+
+function getTimestampMs(data) {
+    if (typeof data.timestamp === "number") {
+        return data.timestamp;
+    }
+
+    if (data.datum && typeof data.datum.toMillis === "function") {
+        return data.datum.toMillis();
+    }
+
+    if (data.archivedAtIso) {
+        const parsed = Date.parse(data.archivedAtIso);
+        if (!Number.isNaN(parsed)) {
+            return parsed;
+        }
+    }
+
+    if (typeof data.archivedAt === "number") {
+        return data.archivedAt;
+    }
+
+    return Date.now();
+}
+
+function toArray(value) {
+    return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function normalizeArchiveItem(doc) {
+    const data = doc.data();
+    const timestamp = getTimestampMs(data);
+    const idem = toArray(data.idem || data.isli || (data.odpovede && data.odpovede.idem));
+    const nejdem = toArray(data.nejdem || data.nejdli || (data.odpovede && data.odpovede.nejdem));
+    const udalost = data.udalost || data.typ || "";
+    const podtyp = data.podtyp || data.typUdalosti || "";
+    const adresa = data.adresa || data.miesto || "";
+    const kategoria = data.kategoriaVyjazdu || getDispatchCategory(udalost, podtyp);
+    const date = new Date(timestamp);
+
+    return {
+        id: doc.id,
+        timestamp,
+        datum: data.datumText || date.toLocaleDateString("sk-SK"),
+        cas: data.cas || date.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        udalost: udalost || "Neznáma udalosť",
+        podtyp,
+        adresa: adresa || "Adresa nebola uložená",
+        kategoria,
+        pocetIdem: typeof data.pocetIdem === "number" ? data.pocetIdem : idem.length,
+        pocetNejdem: typeof data.pocetNejdem === "number" ? data.pocetNejdem : nejdem.length,
+        idem,
+        nejdem
     };
-    const RESET_PIN = "1234";
+}
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+function createNameList(names, type) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "name-list";
 
-    function formatArchiveDate(value, fallbackDate, fallbackTime) {
-        if (value && typeof value.toDate === "function") {
-            return value.toDate().toLocaleString("sk-SK");
-        }
-
-        if (fallbackDate || fallbackTime) {
-            return [fallbackDate || "", fallbackTime || ""].join(" ").trim();
-        }
-
-        return "Neznámy čas";
+    if (!names.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-list";
+        empty.innerText = "Bez odpovede";
+        wrapper.appendChild(empty);
+        return wrapper;
     }
 
-    function getInfoText(data) {
-        if (data.info) {
-            return data.info;
-        }
-
-        return [data.udalost || "", data.podtyp || "", data.adresa || ""]
-            .filter(Boolean)
-            .join(" - ") || "Bez detailov";
-    }
-
-    function getNames(data, primaryKey, fallbackKey) {
-        const value = data[primaryKey] || data[fallbackKey];
-        return Array.isArray(value) && value.length ? value.join(", ") : "Nikto";
-    }
-
-    async function deleteArchive() {
-        const pin = prompt("Zadaj PIN pre vymazanie archívu:");
-        if (pin === null) {
-            return;
-        }
-
-        if (pin !== RESET_PIN) {
-            alert("Nesprávny PIN.");
-            return;
-        }
-
-        if (!confirm("Naozaj chceš vymazať celý archív?")) {
-            return;
-        }
-
-        try {
-            const snapshot = await db.collection("archiv").get();
-
-            if (snapshot.empty) {
-                alert("Archív je už prázdny.");
-                return;
-            }
-
-            const batchSize = 400;
-            let docs = snapshot.docs.slice();
-
-            while (docs.length) {
-                const batch = db.batch();
-                docs.slice(0, batchSize).forEach((doc) => batch.delete(doc.ref));
-                await batch.commit();
-                docs = docs.slice(batchSize);
-            }
-
-            alert("Archív bol vymazaný.");
-            window.location.reload();
-        } catch (error) {
-            alert("Nepodarilo sa vymazať archív: " + error.message);
-        }
-    }
-
-    db.collection("archiv").orderBy("datum", "desc").get().then((querySnapshot) => {
-        const listDiv = document.getElementById("archiv-list");
-        listDiv.innerHTML = "";
-
-        if (querySnapshot.empty) {
-            listDiv.innerHTML = '<div class="empty">Archív je zatiaľ prázdny.</div>';
-            return;
-        }
-
-        querySnapshot.forEach((doc) => {
-            const d = doc.data();
-            const date = formatArchiveDate(d.datum, d.datumText, d.cas);
-            const info = getInfoText(d);
-            const isli = getNames(d, "isli", "idem");
-            const nejdli = getNames(d, "nejdli", "nejdem");
-
-            listDiv.innerHTML += `
-                <div class="entry">
-                    <div class="date">${date}</div>
-                    <div class="info">${info}</div>
-                    <div class="names">
-                        <span class="green">✔ IDEM:</span> ${isli}<br>
-                        <span class="red">✖ NEJDEM:</span> ${nejdli}
-                    </div>
-                </div>`;
-        });
-    }).catch((error) => {
-        document.getElementById("archiv-list").innerHTML = `<div class="empty">Nepodarilo sa načítať archív: ${error.message}</div>`;
+    names.forEach((name) => {
+        const pill = document.createElement("div");
+        pill.className = `name-pill ${type}`;
+        pill.innerText = name;
+        wrapper.appendChild(pill);
     });
+
+    return wrapper;
+}
+
+function getCategoryClass(category) {
+    const value = (category || "").toUpperCase();
+
+    if (value === "AED") {
+        return "aed";
+    }
+
+    if (value.includes("TECHNICK")) {
+        return "technicky";
+    }
+
+    return "";
+}
+
+function createArchiveCard(item, mobile = false) {
+    const card = document.createElement("article");
+    card.className = `archive-card${mobile ? " mobile" : ""}`;
+
+    const top = document.createElement("div");
+    top.className = "archive-card-top";
+
+    const badge = document.createElement("div");
+    const categoryClass = getCategoryClass(item.kategoria);
+    badge.className = `category-badge${categoryClass ? ` ${categoryClass}` : ""}`;
+    badge.innerText = item.kategoria;
+
+    const dateWrap = document.createElement("div");
+    dateWrap.className = "archive-datetime";
+    dateWrap.innerHTML = `${item.datum}<span>${item.cas}</span>`;
+
+    top.appendChild(badge);
+    top.appendChild(dateWrap);
+    card.appendChild(top);
+
+    const title = document.createElement("div");
+    title.className = "archive-title";
+    title.innerText = item.udalost;
+    card.appendChild(title);
+
+    if (item.podtyp) {
+        const subtitle = document.createElement("div");
+        subtitle.className = "archive-subtitle";
+        subtitle.innerText = item.podtyp;
+        card.appendChild(subtitle);
+    }
+
+    const address = document.createElement("div");
+    address.className = "archive-address";
+    address.innerText = item.adresa;
+    card.appendChild(address);
+
+    const counts = document.createElement("div");
+    counts.className = "archive-counts";
+
+    const idemBox = document.createElement("div");
+    idemBox.className = "count-box idem";
+    idemBox.innerHTML = "<strong>IDEM</strong>";
+    const idemValue = document.createElement("span");
+    idemValue.innerText = item.pocetIdem;
+    idemBox.appendChild(idemValue);
+
+    const nejdemBox = document.createElement("div");
+    nejdemBox.className = "count-box nejdem";
+    nejdemBox.innerHTML = "<strong>NEJDEM</strong>";
+    const nejdemValue = document.createElement("span");
+    nejdemValue.innerText = item.pocetNejdem;
+    nejdemBox.appendChild(nejdemValue);
+
+    counts.appendChild(idemBox);
+    counts.appendChild(nejdemBox);
+    card.appendChild(counts);
+
+    const namesGrid = document.createElement("div");
+    namesGrid.className = "names-grid";
+
+    const idemNames = document.createElement("div");
+    idemNames.className = "names-box idem";
+    idemNames.innerHTML = "<strong>IDEM</strong>";
+    idemNames.appendChild(createNameList(item.idem, "idem"));
+
+    const nejdemNames = document.createElement("div");
+    nejdemNames.className = "names-box nejdem";
+    nejdemNames.innerHTML = "<strong>NEJDEM</strong>";
+    nejdemNames.appendChild(createNameList(item.nejdem, "nejdem"));
+
+    namesGrid.appendChild(idemNames);
+    namesGrid.appendChild(nejdemNames);
+    card.appendChild(namesGrid);
+
+    return card;
+}
+
+function renderEmptyState(container) {
+    container.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerText = "Archív zatiaľ neobsahuje žiadne výjazdy.";
+    container.appendChild(empty);
+}
+
+function renderArchive(items) {
+    const tvList = document.getElementById("archive-tv-list");
+    const mobileList = document.getElementById("archive-mobile-list");
+    tvList.innerHTML = "";
+    mobileList.innerHTML = "";
+
+    if (!items.length) {
+        renderEmptyState(tvList);
+        renderEmptyState(mobileList);
+        return;
+    }
+
+    items.forEach((item) => {
+        tvList.appendChild(createArchiveCard(item, false));
+        mobileList.appendChild(createArchiveCard(item, true));
+    });
+}
+
+function updateSummary(items) {
+    document.getElementById("summary-total").innerText = items.length;
+    document.getElementById("summary-updated").innerText = new Date().toLocaleTimeString("sk-SK");
+
+    if (!items.length) {
+        document.getElementById("summary-latest-date").innerText = "-";
+        document.getElementById("summary-latest-title").innerText = "Bez údajov";
+        return;
+    }
+
+    const latest = items[0];
+    document.getElementById("summary-latest-date").innerText = latest.datum;
+    document.getElementById("summary-latest-title").innerText = `${latest.udalost} • ${latest.adresa}`;
+}
+
+function loadArchive() {
+    db.collection("archiv").onSnapshot((snapshot) => {
+        const items = snapshot.docs
+            .map((doc) => normalizeArchiveItem(doc))
+            .sort((a, b) => b.timestamp - a.timestamp);
+
+        logDebug("Archív načítaný", { pocet: items.length, rezim: IS_MOBILE_MODE ? "mobil" : "tv" });
+        updateSummary(items);
+        renderArchive(items);
+    }, (error) => {
+        logDebug("Chyba načítania archívu", error.message || String(error));
+        const tvList = document.getElementById("archive-tv-list");
+        const mobileList = document.getElementById("archive-mobile-list");
+        renderEmptyState(tvList);
+        renderEmptyState(mobileList);
+    });
+}
+
+logDebug("Archív pripravený", { debug: DEBUG_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
+window.addEventListener("load", loadArchive);
 </script>
 </body>
 </html>
