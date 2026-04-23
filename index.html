@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DHZ Lednica - DISPEČING</title>
+    <title>DHZ Lednica - DISPECING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -107,37 +107,31 @@
             color:#ffffff; font-size:1.4rem; font-weight:700;
         }
 
-        @media (max-width: 1024px){
-            .main{ grid-template-columns:1fr 1fr; }
-            .map-shell{ display:none; }
-            .header{ flex-direction:column; padding:10px; gap:15px; }
-            #banner{ white-space:normal; font-size:1.2rem; }
-            #debug-panel{ width:auto; }
-            .archive-modal-box{
-                min-width:auto; width:90vw; padding:28px 22px;
-            }
-            .archive-modal-box strong{
-                font-size:2.1rem;
-            }
-            .archive-modal-box span{
-                font-size:1.1rem;
-            }
+        body.mobile-layout .main{ grid-template-columns:1fr 1fr; }
+        body.mobile-layout .map-shell{ display:none; }
+        body.mobile-layout .header{ flex-direction:column; padding:10px; gap:15px; }
+        body.mobile-layout #banner{ white-space:normal; font-size:1.2rem; }
+        body.mobile-layout #debug-panel{ width:auto; }
+        body.mobile-layout .archive-modal-box{
+            min-width:auto; width:90vw; padding:28px 22px;
         }
+        body.mobile-layout .archive-modal-box strong{ font-size:2.1rem; }
+        body.mobile-layout .archive-modal-box span{ font-size:1.1rem; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPECING</span></div>
     <div id="timer-container" class="center-timer">
-        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
+        <span style="font-size:0.8rem; color:#888;">CAS OD VYHLASENIA UDALOSTI</span><br>
         <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
     </div>
     <div class="toolbar" style="gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <div style="display:flex; gap:8px;">
             <button id="speech-toggle" class="speech-btn" type="button" title="Zapnut hlas" aria-label="Zapnut hlas" data-state="blocked">🔊</button>
-            <a href="archiv.html" class="btn-action">ARCHÍV</a>
+            <a href="archiv.html" class="btn-action">ARCHIV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
     </div>
@@ -152,7 +146,7 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <div id="map-msg" class="map-placeholder">CAKAM NA ADRESU VYJAZDU...</div>
         <div id="map"></div>
         <div id="map-note" class="map-note"></div>
     </div>
@@ -166,8 +160,8 @@
 
 <div id="archive-modal">
     <div class="archive-modal-box">
-        <strong>Ukladám výjazd</strong>
-        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
+        <strong>Ukladam vyjazd</strong>
+        <span>Cakaj chvilu, prebieha presun do archivu...</span>
     </div>
 </div>
 
@@ -203,6 +197,7 @@ let pendingSpeechText = "";
 let currentSpeechText = "";
 const urlParams = new URLSearchParams(window.location.search);
 const DEBUG_MODE = urlParams.get("debug") === "1";
+const FORCE_TV_MODE = urlParams.get("tv") === "1";
 
 setInterval(() => {
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
@@ -234,16 +229,31 @@ function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isDesktopMapEnabled() {
-    return window.innerWidth > 1024;
-}
-
 function isSpeechSupported() {
     return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
 }
 
+function isForcedDesktopMode() {
+    return FORCE_TV_MODE;
+}
+
+function shouldUseMobileLayout() {
+    if (isForcedDesktopMode()) {
+        return false;
+    }
+    return window.innerWidth <= 1024;
+}
+
+function applyResponsiveMode() {
+    document.body.classList.toggle("mobile-layout", shouldUseMobileLayout());
+}
+
+function isDesktopMapEnabled() {
+    return isForcedDesktopMode() || window.innerWidth > 1024;
+}
+
 function isDesktopSpeechEnabled() {
-    return window.innerWidth > 768 && isSpeechSupported();
+    return (isForcedDesktopMode() || window.innerWidth > 768) && isSpeechSupported();
 }
 
 function loadSpeechVoices() {
@@ -391,10 +401,10 @@ function updateSpeechButton() {
         return;
     }
 
-    if (window.innerWidth <= 768) {
+    if (!isDesktopSpeechEnabled()) {
         button.dataset.state = "off";
-        button.title = "Hlas je dostupny len na vacsom zobrazeni";
-        button.setAttribute("aria-label", "Hlas je dostupny len na vacsom zobrazeni");
+        button.title = "Hlas je dostupny iba v desktop alebo TV rezime";
+        button.setAttribute("aria-label", "Hlas je dostupny iba v desktop alebo TV rezime");
         return;
     }
 
@@ -507,10 +517,10 @@ function getDispatchCategory(udalost, podtyp) {
         text.includes("strom") ||
         text.includes("technic")
     ) {
-        return "TECHNICKÝ VÝJAZD";
+        return "TECHNICKY VYJAZD";
     }
 
-    return "POŽIAR";
+    return "POZIAR";
 }
 
 function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
@@ -580,7 +590,7 @@ async function spracujVstup() {
     const t = urlParams.get("typ");
     const ref = db.collection("vyjazdy").doc("active");
 
-    logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t });
+    logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t, tvMode: FORCE_TV_MODE });
 
     if (u) {
         await ref.set({
@@ -600,7 +610,17 @@ async function spracujVstup() {
             logDebug("Pushover chyba", error.message || String(error));
         }
 
-        window.history.replaceState({}, "", window.location.pathname);
+        const preservedSearch = new URLSearchParams();
+        if (FORCE_TV_MODE) {
+            preservedSearch.set("tv", "1");
+        }
+        if (DEBUG_MODE) {
+            preservedSearch.set("debug", "1");
+        }
+        const newUrl = preservedSearch.toString()
+            ? `${window.location.pathname}?${preservedSearch.toString()}`
+            : window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
     }
 
     if (akc) {
@@ -613,19 +633,30 @@ async function spracujVstup() {
             logDebug("Zapisana spatna vazba", { meno, akcia: akc });
         }
 
-        window.history.replaceState({}, "", window.location.pathname);
+        const preservedSearch = new URLSearchParams();
+        if (FORCE_TV_MODE) {
+            preservedSearch.set("tv", "1");
+        }
+        if (DEBUG_MODE) {
+            preservedSearch.set("debug", "1");
+        }
+        const newUrl = preservedSearch.toString()
+            ? `${window.location.pathname}?${preservedSearch.toString()}`
+            : window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
     }
 }
 
 async function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
-    const baseUrl = "https://hasici-lednica.web.app/index.html";
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
     const safeMiesto = miesto || "Nezadane";
+    const responseSuffix = FORCE_TV_MODE ? "&tv=1" : "";
     const msg =
         `<b>${udalost}</b>\n` +
         `Adresa: ${safeMiesto}\n` +
-        `___<a href="${baseUrl}?akcia=IDEM">IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">NEJDEM</a>`;
+        `___<a href="${baseUrl}?akcia=IDEM${responseSuffix}">IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM${responseSuffix}">NEJDEM</a>`;
     const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
     const body = new URLSearchParams({
         token: apiToken,
@@ -638,10 +669,10 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         sound: "persistent",
         html: 1,
         url: mapsUrl,
-        url_title: "SPUSTIŤ NAVIGÁCIU"
+        url_title: "SPUSTIT NAVIGACIU"
     });
 
-    logDebug("Odosielam Pushover", { skupinaTyp, miesto });
+    logDebug("Odosielam Pushover", { skupinaTyp, miesto, tvMode: FORCE_TV_MODE });
 
     const response = await fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
@@ -753,7 +784,7 @@ async function renderRouteToAddress(adresa) {
 
         mapElement.style.display = "none";
         mapMsg.style.display = "flex";
-        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
+        mapMsg.innerText = "NEPODARILO SA NACITAT TRASU.";
         setMapMessage("");
         logDebug("Chyba mapy", error.message || String(error));
         console.error(error);
@@ -879,7 +910,7 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     idemDiv.innerHTML = "";
     nejdemDiv.innerHTML = "";
-    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    document.getElementById("map-msg").innerText = "CAKAM NA ADRESU VYJAZDU...";
     resetUiState();
 
     if (!doc.exists) {
@@ -964,6 +995,8 @@ async function manualReset() {
 }
 
 window.addEventListener("resize", () => {
+    applyResponsiveMode();
+
     if (map && isDesktopMapEnabled()) {
         setTimeout(() => map.invalidateSize(), 100);
     }
@@ -990,10 +1023,11 @@ document.getElementById("speech-toggle").addEventListener("click", () => {
 });
 
 bindSpeechUnlock();
+applyResponsiveMode();
 updateSpeechButton();
 window.addEventListener("beforeunload", stopBannerSpeech);
 
-logDebug("Aplikacia pripravena", { debug: DEBUG_MODE });
+logDebug("Aplikacia pripravena", { debug: DEBUG_MODE, tvMode: FORCE_TV_MODE });
 window.onload = async () => {
     await spracujVstup();
     tryRestoreSpeech();
