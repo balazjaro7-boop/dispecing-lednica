@@ -37,13 +37,14 @@
         .btn-action:last-child{ background:var(--btn-reset); }
 
         .speech-btn{
-            min-width:148px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+            width:42px; height:38px; display:inline-flex; align-items:center; justify-content:center;
             background:#1a1f27; color:#fff; border:1px solid #333; border-radius:4px; cursor:pointer;
-            font-size:0.82rem; line-height:1; font-weight:700; padding:0 12px; white-space:nowrap;
+            font-size:1.1rem; line-height:1; font-weight:700; padding:0;
         }
         .speech-btn[data-state="blocked"]{ background:#5d3b00; border-color:#8c6500; }
         .speech-btn[data-state="ready"]{ background:#0f5132; border-color:#1d6f42; }
         .speech-btn[data-state="off"]{ background:#4a1f28; border-color:#6c2a38; }
+        .speech-btn[data-state="unsupported"]{ background:#444; border-color:#666; opacity:0.75; }
 
         #banner{
             display:none; flex:0 0 auto; padding:12px; text-align:center;
@@ -135,7 +136,7 @@
     <div class="toolbar" style="gap:15px;">
         <div id="clock" class="clock">00:00:00</div>
         <div style="display:flex; gap:8px;">
-            <button id="speech-toggle" class="speech-btn" type="button" title="Zapnut hlas" aria-label="Zapnut hlas" data-state="blocked">ZAPNUT HLAS</button>
+            <button id="speech-toggle" class="speech-btn" type="button" title="Zapnut hlas" aria-label="Zapnut hlas" data-state="blocked">🔊</button>
             <a href="archiv.html" class="btn-action">ARCHIV</a>
             <button class="btn-action" onclick="manualReset()">RESET</button>
         </div>
@@ -237,12 +238,16 @@ function isDesktopMapEnabled() {
     return window.innerWidth > 1024;
 }
 
+function isSpeechSupported() {
+    return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
 function isDesktopSpeechEnabled() {
-    return window.innerWidth > 768 && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+    return window.innerWidth > 768 && isSpeechSupported();
 }
 
 function loadSpeechVoices() {
-    if (!("speechSynthesis" in window)) {
+    if (!isSpeechSupported()) {
         return [];
     }
 
@@ -293,7 +298,7 @@ function stopBannerSpeech() {
     lastSpeechKey = "";
     currentSpeechText = "";
 
-    if ("speechSynthesis" in window) {
+    if (isSpeechSupported()) {
         window.speechSynthesis.cancel();
     }
 
@@ -370,33 +375,37 @@ function startBannerSpeech(prefix, typ, adresa) {
     }, SPEECH_REPEAT_MS);
 }
 
-function isSpeechButtonVisible() {
-    return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
-}
-
 function updateSpeechButton() {
     const button = document.getElementById("speech-toggle");
     if (!button) {
         return;
     }
 
-    if (!isSpeechButtonVisible() || !isDesktopSpeechEnabled()) {
-        button.style.display = "none";
+    button.style.display = "inline-flex";
+    button.textContent = "🔊";
+
+    if (!isSpeechSupported()) {
+        button.dataset.state = "unsupported";
+        button.title = "Hlas nie je podporovany";
+        button.setAttribute("aria-label", "Hlas nie je podporovany");
         return;
     }
 
-    button.style.display = "inline-flex";
+    if (window.innerWidth <= 768) {
+        button.dataset.state = "off";
+        button.title = "Hlas je dostupny len na vacsom zobrazeni";
+        button.setAttribute("aria-label", "Hlas je dostupny len na vacsom zobrazeni");
+        return;
+    }
 
     if (!speechUnlocked) {
         button.dataset.state = "blocked";
-        button.textContent = "ZAPNUT HLAS";
         button.title = "Zapnut hlas";
         button.setAttribute("aria-label", "Zapnut hlas");
         return;
     }
 
     button.dataset.state = currentSpeechText ? "ready" : "off";
-    button.textContent = currentSpeechText ? "HLAS AKTIVNY" : "HLAS PRIPRAVENY";
     button.title = currentSpeechText ? "Hlas je aktivny" : "Hlas pripraveny";
     button.setAttribute("aria-label", currentSpeechText ? "Hlas je aktivny" : "Hlas pripraveny");
 }
@@ -966,7 +975,7 @@ window.addEventListener("resize", () => {
     updateSpeechButton();
 });
 
-if ("speechSynthesis" in window) {
+if (isSpeechSupported()) {
     loadSpeechVoices();
     window.speechSynthesis.onvoiceschanged = loadSpeechVoices;
 }
