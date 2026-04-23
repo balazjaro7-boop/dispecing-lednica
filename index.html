@@ -27,6 +27,1920 @@
         .brand img{ height:45px; width:auto; }
         .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align:center; line-height:1.2; }
         .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+        .toolbar{ display:flex; align-items:center; gap:8px; }
+
+        .btn-action{
+            color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
+            border-radius:3px; text-decoration:none; display:inline-block; font-weight:bold;
+        }
+        .btn-action:first-child{ background:var(--btn-archiv); }
+        .btn-action:last-child{ background:var(--btn-reset); }
+
+        .icon-btn{
+            width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+            background:#1a1f27; color:#fff; border:1px solid #333; border-radius:4px; cursor:pointer;
+            font-size:1.05rem; line-height:1;
+        }
+        .icon-btn[data-state="blocked"]{ background:#5d3b00; border-color:#8c6500; }
+        .icon-btn[data-state="ready"]{ background:#0f5132; border-color:#1d6f42; }
+        .icon-btn[data-state="off"]{ background:#4a1f28; border-color:#6c2a38; }
+
+        #banner{
+            display:none; flex:0 0 auto; padding:12px; text-align:center;
+            animation:stroboskop 0.8s infinite; border-bottom:2px solid #000;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+
+        @keyframes stroboskop{
+            0%{ background:#8b0000; color:#fff; }
+            50%{ background:#ffeb3b; color:#000; }
+            100%{ background:#8b0000; color:#fff; }
+        }
+
+        .main{ flex:1; display:grid; grid-template-columns:300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
+        .map-shell{ background:var(--panel); border-radius:4px; overflow:hidden; position:relative; border:1px solid #222; }
+        #map{ width:100%; height:100%; display:none; }
+        .map-placeholder{
+            position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+            font-size:1.2rem; color:#444; text-align:center; font-weight:bold; padding:20px;
+            background:var(--panel);
+        }
+        .map-note{
+            position:absolute; left:10px; bottom:10px; z-index:500;
+            background:rgba(0,0,0,0.75); color:#fff; padding:8px 10px; border-radius:4px;
+            font-size:0.9rem; display:none;
+        }
+
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+
+        .leaflet-container{ background:#111; }
+        .leaflet-routing-alt, .leaflet-control-attribution{ display:none !important; }
+
+        #debug-panel{
+            display:none; position:fixed; right:10px; bottom:10px; z-index:3000;
+            width:360px; max-width:calc(100vw - 20px); max-height:220px; overflow:auto;
+            background:rgba(0,0,0,0.88); border:1px solid #333; border-radius:6px;
+            padding:10px; font:12px/1.4 monospace; color:#ddd;
+        }
+        #debug-panel strong{ color:#ffeb3b; display:block; margin-bottom:6px; }
+        #debug-log{ white-space:pre-wrap; word-break:break-word; }
+
+        #archive-modal{
+            position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
+            background:rgba(0,0,0,0.78); backdrop-filter:blur(4px);
+        }
+        .archive-modal-box{
+            min-width:520px; max-width:90vw; padding:38px 46px; border-radius:14px;
+            background:#111820; border:3px solid #ffeb3b; text-align:center;
+            box-shadow:0 24px 70px rgba(0,0,0,0.55);
+        }
+        .archive-modal-box strong{
+            display:block; font-size:3rem; color:var(--yellow); margin-bottom:12px; text-transform:uppercase;
+        }
+        .archive-modal-box span{
+            color:#ffffff; font-size:1.4rem; font-weight:700;
+        }
+
+        @media (max-width: 1024px){
+            .main{ grid-template-columns:1fr 1fr; }
+            .map-shell{ display:none; }
+            .header{ flex-direction:column; padding:10px; gap:15px; }
+            #banner{ white-space:normal; font-size:1.2rem; }
+            #debug-panel{ width:auto; }
+            .archive-modal-box{
+                min-width:auto; width:90vw; padding:28px 22px;
+            }
+            .archive-modal-box strong{
+                font-size:2.1rem;
+            }
+            .archive-modal-box span{
+                font-size:1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
+    <div id="timer-container" class="center-timer">
+        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
+        <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
+    </div>
+    <div class="toolbar" style="gap:15px;">
+        <div id="clock" class="clock">00:00:00</div>
+        <div style="display:flex; gap:8px;">
+            <button id="speech-toggle" class="icon-btn" type="button" title="Zapnúť hlas" aria-label="Zapnúť hlas" data-state="blocked">🔈</button>
+            <a href="archiv.html" class="btn-action">ARCHÍV</a>
+            <button class="btn-action" onclick="manualReset()">RESET</button>
+        </div>
+    </div>
+</div>
+
+<div id="banner">
+    <div style="font-size:1.8rem; font-weight:900; text-transform:uppercase;">
+        <span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
+    </div>
+</div>
+
+<div class="main">
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
+    <div class="map-shell">
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <div id="map"></div>
+        <div id="map-note" class="map-note"></div>
+    </div>
+    <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
+</div>
+
+<div id="debug-panel">
+    <strong>DEBUG REŽIM</strong>
+    <div id="debug-log"></div>
+</div>
+
+<div id="archive-modal">
+    <div class="archive-modal-box">
+        <strong>Ukladám výjazd</strong>
+        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const START_ADDRESS = "Lednica 243";
+const START_FALLBACK_COORDS = [49.064949, 18.206457];
+const RESET_PIN = "1234";
+const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
+const SPEECH_REPEAT_MS = 10 * 1000;
+
+let timerInterval = null;
+let map = null;
+let routeLine = null;
+let startMarker = null;
+let endMarker = null;
+let activeRouteRequest = 0;
+let autoArchiveInProgress = false;
+let speechInterval = null;
+let lastSpeechKey = "";
+let speechVoices = [];
+let speechUnlocked = false;
+let pendingSpeechText = "";
+let currentSpeechText = "";
+const urlParams = new URLSearchParams(window.location.search);
+const DEBUG_MODE = urlParams.get("debug") === "1";
+
+setInterval(() => {
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
+}, 1000);
+
+function logDebug(message, data) {
+    const timestamp = new Date().toLocaleTimeString("sk-SK");
+    const formatted = data === undefined
+        ? `[${timestamp}] ${message}`
+        : `[${timestamp}] ${message} ${typeof data === "string" ? data : JSON.stringify(data)}`;
+
+    console.log(formatted);
+
+    if (!DEBUG_MODE) {
+        return;
+    }
+
+    const panel = document.getElementById("debug-panel");
+    const log = document.getElementById("debug-log");
+    panel.style.display = "block";
+    log.textContent = `${formatted}\n${log.textContent}`.slice(0, 5000);
+}
+
+function showArchiveModal(show) {
+    document.getElementById("archive-modal").style.display = show ? "flex" : "none";
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isDesktopMapEnabled() {
+    return window.innerWidth > 1024;
+}
+
+function isDesktopSpeechEnabled() {
+    return window.innerWidth > 768 && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
+function loadSpeechVoices() {
+    if (!("speechSynthesis" in window)) {
+        return [];
+    }
+
+    speechVoices = window.speechSynthesis.getVoices();
+    return speechVoices;
+}
+
+function getPreferredVoice() {
+    const voices = speechVoices.length ? speechVoices : loadSpeechVoices();
+    if (!voices.length) {
+        return null;
+    }
+
+    return voices.find((voice) => voice.lang === "sk-SK")
+        || voices.find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("sk"))
+        || voices.find((voice) => voice.default)
+        || voices[0]
+        || null;
+}
+
+function buildBannerSpeechText(prefix, typ, adresa) {
+    return [prefix, typ, adresa].filter(Boolean).join(". ") + ".";
+}
+
+function stopBannerSpeech() {
+    if (speechInterval) {
+        clearInterval(speechInterval);
+        speechInterval = null;
+    }
+
+    lastSpeechKey = "";
+    currentSpeechText = "";
+
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+    }
+
+    updateSpeechButton();
+}
+
+function speakBannerNow(text) {
+    if (!isDesktopSpeechEnabled() || !text) {
+        logDebug("Hlas preskočený", { enabled: isDesktopSpeechEnabled(), hasText: !!text });
+        return;
+    }
+
+    if (!speechUnlocked) {
+        pendingSpeechText = text;
+        logDebug("Hlas čaká na odomknutie");
+        updateSpeechButton();
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getPreferredVoice();
+    if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+    } else {
+        utterance.lang = "sk-SK";
+    }
+
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onstart = () => {
+        logDebug("Hlas spustený", { text, voice: utterance.voice ? utterance.voice.name : utterance.lang });
+        updateSpeechButton();
+    };
+    utterance.onerror = (event) => {
+        logDebug("Hlas zlyhal", event.error || "unknown");
+        if (event.error === "not-allowed") {
+            speechUnlocked = false;
+            pendingSpeechText = text;
+        }
+        updateSpeechButton();
+    };
+    currentSpeechText = text;
+    window.speechSynthesis.speak(utterance);
+}
+
+function startBannerSpeech(prefix, typ, adresa) {
+    if (!isDesktopSpeechEnabled()) {
+        stopBannerSpeech();
+        return;
+    }
+
+    const text = buildBannerSpeechText(prefix, typ, adresa);
+    const speechKey = `${prefix}|${typ}|${adresa}`;
+    if (!text.trim()) {
+        stopBannerSpeech();
+        return;
+    }
+
+    if (speechKey === lastSpeechKey && speechInterval) {
+        return;
+    }
+
+    stopBannerSpeech();
+    lastSpeechKey = speechKey;
+    pendingSpeechText = text;
+    speakBannerNow(text);
+    speechInterval = setInterval(() => {
+        speakBannerNow(text);
+    }, SPEECH_REPEAT_MS);
+}
+
+function isSpeechButtonVisible() {
+    return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
+function updateSpeechButton() {
+    const button = document.getElementById("speech-toggle");
+    if (!button) {
+        return;
+    }
+
+    if (!isSpeechButtonVisible() || !isDesktopSpeechEnabled()) {
+        button.style.display = "none";
+        return;
+    }
+
+    button.style.display = "inline-flex";
+
+    if (!speechUnlocked) {
+        button.dataset.state = "blocked";
+        button.textContent = "🔈";
+        button.title = "Zapnúť hlas";
+        button.setAttribute("aria-label", "Zapnúť hlas");
+        return;
+    }
+
+    button.dataset.state = currentSpeechText ? "ready" : "off";
+    button.textContent = currentSpeechText ? "🔊" : "🔉";
+    button.title = currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený";
+    button.setAttribute("aria-label", currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený");
+}
+
+function unlockSpeech(forceTest = false) {
+    if (!isDesktopSpeechEnabled()) {
+        updateSpeechButton();
+        return;
+    }
+
+    loadSpeechVoices();
+    speechUnlocked = true;
+    updateSpeechButton();
+    logDebug("Hlas odomknutý");
+
+    if (forceTest) {
+        const probe = new SpeechSynthesisUtterance("");
+        probe.volume = 0;
+        try {
+            window.speechSynthesis.speak(probe);
+            window.speechSynthesis.cancel();
+        } catch (error) {
+            speechUnlocked = false;
+            logDebug("Test hlasu zlyhal", error.message || String(error));
+            updateSpeechButton();
+            return;
+        }
+    }
+
+    if (pendingSpeechText) {
+        const text = pendingSpeechText;
+        pendingSpeechText = "";
+        speakBannerNow(text);
+    }
+}
+
+function bindSpeechUnlock() {
+    const unlock = () => unlockSpeech(true);
+    ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+        window.addEventListener(eventName, unlock, { passive: true });
+    });
+}
+
+function ensureMap() {
+    if (!isDesktopMapEnabled()) {
+        return null;
+    }
+
+    if (!map) {
+        map = L.map("map", {
+            zoomControl: false,
+            attributionControl: false
+        }).setView(START_FALLBACK_COORDS, 13);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19
+        }).addTo(map);
+    }
+
+    return map;
+}
+
+function setMapMessage(message) {
+    const note = document.getElementById("map-note");
+    note.innerText = message || "";
+    note.style.display = message ? "block" : "none";
+}
+
+function getDispatchCategory(udalost, podtyp) {
+    const upperPodtyp = (podtyp || "").toUpperCase();
+    const upperUdalost = (udalost || "").toUpperCase();
+
+    if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
+        return "VÝJAZD";
+    }
+
+    const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
+    if (
+        text.includes("nehoda") ||
+        text.includes("voda") ||
+        text.includes("vody") ||
+        text.includes("strom") ||
+        text.includes("technic")
+    ) {
+        return "TECHNICKÝ VÝJAZD";
+    }
+
+    return "POŽIAR";
+}
+
+function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
+    const bounds = L.latLngBounds([startCoords, endCoords]);
+
+    if (routeBounds && routeBounds.isValid()) {
+        bounds.extend(routeBounds);
+    }
+
+    if (!bounds.isValid()) {
+        return;
+    }
+
+    const isShortRoute = routeDistanceMeters > 0 && routeDistanceMeters <= 1000;
+    const isMediumRoute = routeDistanceMeters > 1000 && routeDistanceMeters <= 5000;
+
+    mapInstance.fitBounds(bounds, {
+        paddingTopLeft: isShortRoute ? [2, 2] : isMediumRoute ? [6, 6] : [10, 10],
+        paddingBottomRight: isShortRoute ? [2, 18] : isMediumRoute ? [6, 24] : [10, 30],
+        maxZoom: isShortRoute ? 18 : isMediumRoute ? 17 : 16
+    });
+}
+
+function clearRoute() {
+    if (!map) {
+        return;
+    }
+
+    if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+    }
+
+    if (startMarker) {
+        map.removeLayer(startMarker);
+        startMarker = null;
+    }
+
+    if (endMarker) {
+        map.removeLayer(endMarker);
+        endMarker = null;
+    }
+}
+
+function resetUiState() {
+    stopBannerSpeech();
+    document.getElementById("banner").style.display = "none";
+    document.getElementById("prefix").innerText = "";
+    document.getElementById("typ").innerText = "";
+    document.getElementById("adresa").innerText = "";
+    document.getElementById("timer").innerText = "00:00";
+    document.getElementById("map-msg").style.display = "flex";
+    document.getElementById("map").style.display = "none";
+    setMapMessage("");
+    clearRoute();
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+async function spracujVstup() {
+    const u = urlParams.get("udalost");
+    const adr = urlParams.get("miesto");
+    const akc = urlParams.get("akcia");
+    const t = urlParams.get("typ");
+    const ref = db.collection("vyjazdy").doc("active");
+
+    logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t });
+
+    if (u) {
+        await ref.set({
+            __metadata: {
+                typ: u,
+                podtyp: t || "",
+                miesto: adr || "",
+                timestamp: Date.now()
+            }
+        });
+
+        logDebug("Udalosť uložená do Firestore");
+
+        try {
+            await sendPushover(u, adr, t);
+        } catch (error) {
+            logDebug("Pushover chyba", error.message || String(error));
+        }
+
+        window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    if (akc) {
+        let meno = localStorage.getItem("h_meno") || prompt("Zadaj meno:");
+
+        if (meno) {
+            meno = meno.trim();
+            localStorage.setItem("h_meno", meno);
+            await ref.set({ [meno]: akc }, { merge: true });
+            logDebug("Zapísaná spätná väzba", { meno, akcia: akc });
+        }
+
+        window.history.replaceState({}, "", window.location.pathname);
+    }
+}
+
+async function sendPushover(udalost, miesto, skupinaTyp) {
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    const baseUrl = "https://hasici-lednica.web.app/index.html";
+    const safeMiesto = miesto || "Nezadané";
+    const msg =
+        `<b>${udalost}</b>\n` +
+        `Adresa: ${safeMiesto}\n` +
+        `___<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+    const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
+    const body = new URLSearchParams({
+        token: apiToken,
+        user: groupVyjazd,
+        message: msg,
+        title: `${skupinaTyp === "AED" ? "🫀" : "🚨"} ${udalost}`,
+        priority: 2,
+        retry: 60,
+        expire: 3600,
+        sound: "persistent",
+        html: 1,
+        url: mapsUrl,
+        url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+    });
+
+    logDebug("Odosielam Pushover", { skupinaTyp, miesto });
+
+    const response = await fetch("https://api.pushover.net/1/messages.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+    });
+
+    const text = await response.text();
+    logDebug("Pushover odpoveď", text);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${text}`);
+    }
+}
+
+async function geocodeAddress(query) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=sk&q=${encodeURIComponent(query)}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error("Geokódovanie zlyhalo.");
+    }
+
+    const results = await response.json();
+    if (!results.length) {
+        throw new Error("Adresa sa nenašla.");
+    }
+
+    return [parseFloat(results[0].lat), parseFloat(results[0].lon)];
+}
+
+async function getRoute(startCoords, endCoords) {
+    const [startLat, startLon] = startCoords;
+    const [endLat, endLon] = endCoords;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Výpočet trasy zlyhal.");
+    }
+
+    const data = await response.json();
+    if (!data.routes || !data.routes.length) {
+        throw new Error("Trasa sa nenašla.");
+    }
+
+    return data.routes[0];
+}
+
+async function renderRouteToAddress(adresa) {
+    if (!isDesktopMapEnabled()) {
+        return;
+    }
+
+    const currentRequest = ++activeRouteRequest;
+    const mapInstance = ensureMap();
+    const mapElement = document.getElementById("map");
+    const mapMsg = document.getElementById("map-msg");
+
+    mapMsg.style.display = "none";
+    mapElement.style.display = "block";
+    setMapMessage("Načítavam trasu...");
+    clearRoute();
+
+    try {
+        const [startCoords, endCoords] = await Promise.all([
+            geocodeAddress(`${START_ADDRESS}, Lednica, Slovensko`).catch(() => START_FALLBACK_COORDS),
+            geocodeAddress(`${adresa}, Slovensko`)
+        ]);
+
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        const route = await getRoute(startCoords, endCoords);
+
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        routeLine = L.geoJSON(route.geometry, {
+            style: {
+                color: "#ff1744",
+                weight: 7,
+                opacity: 0.95
+            }
+        }).addTo(mapInstance);
+
+        startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
+        endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
+
+        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
+
+        const km = (route.distance / 1000).toFixed(1);
+        const min = Math.round(route.duration / 60);
+        setMapMessage(`Trasa ${km} km • cca ${min} min`);
+
+        setTimeout(() => {
+            mapInstance.invalidateSize();
+            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
+        }, 100);
+    } catch (error) {
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        mapElement.style.display = "none";
+        mapMsg.style.display = "flex";
+        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
+        setMapMessage("");
+        logDebug("Chyba mapy", error.message || String(error));
+        console.error(error);
+    }
+}
+
+function formatDateParts(timestamp) {
+    const date = new Date(timestamp);
+    return {
+        datum: date.toLocaleDateString("sk-SK"),
+        cas: date.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        iso: date.toISOString()
+    };
+}
+
+function buildArchivePayload(data) {
+    const metadata = data.__metadata || {};
+    const participants = { idem: [], nejdem: [] };
+
+    Object.keys(data).forEach((key) => {
+        if (key === "__metadata") {
+            return;
+        }
+
+        if (data[key] === "IDEM") {
+            participants.idem.push(key);
+        } else if (data[key] === "NEJDEM") {
+            participants.nejdem.push(key);
+        }
+    });
+
+    const eventTimestamp = metadata.timestamp || Date.now();
+    const timeParts = formatDateParts(eventTimestamp);
+    const podtyp = metadata.podtyp || "";
+    const kategoriaVyjazdu = getDispatchCategory(metadata.typ || "", podtyp);
+    const info = [metadata.typ || "", podtyp, metadata.miesto || ""].filter(Boolean).join(" - ");
+
+    return {
+        datum: firebase.firestore.Timestamp.fromMillis(eventTimestamp),
+        datumText: timeParts.datum,
+        cas: timeParts.cas,
+        timestamp: eventTimestamp,
+        archivedAt: Date.now(),
+        archivedAtIso: new Date().toISOString(),
+        udalost: metadata.typ || "",
+        podtyp,
+        typUdalosti: podtyp,
+        kategoriaVyjazdu: (podtyp || "").toUpperCase() === "AED" ? "AED" : kategoriaVyjazdu,
+        adresa: metadata.miesto || "",
+        miesto: metadata.miesto || "",
+        info,
+        odpovede: participants,
+        isli: participants.idem,
+        nejdli: participants.nejdem,
+        idem: participants.idem,
+        nejdem: participants.nejdem,
+        pocetIdem: participants.idem.length,
+        pocetNejdem: participants.nejdem.length,
+        raw: data
+    };
+}
+
+async function autoArchiveActiveRun() {
+    if (autoArchiveInProgress) {
+        return;
+    }
+
+    autoArchiveInProgress = true;
+    stopBannerSpeech();
+    showArchiveModal(true);
+    await wait(150);
+    const modalShownAt = Date.now();
+    logDebug("Spúšťam auto-archiváciu");
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const activeRef = db.collection("vyjazdy").doc("active");
+            const activeDoc = await transaction.get(activeRef);
+
+            if (!activeDoc.exists) {
+                return;
+            }
+
+            const activeData = activeDoc.data();
+            const metadata = activeData.__metadata || {};
+
+            if (!metadata.timestamp) {
+                return;
+            }
+
+            if (metadata.archivedAt) {
+                return;
+            }
+
+            if ((Date.now() - metadata.timestamp) < AUTO_ARCHIVE_AFTER_MS) {
+                return;
+            }
+
+            const archiveRef = db.collection("archiv").doc();
+            const archivePayload = buildArchivePayload(activeData);
+
+            transaction.set(archiveRef, archivePayload);
+            transaction.delete(activeRef);
+        });
+
+        logDebug("Auto-archivácia dokončená");
+    } catch (error) {
+        logDebug("Auto-archivácia zlyhala", error.message || String(error));
+        console.error(error);
+    } finally {
+        const visibleFor = Date.now() - modalShownAt;
+        if (visibleFor < 3000) {
+            await wait(3000 - visibleFor);
+        }
+        showArchiveModal(false);
+        autoArchiveInProgress = false;
+    }
+}
+
+db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
+    const idemDiv = document.getElementById("idem");
+    const nejdemDiv = document.getElementById("nejdem");
+
+    idemDiv.innerHTML = "";
+    nejdemDiv.innerHTML = "";
+    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    resetUiState();
+
+    if (!doc.exists) {
+        return;
+    }
+
+    const d = doc.data();
+    const m = d.__metadata || {};
+
+    if (m.typ) {
+        const prefix = getDispatchCategory(m.typ, m.podtyp || "");
+        document.getElementById("banner").style.display = "block";
+        document.getElementById("prefix").innerText = prefix;
+        document.getElementById("typ").innerText = m.typ;
+        document.getElementById("adresa").innerText = m.miesto || "";
+        startBannerSpeech(prefix, m.typ, m.miesto || "");
+
+        if (m.miesto && m.miesto.length > 2) {
+            renderRouteToAddress(m.miesto);
+        }
+
+        if (typeof m.timestamp === "number") {
+            startTimer(m.timestamp);
+        }
+    }
+
+    Object.keys(d).forEach((k) => {
+        if (k === "__metadata") return;
+
+        const div = document.createElement("div");
+        div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
+        div.innerText = k;
+        (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
+    });
+});
+
+function formatElapsedTime(start) {
+    const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function startTimer(start) {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    document.getElementById("timer").innerText = formatElapsedTime(start);
+    timerInterval = setInterval(() => {
+        document.getElementById("timer").innerText = formatElapsedTime(start);
+
+        if ((Date.now() - start) >= AUTO_ARCHIVE_AFTER_MS) {
+            autoArchiveActiveRun();
+        }
+    }, 1000);
+}
+
+async function manualReset() {
+    const pin = prompt("Zadaj PIN pre reset:");
+    if (pin === null) {
+        return;
+    }
+
+    if (pin !== RESET_PIN) {
+        alert("Nesprávny PIN.");
+        logDebug("Reset zamietnutý", "Nesprávny PIN");
+        return;
+    }
+
+    if (confirm("Resetovať výjazd?")) {
+        stopBannerSpeech();
+        await db.collection("vyjazdy").doc("active").delete();
+        logDebug("Výjazd bol resetovaný");
+    }
+}
+
+window.addEventListener("resize", () => {
+    if (map && isDesktopMapEnabled()) {
+        setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    if (!isDesktopSpeechEnabled()) {
+        stopBannerSpeech();
+    }
+
+    updateSpeechButton();
+});
+
+if ("speechSynthesis" in window) {
+    loadSpeechVoices();
+    window.speechSynthesis.onvoiceschanged = loadSpeechVoices;
+}
+
+document.getElementById("speech-toggle").addEventListener("click", () => {
+    unlockSpeech(true);
+    if (currentSpeechText) {
+        speakBannerNow(currentSpeechText);
+    } else if (pendingSpeechText) {
+        speakBannerNow(pendingSpeechText);
+    }
+});
+
+bindSpeechUnlock();
+updateSpeechButton();
+window.addEventListener("beforeunload", stopBannerSpeech);
+
+logDebug("Aplikácia pripravená", { debug: DEBUG_MODE });
+window.onload = spracujVstup;
+</script>
+</body>
+</html>
+
+št 23. 4. 2026 o 16:54 Peter Majerko <peter.majerko7@gmail.com> napísal(a):
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DHZ Lednica - DISPEČING</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root{
+            --bg:#07090c;
+            --panel:#10141a;
+            --green:#00e676;
+            --gray:#888;
+            --red:#ff1744;
+            --yellow:#ffeb3b;
+            --btn-archiv:#00e676;
+            --btn-reset:#ff1744;
+        }
+
+        body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+        .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display:flex; align-items:center; gap:10px; }
+        .brand img{ height:45px; width:auto; }
+        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align:center; line-height:1.2; }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
+        .toolbar{ display:flex; align-items:center; gap:8px; }
+
+        .btn-action{
+            color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
+            border-radius:3px; text-decoration:none; display:inline-block; font-weight:bold;
+        }
+        .btn-action:first-child{ background:var(--btn-archiv); }
+        .btn-action:last-child{ background:var(--btn-reset); }
+
+        .icon-btn{
+            width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+            background:#1a1f27; color:#fff; border:1px solid #333; border-radius:4px; cursor:pointer;
+            font-size:1.05rem; line-height:1;
+        }
+        .icon-btn[data-state="blocked"]{ background:#5d3b00; border-color:#8c6500; }
+        .icon-btn[data-state="ready"]{ background:#0f5132; border-color:#1d6f42; }
+        .icon-btn[data-state="off"]{ background:#4a1f28; border-color:#6c2a38; }
+
+        #banner{
+            display:none; flex:0 0 auto; padding:12px; text-align:center;
+            animation:stroboskop 0.8s infinite; border-bottom:2px solid #000;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+
+        @keyframes stroboskop{
+            0%{ background:#8b0000; color:#fff; }
+            50%{ background:#ffeb3b; color:#000; }
+            100%{ background:#8b0000; color:#fff; }
+        }
+
+        .main{ flex:1; display:grid; grid-template-columns:300px 1fr 300px; overflow:hidden; padding:10px; gap:15px; }
+        .map-shell{ background:var(--panel); border-radius:4px; overflow:hidden; position:relative; border:1px solid #222; }
+        #map{ width:100%; height:100%; display:none; }
+        .map-placeholder{
+            position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+            font-size:1.2rem; color:#444; text-align:center; font-weight:bold; padding:20px;
+            background:var(--panel);
+        }
+        .map-note{
+            position:absolute; left:10px; bottom:10px; z-index:500;
+            background:rgba(0,0,0,0.75); color:#fff; padding:8px 10px; border-radius:4px;
+            font-size:0.9rem; display:none;
+        }
+
+        .col{ display:flex; flex-direction:column; background:var(--panel); border-radius:4px; padding:10px; overflow:hidden; }
+        .title{ text-align:center; font-size:1.5rem; font-weight:800; border-bottom:2px solid #222; padding-bottom:5px; margin-bottom:10px; }
+        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .item{ padding:5px 10px; font-size:1.2rem; font-weight:bold; text-transform:uppercase; border-radius:3px; }
+        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
+        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+
+        .leaflet-container{ background:#111; }
+        .leaflet-routing-alt, .leaflet-control-attribution{ display:none !important; }
+
+        #debug-panel{
+            display:none; position:fixed; right:10px; bottom:10px; z-index:3000;
+            width:360px; max-width:calc(100vw - 20px); max-height:220px; overflow:auto;
+            background:rgba(0,0,0,0.88); border:1px solid #333; border-radius:6px;
+            padding:10px; font:12px/1.4 monospace; color:#ddd;
+        }
+        #debug-panel strong{ color:#ffeb3b; display:block; margin-bottom:6px; }
+        #debug-log{ white-space:pre-wrap; word-break:break-word; }
+
+        #archive-modal{
+            position:fixed; inset:0; z-index:2500; display:none; align-items:center; justify-content:center;
+            background:rgba(0,0,0,0.78); backdrop-filter:blur(4px);
+        }
+        .archive-modal-box{
+            min-width:520px; max-width:90vw; padding:38px 46px; border-radius:14px;
+            background:#111820; border:3px solid #ffeb3b; text-align:center;
+            box-shadow:0 24px 70px rgba(0,0,0,0.55);
+        }
+        .archive-modal-box strong{
+            display:block; font-size:3rem; color:var(--yellow); margin-bottom:12px; text-transform:uppercase;
+        }
+        .archive-modal-box span{
+            color:#ffffff; font-size:1.4rem; font-weight:700;
+        }
+
+        @media (max-width: 1024px){
+            .main{ grid-template-columns:1fr 1fr; }
+            .map-shell{ display:none; }
+            .header{ flex-direction:column; padding:10px; gap:15px; }
+            #banner{ white-space:normal; font-size:1.2rem; }
+            #debug-panel{ width:auto; }
+            .archive-modal-box{
+                min-width:auto; width:90vw; padding:28px 22px;
+            }
+            .archive-modal-box strong{
+                font-size:2.1rem;
+            }
+            .archive-modal-box span{
+                font-size:1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
+    <div id="timer-container" class="center-timer">
+        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
+        <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
+    </div>
+    <div class="toolbar" style="gap:15px;">
+        <div id="clock" class="clock">00:00:00</div>
+        <div style="display:flex; gap:8px;">
+            <button id="speech-toggle" class="icon-btn" type="button" title="Zapnúť hlas" aria-label="Zapnúť hlas" data-state="blocked">🔈</button>
+            <a href="archiv.html" class="btn-action">ARCHÍV</a>
+            <button class="btn-action" onclick="manualReset()">RESET</button>
+        </div>
+    </div>
+</div>
+
+<div id="banner">
+    <div style="font-size:1.8rem; font-weight:900; text-transform:uppercase;">
+        <span id="prefix"></span> : <span id="typ"></span> : <span id="adresa"></span>
+    </div>
+</div>
+
+<div class="main">
+    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
+    <div class="map-shell">
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <div id="map"></div>
+        <div id="map-note" class="map-note"></div>
+    </div>
+    <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
+</div>
+
+<div id="debug-panel">
+    <strong>DEBUG REŽIM</strong>
+    <div id="debug-log"></div>
+</div>
+
+<div id="archive-modal">
+    <div class="archive-modal-box">
+        <strong>Ukladám výjazd</strong>
+        <span>Čakaj chvíľu, prebieha presun do archívu...</span>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
+    authDomain: "hasici-lednica.firebaseapp.com",
+    projectId: "hasici-lednica"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const START_ADDRESS = "Lednica 243";
+const START_FALLBACK_COORDS = [49.064949, 18.206457];
+const RESET_PIN = "1234";
+const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
+const SPEECH_REPEAT_MS = 10 * 1000;
+
+let timerInterval = null;
+let map = null;
+let routeLine = null;
+let startMarker = null;
+let endMarker = null;
+let activeRouteRequest = 0;
+let autoArchiveInProgress = false;
+let speechInterval = null;
+let lastSpeechKey = "";
+let speechVoices = [];
+let speechUnlocked = false;
+let pendingSpeechText = "";
+let currentSpeechText = "";
+const urlParams = new URLSearchParams(window.location.search);
+const DEBUG_MODE = urlParams.get("debug") === "1";
+
+setInterval(() => {
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
+}, 1000);
+
+function logDebug(message, data) {
+    const timestamp = new Date().toLocaleTimeString("sk-SK");
+    const formatted = data === undefined
+        ? `[${timestamp}] ${message}`
+        : `[${timestamp}] ${message} ${typeof data === "string" ? data : JSON.stringify(data)}`;
+
+    console.log(formatted);
+
+    if (!DEBUG_MODE) {
+        return;
+    }
+
+    const panel = document.getElementById("debug-panel");
+    const log = document.getElementById("debug-log");
+    panel.style.display = "block";
+    log.textContent = `${formatted}\n${log.textContent}`.slice(0, 5000);
+}
+
+function showArchiveModal(show) {
+    document.getElementById("archive-modal").style.display = show ? "flex" : "none";
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isDesktopMapEnabled() {
+    return window.innerWidth > 1024;
+}
+
+function isDesktopSpeechEnabled() {
+    return window.innerWidth > 768 && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
+function loadSpeechVoices() {
+    if (!("speechSynthesis" in window)) {
+        return [];
+    }
+
+    speechVoices = window.speechSynthesis.getVoices();
+    return speechVoices;
+}
+
+function getPreferredVoice() {
+    const voices = speechVoices.length ? speechVoices : loadSpeechVoices();
+    if (!voices.length) {
+        return null;
+    }
+
+    return voices.find((voice) => voice.lang === "sk-SK")
+        || voices.find((voice) => voice.lang && voice.lang.toLowerCase().startsWith("sk"))
+        || voices.find((voice) => voice.default)
+        || voices[0]
+        || null;
+}
+
+function buildBannerSpeechText(prefix, typ, adresa) {
+    return [prefix, typ, adresa].filter(Boolean).join(". ") + ".";
+}
+
+function stopBannerSpeech() {
+    if (speechInterval) {
+        clearInterval(speechInterval);
+        speechInterval = null;
+    }
+
+    lastSpeechKey = "";
+    currentSpeechText = "";
+
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+    }
+
+    updateSpeechButton();
+}
+
+function speakBannerNow(text) {
+    if (!isDesktopSpeechEnabled() || !text) {
+        logDebug("Hlas preskočený", { enabled: isDesktopSpeechEnabled(), hasText: !!text });
+        return;
+    }
+
+    if (!speechUnlocked) {
+        pendingSpeechText = text;
+        logDebug("Hlas čaká na odomknutie");
+        updateSpeechButton();
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getPreferredVoice();
+    if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+    } else {
+        utterance.lang = "sk-SK";
+    }
+
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onstart = () => {
+        logDebug("Hlas spustený", { text, voice: utterance.voice ? utterance.voice.name : utterance.lang });
+        updateSpeechButton();
+    };
+    utterance.onerror = (event) => {
+        logDebug("Hlas zlyhal", event.error || "unknown");
+        if (event.error === "not-allowed") {
+            speechUnlocked = false;
+            pendingSpeechText = text;
+        }
+        updateSpeechButton();
+    };
+    currentSpeechText = text;
+    window.speechSynthesis.speak(utterance);
+}
+
+function startBannerSpeech(prefix, typ, adresa) {
+    if (!isDesktopSpeechEnabled()) {
+        stopBannerSpeech();
+        return;
+    }
+
+    const text = buildBannerSpeechText(prefix, typ, adresa);
+    const speechKey = `${prefix}|${typ}|${adresa}`;
+    if (!text.trim()) {
+        stopBannerSpeech();
+        return;
+    }
+
+    if (speechKey === lastSpeechKey && speechInterval) {
+        return;
+    }
+
+    stopBannerSpeech();
+    lastSpeechKey = speechKey;
+    pendingSpeechText = text;
+    speakBannerNow(text);
+    speechInterval = setInterval(() => {
+        speakBannerNow(text);
+    }, SPEECH_REPEAT_MS);
+}
+
+function isSpeechButtonVisible() {
+    return "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+}
+
+function updateSpeechButton() {
+    const button = document.getElementById("speech-toggle");
+    if (!button) {
+        return;
+    }
+
+    if (!isSpeechButtonVisible() || !isDesktopSpeechEnabled()) {
+        button.style.display = "none";
+        return;
+    }
+
+    button.style.display = "inline-flex";
+
+    if (!speechUnlocked) {
+        button.dataset.state = "blocked";
+        button.textContent = "🔈";
+        button.title = "Zapnúť hlas";
+        button.setAttribute("aria-label", "Zapnúť hlas");
+        return;
+    }
+
+    button.dataset.state = currentSpeechText ? "ready" : "off";
+    button.textContent = currentSpeechText ? "🔊" : "🔉";
+    button.title = currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený";
+    button.setAttribute("aria-label", currentSpeechText ? "Hlas je pripravený" : "Hlas pripravený");
+}
+
+function unlockSpeech(forceTest = false) {
+    if (!isDesktopSpeechEnabled()) {
+        updateSpeechButton();
+        return;
+    }
+
+    loadSpeechVoices();
+    speechUnlocked = true;
+    updateSpeechButton();
+    logDebug("Hlas odomknutý");
+
+    if (forceTest) {
+        const probe = new SpeechSynthesisUtterance("");
+        probe.volume = 0;
+        try {
+            window.speechSynthesis.speak(probe);
+            window.speechSynthesis.cancel();
+        } catch (error) {
+            speechUnlocked = false;
+            logDebug("Test hlasu zlyhal", error.message || String(error));
+            updateSpeechButton();
+            return;
+        }
+    }
+
+    if (pendingSpeechText) {
+        const text = pendingSpeechText;
+        pendingSpeechText = "";
+        speakBannerNow(text);
+    }
+}
+
+function bindSpeechUnlock() {
+    const unlock = () => unlockSpeech(true);
+    ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+        window.addEventListener(eventName, unlock, { passive: true });
+    });
+}
+
+function ensureMap() {
+    if (!isDesktopMapEnabled()) {
+        return null;
+    }
+
+    if (!map) {
+        map = L.map("map", {
+            zoomControl: false,
+            attributionControl: false
+        }).setView(START_FALLBACK_COORDS, 13);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19
+        }).addTo(map);
+    }
+
+    return map;
+}
+
+function setMapMessage(message) {
+    const note = document.getElementById("map-note");
+    note.innerText = message || "";
+    note.style.display = message ? "block" : "none";
+}
+
+function getDispatchCategory(udalost, podtyp) {
+    const upperPodtyp = (podtyp || "").toUpperCase();
+    const upperUdalost = (udalost || "").toUpperCase();
+
+    if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
+        return "VÝJAZD";
+    }
+
+    const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
+    if (
+        text.includes("nehoda") ||
+        text.includes("voda") ||
+        text.includes("vody") ||
+        text.includes("strom") ||
+        text.includes("technic")
+    ) {
+        return "TECHNICKÝ VÝJAZD";
+    }
+
+    return "POŽIAR";
+}
+
+function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
+    const bounds = L.latLngBounds([startCoords, endCoords]);
+
+    if (routeBounds && routeBounds.isValid()) {
+        bounds.extend(routeBounds);
+    }
+
+    if (!bounds.isValid()) {
+        return;
+    }
+
+    const isShortRoute = routeDistanceMeters > 0 && routeDistanceMeters <= 1000;
+    const isMediumRoute = routeDistanceMeters > 1000 && routeDistanceMeters <= 5000;
+
+    mapInstance.fitBounds(bounds, {
+        paddingTopLeft: isShortRoute ? [2, 2] : isMediumRoute ? [6, 6] : [10, 10],
+        paddingBottomRight: isShortRoute ? [2, 18] : isMediumRoute ? [6, 24] : [10, 30],
+        maxZoom: isShortRoute ? 18 : isMediumRoute ? 17 : 16
+    });
+}
+
+function clearRoute() {
+    if (!map) {
+        return;
+    }
+
+    if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+    }
+
+    if (startMarker) {
+        map.removeLayer(startMarker);
+        startMarker = null;
+    }
+
+    if (endMarker) {
+        map.removeLayer(endMarker);
+        endMarker = null;
+    }
+}
+
+function resetUiState() {
+    stopBannerSpeech();
+    document.getElementById("banner").style.display = "none";
+    document.getElementById("prefix").innerText = "";
+    document.getElementById("typ").innerText = "";
+    document.getElementById("adresa").innerText = "";
+    document.getElementById("timer").innerText = "00:00";
+    document.getElementById("map-msg").style.display = "flex";
+    document.getElementById("map").style.display = "none";
+    setMapMessage("");
+    clearRoute();
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+async function spracujVstup() {
+    const u = urlParams.get("udalost");
+    const adr = urlParams.get("miesto");
+    const akc = urlParams.get("akcia");
+    const t = urlParams.get("typ");
+    const ref = db.collection("vyjazdy").doc("active");
+
+    logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t });
+
+    if (u) {
+        await ref.set({
+            __metadata: {
+                typ: u,
+                podtyp: t || "",
+                miesto: adr || "",
+                timestamp: Date.now()
+            }
+        });
+
+        logDebug("Udalosť uložená do Firestore");
+
+        try {
+            await sendPushover(u, adr, t);
+        } catch (error) {
+            logDebug("Pushover chyba", error.message || String(error));
+        }
+
+        window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    if (akc) {
+        let meno = localStorage.getItem("h_meno") || prompt("Zadaj meno:");
+
+        if (meno) {
+            meno = meno.trim();
+            localStorage.setItem("h_meno", meno);
+            await ref.set({ [meno]: akc }, { merge: true });
+            logDebug("Zapísaná spätná väzba", { meno, akcia: akc });
+        }
+
+        window.history.replaceState({}, "", window.location.pathname);
+    }
+}
+
+async function sendPushover(udalost, miesto, skupinaTyp) {
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
+    const baseUrl = "https://hasici-lednica.web.app/index.html";
+    const safeMiesto = miesto || "Nezadané";
+    const msg =
+        `<b>${udalost}</b>\n` +
+        `Adresa: ${safeMiesto}\n` +
+        `___<a href="${baseUrl}?akcia=IDEM">✅ IDEM</a>__________<a href="${baseUrl}?akcia=NEJDEM">❌ NEJDEM</a>`;
+    const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : baseUrl;
+    const body = new URLSearchParams({
+        token: apiToken,
+        user: groupVyjazd,
+        message: msg,
+        title: `${skupinaTyp === "AED" ? "🫀" : "🚨"} ${udalost}`,
+        priority: 2,
+        retry: 60,
+        expire: 3600,
+        sound: "persistent",
+        html: 1,
+        url: mapsUrl,
+        url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+    });
+
+    logDebug("Odosielam Pushover", { skupinaTyp, miesto });
+
+    const response = await fetch("https://api.pushover.net/1/messages.json", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+    });
+
+    const text = await response.text();
+    logDebug("Pushover odpoveď", text);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${text}`);
+    }
+}
+
+async function geocodeAddress(query) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=sk&q=${encodeURIComponent(query)}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error("Geokódovanie zlyhalo.");
+    }
+
+    const results = await response.json();
+    if (!results.length) {
+        throw new Error("Adresa sa nenašla.");
+    }
+
+    return [parseFloat(results[0].lat), parseFloat(results[0].lon)];
+}
+
+async function getRoute(startCoords, endCoords) {
+    const [startLat, startLon] = startCoords;
+    const [endLat, endLon] = endCoords;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Výpočet trasy zlyhal.");
+    }
+
+    const data = await response.json();
+    if (!data.routes || !data.routes.length) {
+        throw new Error("Trasa sa nenašla.");
+    }
+
+    return data.routes[0];
+}
+
+async function renderRouteToAddress(adresa) {
+    if (!isDesktopMapEnabled()) {
+        return;
+    }
+
+    const currentRequest = ++activeRouteRequest;
+    const mapInstance = ensureMap();
+    const mapElement = document.getElementById("map");
+    const mapMsg = document.getElementById("map-msg");
+
+    mapMsg.style.display = "none";
+    mapElement.style.display = "block";
+    setMapMessage("Načítavam trasu...");
+    clearRoute();
+
+    try {
+        const [startCoords, endCoords] = await Promise.all([
+            geocodeAddress(`${START_ADDRESS}, Lednica, Slovensko`).catch(() => START_FALLBACK_COORDS),
+            geocodeAddress(`${adresa}, Slovensko`)
+        ]);
+
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        const route = await getRoute(startCoords, endCoords);
+
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        routeLine = L.geoJSON(route.geometry, {
+            style: {
+                color: "#ff1744",
+                weight: 7,
+                opacity: 0.95
+            }
+        }).addTo(mapInstance);
+
+        startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
+        endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
+
+        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
+
+        const km = (route.distance / 1000).toFixed(1);
+        const min = Math.round(route.duration / 60);
+        setMapMessage(`Trasa ${km} km • cca ${min} min`);
+
+        setTimeout(() => {
+            mapInstance.invalidateSize();
+            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
+        }, 100);
+    } catch (error) {
+        if (currentRequest !== activeRouteRequest) {
+            return;
+        }
+
+        mapElement.style.display = "none";
+        mapMsg.style.display = "flex";
+        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
+        setMapMessage("");
+        logDebug("Chyba mapy", error.message || String(error));
+        console.error(error);
+    }
+}
+
+function formatDateParts(timestamp) {
+    const date = new Date(timestamp);
+    return {
+        datum: date.toLocaleDateString("sk-SK"),
+        cas: date.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        iso: date.toISOString()
+    };
+}
+
+function buildArchivePayload(data) {
+    const metadata = data.__metadata || {};
+    const participants = { idem: [], nejdem: [] };
+
+    Object.keys(data).forEach((key) => {
+        if (key === "__metadata") {
+            return;
+        }
+
+        if (data[key] === "IDEM") {
+            participants.idem.push(key);
+        } else if (data[key] === "NEJDEM") {
+            participants.nejdem.push(key);
+        }
+    });
+
+    const eventTimestamp = metadata.timestamp || Date.now();
+    const timeParts = formatDateParts(eventTimestamp);
+    const podtyp = metadata.podtyp || "";
+    const kategoriaVyjazdu = getDispatchCategory(metadata.typ || "", podtyp);
+    const info = [metadata.typ || "", podtyp, metadata.miesto || ""].filter(Boolean).join(" - ");
+
+    return {
+        datum: firebase.firestore.Timestamp.fromMillis(eventTimestamp),
+        datumText: timeParts.datum,
+        cas: timeParts.cas,
+        timestamp: eventTimestamp,
+        archivedAt: Date.now(),
+        archivedAtIso: new Date().toISOString(),
+        udalost: metadata.typ || "",
+        podtyp,
+        typUdalosti: podtyp,
+        kategoriaVyjazdu: (podtyp || "").toUpperCase() === "AED" ? "AED" : kategoriaVyjazdu,
+        adresa: metadata.miesto || "",
+        miesto: metadata.miesto || "",
+        info,
+        odpovede: participants,
+        isli: participants.idem,
+        nejdli: participants.nejdem,
+        idem: participants.idem,
+        nejdem: participants.nejdem,
+        pocetIdem: participants.idem.length,
+        pocetNejdem: participants.nejdem.length,
+        raw: data
+    };
+}
+
+async function autoArchiveActiveRun() {
+    if (autoArchiveInProgress) {
+        return;
+    }
+
+    autoArchiveInProgress = true;
+    stopBannerSpeech();
+    showArchiveModal(true);
+    await wait(150);
+    const modalShownAt = Date.now();
+    logDebug("Spúšťam auto-archiváciu");
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const activeRef = db.collection("vyjazdy").doc("active");
+            const activeDoc = await transaction.get(activeRef);
+
+            if (!activeDoc.exists) {
+                return;
+            }
+
+            const activeData = activeDoc.data();
+            const metadata = activeData.__metadata || {};
+
+            if (!metadata.timestamp) {
+                return;
+            }
+
+            if (metadata.archivedAt) {
+                return;
+            }
+
+            if ((Date.now() - metadata.timestamp) < AUTO_ARCHIVE_AFTER_MS) {
+                return;
+            }
+
+            const archiveRef = db.collection("archiv").doc();
+            const archivePayload = buildArchivePayload(activeData);
+
+            transaction.set(archiveRef, archivePayload);
+            transaction.delete(activeRef);
+        });
+
+        logDebug("Auto-archivácia dokončená");
+    } catch (error) {
+        logDebug("Auto-archivácia zlyhala", error.message || String(error));
+        console.error(error);
+    } finally {
+        const visibleFor = Date.now() - modalShownAt;
+        if (visibleFor < 3000) {
+            await wait(3000 - visibleFor);
+        }
+        showArchiveModal(false);
+        autoArchiveInProgress = false;
+    }
+}
+
+db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
+    const idemDiv = document.getElementById("idem");
+    const nejdemDiv = document.getElementById("nejdem");
+
+    idemDiv.innerHTML = "";
+    nejdemDiv.innerHTML = "";
+    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    resetUiState();
+
+    if (!doc.exists) {
+        return;
+    }
+
+    const d = doc.data();
+    const m = d.__metadata || {};
+
+    if (m.typ) {
+        const prefix = getDispatchCategory(m.typ, m.podtyp || "");
+        document.getElementById("banner").style.display = "block";
+        document.getElementById("prefix").innerText = prefix;
+        document.getElementById("typ").innerText = m.typ;
+        document.getElementById("adresa").innerText = m.miesto || "";
+        startBannerSpeech(prefix, m.typ, m.miesto || "");
+
+        if (m.miesto && m.miesto.length > 2) {
+            renderRouteToAddress(m.miesto);
+        }
+
+        if (typeof m.timestamp === "number") {
+            startTimer(m.timestamp);
+        }
+    }
+
+    Object.keys(d).forEach((k) => {
+        if (k === "__metadata") return;
+
+        const div = document.createElement("div");
+        div.className = "item " + (d[k] === "IDEM" ? "idem" : "nejdem");
+        div.innerText = k;
+        (d[k] === "IDEM" ? idemDiv : nejdemDiv).appendChild(div);
+    });
+});
+
+function formatElapsedTime(start) {
+    const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function startTimer(start) {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+
+    document.getElementById("timer").innerText = formatElapsedTime(start);
+    timerInterval = setInterval(() => {
+        document.getElementById("timer").innerText = formatElapsedTime(start);
+
+        if ((Date.now() - start) >= AUTO_ARCHIVE_AFTER_MS) {
+            autoArchiveActiveRun();
+        }
+    }, 1000);
+}
+
+async function manualReset() {
+    const pin = prompt("Zadaj PIN pre reset:");
+    if (pin === null) {
+        return;
+    }
+
+    if (pin !== RESET_PIN) {
+        alert("Nesprávny PIN.");
+        logDebug("Reset zamietnutý", "Nesprávny PIN");
+        return;
+    }
+
+    if (confirm("Resetovať výjazd?")) {
+        stopBannerSpeech();
+        await db.collection("vyjazdy").doc("active").delete();
+        logDebug("Výjazd bol resetovaný");
+    }
+}
+
+window.addEventListener("resize", () => {
+    if (map && isDesktopMapEnabled()) {
+        setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    if (!isDesktopSpeechEnabled()) {
+        stopBannerSpeech();
+    }
+
+    updateSpeechButton();
+});
+
+if ("speechSynthesis" in window) {
+    loadSpeechVoices();
+    window.speechSynthesis.onvoiceschanged = loadSpeechVoices;
+}
+
+document.getElementById("speech-toggle").addEventListener("click", () => {
+    unlockSpeech(true);
+    if (currentSpeechText) {
+        speakBannerNow(currentSpeechText);
+    } else if (pendingSpeechText) {
+        speakBannerNow(pendingSpeechText);
+    }
+});
+
+bindSpeechUnlock();
+updateSpeechButton();
+window.addEventListener("beforeunload", stopBannerSpeech);
+
+logDebug("Aplikácia pripravená", { debug: DEBUG_MODE });
+window.onload = spracujVstup;
+</script>
+</body>
+</html>
+
+št 23. 4. 2026 o 16:36 Peter Majerko <peter.majerko7@gmail.com> napísal(a):
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DHZ Lednica - DISPEČING</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root{
+            --bg:#07090c;
+            --panel:#10141a;
+            --green:#00e676;
+            --gray:#888;
+            --red:#ff1744;
+            --yellow:#ffeb3b;
+            --btn-archiv:#00e676;
+            --btn-reset:#ff1744;
+        }
+
+        body{ margin:0; height:100vh; display:flex; flex-direction:column; font-family:Segoe UI,sans-serif; background:var(--bg); color:#fff; overflow:hidden; }
+        .header{ display:flex; justify-content:space-between; align-items:center; padding:10px 20px; background:#000; border-bottom:2px solid #222; flex:0 0 auto; }
+        .brand{ font-size:1.3rem; font-weight:700; color:#aaa; display:flex; align-items:center; gap:10px; }
+        .brand img{ height:45px; width:auto; }
+        .center-timer{ font-size:1.4rem; font-family:monospace; color:var(--yellow); text-align:center; line-height:1.2; }
+        .clock{ font-family:monospace; font-size:1.8rem; font-weight:bold; }
 
         .btn-action{
             color:#fff; border:1px solid #333; padding:6px 12px; cursor:pointer; font-size:0.85rem;
