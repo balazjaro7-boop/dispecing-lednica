@@ -1298,7 +1298,6 @@ const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
-const APP_BASE_URL = "https://hasici-lednica.web.app";
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 
@@ -1453,18 +1452,6 @@ function replaceHistoryPreservingMode() {
     const params = buildPersistentParams();
     const query = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-}
-
-function buildHostedAppUrl(extraParams = {}) {
-    const params = new URLSearchParams();
-    Object.entries(extraParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-            params.set(key, String(value));
-        }
-    });
-
-    const query = params.toString();
-    return `${APP_BASE_URL}${query ? `?${query}` : ""}`;
 }
 
 function showArchiveModal(show) {
@@ -1710,15 +1697,14 @@ async function spracujVstup() {
 async function sendPushover(udalost, miesto, skupinaTyp) {
     const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
-    const mobileBaseUrl = buildHostedAppUrl({ mobil: 1 });
-    const idemUrl = buildHostedAppUrl({ mobil: 1, akcia: "IDEM" });
-    const nejdemUrl = buildHostedAppUrl({ mobil: 1, akcia: "NEJDEM" });
+    const responseUrl = "https://hasici-lednica.web.app/?mobil=1";
     const safeMiesto = miesto || "Nezadané";
+    const safeTyp = (skupinaTyp || "").trim();
     const msg =
         `<b>${udalost}</b>\n` +
+        `${safeTyp ? `Typ: ${safeTyp}\n` : ""}` +
         `Adresa: ${safeMiesto}\n` +
-        `___<a href="${idemUrl}">✅ IDEM</a>__________<a href="${nejdemUrl}">❌ NEJDEM</a>`;
-    const mapsUrl = miesto ? `http://maps.google.com/maps?daddr=${encodeURIComponent(miesto)}` : mobileBaseUrl;
+        `___<a href="${responseUrl}">Odpovedať na výjazd</a>`;
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
@@ -1728,12 +1714,10 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         retry: 60,
         expire: 3600,
         sound: "persistent",
-        html: 1,
-        url: mapsUrl,
-        url_title: "📍 SPUSTIŤ NAVIGÁCIU"
+        html: 1
     });
 
-    logDebug("Odosielam Pushover", { skupinaTyp, miesto, idemUrl, nejdemUrl });
+    logDebug("Odosielam Pushover", { skupinaTyp, miesto, responseUrl });
 
     const response = await fetch("https://api.pushover.net/1/messages.json", {
         method: "POST",
