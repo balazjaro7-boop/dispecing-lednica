@@ -1704,7 +1704,7 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         `<b>${udalost}</b>\n` +
         `${safeTyp ? `Typ: ${safeTyp}\n` : ""}` +
         `Adresa: ${safeMiesto}\n` +
-        `___<a href="${responseUrl}">Odpovedať na výjazd</a>`;
+        `<a href="${responseUrl}" style="font-size:22px; font-weight:900;"><b>🚨 ODPOVEDAŤ NA VÝJAZD 🚨</b></a>`;
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
