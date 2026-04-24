@@ -1699,12 +1699,10 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const responseUrl = "https://hasici-lednica.web.app/?mobil=1";
     const safeMiesto = miesto || "Nezadané";
-    const safeTyp = (skupinaTyp || "").trim();
     const msg =
-        `<b>${udalost}</b>\n` +
-        `${safeTyp ? `Typ: ${safeTyp}\n` : ""}` +
-        `Adresa: ${safeMiesto}\n` +
-        `<a href="${responseUrl}" style="font-size:22px; font-weight:900;"><b>🚨 ODPOVEDAŤ NA VÝJAZD 🚨</b></a>`;
+        `<b>${udalost}</b><br>` +
+        `Adresa: ${safeMiesto}<br><br>` +
+        `<a href="${responseUrl}"><b>🚨 ODPOVEDAŤ NA VÝJAZD 🚨</b></a>`;
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
