@@ -1544,6 +1544,14 @@ function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDi
 }
 
 function clearRoute() {
+    const mapElement = document.getElementById("map");
+    const mapMsg = document.getElementById("map-msg");
+
+    mapElement.style.display = "none";
+    mapMsg.style.display = "flex";
+    mapMsg.innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    setMapMessage("");
+
     if (!map) {
         return;
     }
@@ -2089,6 +2097,10 @@ function resetUiStateWithoutMap() {
     document.getElementById("adresa").innerText = "";
     document.getElementById("timer").innerText = "00:00";
     document.getElementById("mobile-timer").innerText = "00:00";
+    document.getElementById("map").style.display = "none";
+    document.getElementById("map-msg").style.display = "flex";
+    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    setMapMessage("");
 
     document.getElementById("idem").innerHTML = "";
     document.getElementById("nejdem").innerHTML = "";
