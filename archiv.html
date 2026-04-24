@@ -488,7 +488,7 @@
         <div class="summary-card">
             <div class="summary-label">Posledná aktualizácia</div>
             <div id="summary-updated" class="summary-value">--:--:--</div>
-            <div class="summary-note">Archív sa obnovuje automaticky z Firestore kolekcie <strong>archiv</strong>.</div>
+            <div class="summary-note">Dáta sú načítané z databázy.</div>
         </div>
     </div>
 
@@ -516,6 +516,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const RESET_PIN = "1234";
+const ROOT_PAGE_URL = `${window.location.origin}/`;
 
 function normalizeSearch(search) {
     if (!search) {
@@ -565,9 +566,7 @@ function applyModeClass() {
     document.body.classList.toggle("mode-mobile", IS_MOBILE_MODE);
     document.body.classList.toggle("mode-tv", IS_TV_MODE);
     document.getElementById("mode-pill").innerText = IS_MOBILE_MODE ? "MOBILNÝ REŽIM" : "TV REŽIM";
-    document.getElementById("header-subtitle").innerText = IS_MOBILE_MODE
-        ? "Mobilný prehľad archivovaných výjazdov"
-        : "TV prehľad archivovaných výjazdov";
+    document.getElementById("header-subtitle").innerText = "Prehľad archivovaných výjazdov";
 }
 
 function buildPersistentParams() {
@@ -587,8 +586,14 @@ function buildPersistentParams() {
 }
 
 function configureNavigation() {
+    const url = new URL(ROOT_PAGE_URL);
     const params = buildPersistentParams();
-    document.getElementById("dispatch-link").href = `./?${params.toString()}`;
+
+    params.forEach((value, key) => {
+        url.searchParams.set(key, value);
+    });
+
+    document.getElementById("dispatch-link").href = url.toString();
 }
 
 async function deleteArchiveBatch(batchSize = 200) {
