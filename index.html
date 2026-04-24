@@ -1701,8 +1701,7 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     const safeMiesto = miesto || "Nezadané";
     const msg =
         `<b>${udalost}</b><br>` +
-        `Adresa: ${safeMiesto}<br><br>` +
-        `<a href="${responseUrl}"><b>🚨 ODPOVEDAŤ NA VÝJAZD 🚨</b></a>`;
+        `Adresa: ${safeMiesto}`; 
     const body = new URLSearchParams({
         token: apiToken,
         user: groupVyjazd,
@@ -1712,7 +1711,9 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         retry: 60,
         expire: 3600,
         sound: "persistent",
-        html: 1
+        html: 1,
+        url: responseUrl,
+        url_title: "🚨 ODPOVEDAŤ NA VÝJAZD 🚨"
     });
 
     logDebug("Odosielam Pushover", { skupinaTyp, miesto, responseUrl });
