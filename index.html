@@ -157,18 +157,28 @@
             margin-bottom:10px;
         }
 
-        .list{ display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+        .list{ display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
 
         .item{
-            padding:5px 10px;
+            display:inline-flex;
+            align-items:center;
+            align-self:flex-start;
+            max-width:100%;
+            padding:9px 12px;
             font-size:1.2rem;
             font-weight:bold;
             text-transform:uppercase;
-            border-radius:3px;
+            border-radius:999px;
         }
 
-        .idem{ color:var(--green); background:rgba(0,230,118,0.1); }
-        .nejdem{ color:var(--gray); background:rgba(255,255,255,0.05); }
+        .item.idem{
+            color:var(--green);
+            background:rgba(0,230,118,0.11);
+        }
+        .item.nejdem{
+            color:var(--red);
+            background:rgba(255,23,68,0.12);
+        }
 
         .leaflet-container{ background:#111; }
         .leaflet-routing-alt, .leaflet-control-attribution{ display:none !important; }
@@ -190,6 +200,96 @@
             overflow:hidden;
         }
 
+        .mobile-panel-header{
+            padding:18px 18px 16px;
+            border-bottom:1px solid var(--line);
+            background:rgba(0,0,0,0.72);
+            backdrop-filter:blur(12px);
+        }
+
+        .mobile-panel-top{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+        }
+
+        .mobile-brand-inline{
+            display:flex;
+            align-items:center;
+            justify-content:flex-start;
+            gap:12px;
+            text-align:left;
+            min-width:0;
+        }
+
+        .mobile-brand-inline img{
+            height:46px;
+            width:auto;
+        }
+
+        .mobile-brand-copy{
+            display:flex;
+            flex-direction:column;
+            gap:2px;
+            min-width:0;
+        }
+
+        .mobile-brand-copy strong{
+            font-size:1.02rem;
+            font-weight:900;
+            letter-spacing:0.04em;
+            text-transform:uppercase;
+            color:#fff;
+        }
+
+        .mobile-brand-copy span{
+            color:#98a6b6;
+            font-size:0.88rem;
+            font-weight:700;
+        }
+
+        .mobile-timer-strip{
+            margin-top:16px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+        }
+
+        .mobile-timer-card{
+            padding:14px 16px;
+            border-radius:16px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+        }
+
+        .mobile-timer-label{
+            color:#9eacba;
+            font-size:0.78rem;
+            font-weight:800;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+
+        .mobile-card-timer{
+            margin-top:8px;
+            font-family:monospace;
+            font-size:1.95rem;
+            font-weight:900;
+            color:#fff;
+        }
+
+        .mobile-card-clock{
+            margin-top:8px;
+            font-family:monospace;
+            font-size:1.35rem;
+            font-weight:800;
+            color:#fff;
+            text-align:center;
+        }
+
         .mobile-hero{
             padding:18px 18px 12px;
             border-bottom:1px solid rgba(255,255,255,0.06);
@@ -202,7 +302,7 @@
             display:inline-flex;
             align-items:center;
             gap:8px;
-            padding:7px 12px;
+            padding:8px 12px;
             border-radius:999px;
             background:rgba(255,255,255,0.08);
             color:#d9e4ef;
@@ -210,6 +310,7 @@
             font-weight:800;
             letter-spacing:0.08em;
             text-transform:uppercase;
+            border:1px solid rgba(255,255,255,0.08);
         }
 
         .mobile-prefix{
@@ -453,7 +554,7 @@
         }
 
         .mobile-pill.idem{ color:var(--green); background:rgba(0,230,118,0.11); }
-        .mobile-pill.nejdem{ color:#f8b2c1; background:rgba(255,23,68,0.12); }
+        .mobile-pill.nejdem{ color:var(--red); background:rgba(255,23,68,0.12); }
 
         .mobile-empty{
             color:#7d8a97;
@@ -588,11 +689,13 @@
             font-weight:900;
             border:1px solid rgba(255,255,255,0.08);
             box-shadow:0 18px 46px rgba(0,0,0,0.22);
+            text-align:center;
         }
 
         .selector-btn strong{
             font-size:1.28rem;
             letter-spacing:0.04em;
+            width:100%;
         }
 
         .selector-btn span{
@@ -602,6 +705,7 @@
             font-size:0.95rem;
             line-height:1.45;
             font-weight:700;
+            width:100%;
         }
 
         .selector-btn-tv{
@@ -609,14 +713,7 @@
         }
 
         .selector-btn-mobile{
-            background:linear-gradient(180deg, #0de57d, #00b35b);
-        }
-
-        .selector-note{
-            margin-top:18px;
-            color:#8e9cab;
-            font-size:0.92rem;
-            font-weight:700;
+            background:linear-gradient(180deg, #2db4ff, #156ed6);
         }
 
         body.mode-mobile{
@@ -648,9 +745,7 @@
         }
 
         body.mode-mobile .header{
-            flex-direction:column;
-            align-items:stretch;
-            padding:14px;
+            display:none;
         }
 
         body.mode-mobile .brand{
@@ -679,8 +774,262 @@
             text-align:center;
         }
 
+        body.mode-tv{
+            background:
+                radial-gradient(circle at top right, rgba(56,207,255,0.08), transparent 28%),
+                radial-gradient(circle at top left, rgba(255,23,68,0.08), transparent 24%),
+                var(--bg);
+            --tv-header-card-height: 46px;
+            --tv-header-card-width: clamp(260px, 20vw, 360px);
+            --tv-header-card-pad-y: 3px;
+            --tv-header-card-pad-x: 6px;
+            --tv-header-gap: 4px;
+            --tv-time-card-width: clamp(230px, 16vw, 300px);
+        }
+
+        body.mode-tv .header{
+            display:block;
+            width:min(1560px, calc(100% - 28px));
+            margin:8px auto 0;
+            padding:6px 8px;
+            background:rgba(0,0,0,0.72);
+            backdrop-filter:blur(12px);
+            border:1px solid var(--line);
+            border-radius:16px;
+            box-shadow:0 24px 70px rgba(0,0,0,0.35);
+        }
+
+        body.mode-tv .tv-header-top{
+            display:grid;
+            grid-template-columns:auto minmax(0, 1fr) auto;
+            align-items:center;
+            gap:var(--tv-header-gap);
+        }
+
+        body.mode-tv .tv-brand{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            min-width:0;
+        }
+
+        body.mode-tv .tv-brand img{
+            height:28px;
+            width:auto;
+        }
+
+        body.mode-tv .tv-brand-copy{
+            display:flex;
+            flex-direction:column;
+            gap:2px;
+            min-width:0;
+        }
+
+        body.mode-tv .tv-brand-copy strong{
+            font-size:0.82rem;
+            font-weight:900;
+            letter-spacing:0.04em;
+            text-transform:uppercase;
+            color:#fff;
+        }
+
+        body.mode-tv .tv-brand-copy span{
+            color:#98a6b6;
+            font-size:0.70rem;
+            font-weight:700;
+        }
+
+        body.mode-tv .tv-side-stack{
+            display:grid;
+            grid-template-columns:auto auto;
+            gap:var(--tv-header-gap);
+            align-items:stretch;
+            width:auto;
+            justify-self:end;
+        }
+
+        body.mode-tv .tv-mode-badge{
+            flex:0 0 auto;
+            align-self:stretch;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            font-size:0.64rem;
+            white-space:nowrap;
+        }
+
+        body.mode-tv #timer-container,
+        body.mode-tv .tv-clock-card,
+        body.mode-tv .header-meta,
+        body.mode-tv .tv-mode-badge{
+            height:var(--tv-header-card-height);
+        }
+
+        body.mode-tv .tv-header-strip{
+            display:grid;
+            grid-template-columns:var(--tv-time-card-width) var(--tv-time-card-width);
+            justify-content:end;
+            gap:var(--tv-header-gap);
+            min-width:0;
+            align-items:stretch;
+            justify-self:end;
+        }
+
+        body.mode-tv #timer-container{
+            min-width:0;
+            width:var(--tv-time-card-width);
+            font-family:inherit;
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        body.mode-tv .tv-clock-card{
+            width:var(--tv-time-card-width);
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        body.mode-tv .header-meta{
+            display:flex;
+            flex-direction:row;
+            justify-content:space-between;
+            align-items:center;
+            gap:6px !important;
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+        }
+
+        body.mode-tv .clock{
+            color:#fff;
+            text-align:center;
+        }
+
+        body.mode-tv #timer-container .mobile-timer-label,
+        body.mode-tv .tv-clock-card .mobile-timer-label{
+            color:#9eacba;
+            font-size:0.66rem;
+            font-weight:800;
+            letter-spacing:0.08em;
+            line-height:1.1;
+            text-transform:uppercase;
+            white-space:nowrap;
+            overflow:visible;
+        }
+
+        body.mode-tv .header-meta .mobile-timer-label{
+            font-size:0.66rem;
+            letter-spacing:0.08em;
+            line-height:1.1;
+            white-space:nowrap;
+        }
+
+        body.mode-tv #timer-container .mobile-card-timer,
+        body.mode-tv .tv-clock-card .mobile-card-clock{
+            margin-top:2px;
+        }
+
+        body.mode-tv #timer.mobile-card-timer{
+            font-size:1.26rem;
+            font-weight:800;
+            line-height:1;
+        }
+
+        body.mode-tv #clock.mobile-card-clock{
+            font-size:1.26rem;
+            font-weight:800;
+            line-height:1;
+        }
+
+        body.mode-tv .btn-action{
+            min-height:20px;
+            padding:3px 6px;
+            font-size:0.58rem;
+            border-radius:10px;
+            border:1px solid rgba(255,255,255,0.08);
+            box-shadow:none;
+            line-height:1;
+        }
+
+        body.mode-tv .header-actions{
+            display:flex;
+            justify-content:flex-end;
+            gap:4px !important;
+            width:auto;
+            flex:0 0 auto;
+        }
+
         body.mode-tv .map-shell{
             display:block !important;
+        }
+
+        body.mode-tv #banner{
+            width:min(1560px, calc(100% - 28px));
+            margin:8px auto 0;
+            padding:8px 10px;
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:16px;
+            box-shadow:0 18px 48px rgba(0,0,0,0.28);
+        }
+
+        body.mode-tv #banner > div{
+            font-size:1.45rem !important;
+            line-height:1.1;
+        }
+
+        body.mode-tv .main{
+            width:min(1560px, calc(100% - 28px));
+            margin:14px auto 18px;
+            padding:0;
+            grid-template-columns:320px minmax(0, 1fr) 320px;
+            gap:16px;
+        }
+
+        body.mode-tv .col,
+        body.mode-tv .map-shell{
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            border-radius:18px;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+        }
+
+        body.mode-tv .col{
+            padding:16px;
+        }
+
+        body.mode-tv .title{
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            padding-bottom:10px;
+            margin-bottom:14px;
+            letter-spacing:0.04em;
+        }
+
+        body.mode-tv .map-placeholder{
+            background:transparent;
+        }
+
+        body.mode-tv .map-note{
+            background:rgba(10,14,19,0.85);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:12px;
         }
 
         @media (max-width: 1024px){
@@ -698,12 +1047,33 @@
             .archive-modal-box span{ font-size:1.1rem; }
 
             body.mode-tv .header{
-                flex-direction:row;
-                align-items:center;
+                width:calc(100% - 20px);
+                padding:8px 10px;
             }
 
             body.mode-tv .main{
+                width:calc(100% - 20px);
+                margin:10px auto 14px;
                 grid-template-columns:220px minmax(0, 1fr) 220px;
+            }
+
+            body.mode-tv .tv-header-top{
+                grid-template-columns:1fr;
+                align-items:flex-start;
+            }
+
+            body.mode-tv .tv-side-stack{
+                grid-template-columns:1fr;
+                width:100%;
+            }
+
+            body.mode-tv .tv-mode-badge{
+                align-self:flex-start;
+                justify-content:center;
+            }
+
+            body.mode-tv .tv-header-strip{
+                grid-template-columns:1fr;
             }
 
             body.mode-tv .map-shell{
@@ -711,6 +1081,7 @@
             }
 
             body.mode-tv #banner{
+                width:calc(100% - 20px);
                 white-space:nowrap;
             }
         }
@@ -730,6 +1101,23 @@
 
             .selector-title{
                 font-size:1.65rem;
+            }
+
+            .mobile-panel-top{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+
+            .mobile-brand-inline{
+                width:100%;
+            }
+
+            .mobile-brand-copy strong{
+                font-size:0.98rem;
+            }
+
+            .mobile-timer-strip{
+                grid-template-columns:1fr;
             }
 
             .mobile-typ{ font-size:1.45rem; }
@@ -758,21 +1146,37 @@
                 <span>Mobilné ovládanie s odpoveďou IDEM alebo NEJDEM.</span>
             </a>
         </div>
-        <div class="selector-note">Po otvorení bez parametrov sa vždy zobrazí tento výber.</div>
     </div>
 </div>
 
 <div class="header">
-    <div class="brand"><img src="logo.png" alt="DHZ"><span>DHZ LEDNICA - DISPEČING</span></div>
-    <div id="timer-container" class="center-timer">
-        <span style="font-size:0.8rem; color:#888;">ČAS OD VYHLÁSENIA UDALOSTI</span><br>
-        <span id="timer" style="font-size:1.8rem; font-weight:bold;">00:00</span>
-    </div>
-    <div class="header-meta" style="display:flex; align-items:center; gap:15px;">
-        <div id="clock" class="clock">00:00:00</div>
-        <div class="header-actions" style="display:flex; gap:8px;">
-            <a id="archive-link" href="archive.html?tv=1" class="btn-action">ARCHÍV</a>
-            <button class="btn-action" onclick="manualReset()">RESET</button>
+    <div class="tv-header-top">
+        <div class="brand tv-brand">
+            <img src="logo.png" alt="DHZ">
+            <div class="tv-brand-copy">
+                <strong>DHZ LEDNICA - DISPEČING</strong>
+                <span>Prehľad výjazdu</span>
+            </div>
+        </div>
+        <div class="tv-header-strip">
+            <div id="timer-container" class="center-timer mobile-timer-card">
+                <div class="mobile-timer-label">ČAS OD VYHLÁSENIA UDALOSTI</div>
+                <div id="timer" class="mobile-card-timer">00:00</div>
+            </div>
+            <div class="tv-clock-card mobile-timer-card">
+                <div class="mobile-timer-label">AKTUÁLNY ČAS</div>
+                <div id="clock" class="mobile-card-clock">00:00:00</div>
+            </div>
+        </div>
+        <div class="tv-side-stack">
+            <div class="header-meta">
+                <div class="mobile-timer-label">OVLÁDANIE</div>
+                <div class="header-actions">
+                    <a id="archive-link" href="archive.html?tv=1" class="btn-action">ARCHÍV</a>
+                    <button class="btn-action" onclick="manualReset()">RESET</button>
+                </div>
+            </div>
+            <div class="mobile-badge tv-mode-badge">TV REŽIM</div>
         </div>
     </div>
 </div>
@@ -785,8 +1189,29 @@
 
 <div id="mobile-view">
     <div class="mobile-card">
+        <div class="mobile-panel-header">
+            <div class="mobile-panel-top">
+                <div class="mobile-brand-inline">
+                    <img src="logo.png" alt="DHZ">
+                    <div class="mobile-brand-copy">
+                        <strong>DHZ LEDNICA - DISPEČING</strong>
+                        <span>Odpoveď na výjazd</span>
+                    </div>
+                </div>
+                <div class="mobile-badge">MOBILNÝ REŽIM</div>
+            </div>
+            <div class="mobile-timer-strip">
+                <div class="mobile-timer-card">
+                    <div class="mobile-timer-label">ČAS OD VYHLÁSENIA UDALOSTI</div>
+                    <div id="mobile-timer" class="mobile-card-timer">00:00</div>
+                </div>
+                <div class="mobile-timer-card">
+                    <div class="mobile-timer-label">AKTUÁLNY ČAS</div>
+                    <div id="mobile-clock" class="mobile-card-clock">00:00:00</div>
+                </div>
+            </div>
+        </div>
         <div class="mobile-hero">
-            <div class="mobile-badge">MOBILNÝ REŽIM</div>
             <div id="mobile-prefix" class="mobile-prefix">ČAKÁM NA VÝJAZD</div>
             <div id="mobile-typ" class="mobile-typ">Bez aktívnej udalosti</div>
             <div id="mobile-adresa" class="mobile-adresa">Po vyhlásení výjazdu sa tu zobrazí typ a adresa udalosti.</div>
@@ -801,30 +1226,30 @@
             </label>
 
             <div class="mobile-actions">
-                <button id="mobile-idem" class="mobile-btn mobile-btn-idem" type="button" onclick="submitMobileAction('IDEM')">IDEM</button>
-                <button id="mobile-nejdem" class="mobile-btn mobile-btn-nejdem" type="button" onclick="submitMobileAction('NEJDEM')">NEJDEM</button>
+                <button id="mobile-idem" class="mobile-btn mobile-btn-idem" type="button" onclick="submitMobileAction('IDEM')">IDEM ✔️</button>
+                <button id="mobile-nejdem" class="mobile-btn mobile-btn-nejdem" type="button" onclick="submitMobileAction('NEJDEM')">NEJDEM ❌</button>
             </div>
 
             <div id="mobile-feedback" class="mobile-feedback warn">Tvoja odpoveď ešte nebola odoslaná.</div>
 
             <div class="mobile-summary-grid">
                 <div class="mobile-summary-card">
-                    <div class="mobile-summary-label">Počet IDEM</div>
+                    <div class="mobile-summary-label">Počet IDEM ✔️</div>
                     <div id="mobile-count-idem" class="mobile-summary-value idem">0</div>
                 </div>
                 <div class="mobile-summary-card">
-                    <div class="mobile-summary-label">Počet NEJDEM</div>
+                    <div class="mobile-summary-label">Počet NEJDEM ❌</div>
                     <div id="mobile-count-nejdem" class="mobile-summary-value nejdem">0</div>
                 </div>
             </div>
 
             <div class="mobile-list-grid">
                 <div class="mobile-list-card">
-                    <div class="mobile-list-title idem">IDEM</div>
+                    <div class="mobile-list-title idem">IDEM ✔️</div>
                     <div id="mobile-idem-list" class="mobile-name-list"></div>
                 </div>
                 <div class="mobile-list-card">
-                    <div class="mobile-list-title nejdem">NEJDEM</div>
+                    <div class="mobile-list-title nejdem">NEJDEM ❌</div>
                     <div id="mobile-nejdem-list" class="mobile-name-list"></div>
                 </div>
             </div>
@@ -838,13 +1263,13 @@
 </div>
 
 <div class="main">
-    <div class="col"><div class="title" style="color:var(--green);">IDEM</div><div id="idem" class="list"></div></div>
+    <div class="col"><div class="title" style="color:var(--green);">IDEM ✔️</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
         <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
         <div id="map"></div>
         <div id="map-note" class="map-note"></div>
     </div>
-    <div class="col"><div class="title" style="color:var(--red);">NEJDEM</div><div id="nejdem" class="list"></div></div>
+    <div class="col"><div class="title" style="color:var(--red);">NEJDEM ❌</div><div id="nejdem" class="list"></div></div>
 </div>
 
 <div id="debug-panel">
@@ -874,6 +1299,8 @@ const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const APP_BASE_URL = "https://hasici-lednica.web.app";
+const ROOT_PAGE_URL = `${window.location.origin}/`;
+const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 
 let timerInterval = null;
 let map = null;
@@ -913,9 +1340,14 @@ initializeMobileForm();
 configureArchiveLink();
 configureSelectorLinks();
 
-setInterval(() => {
-    document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
-}, 1000);
+function updateClocks() {
+    const currentTime = new Date().toLocaleTimeString("sk-SK");
+    document.getElementById("clock").innerText = currentTime;
+    document.getElementById("mobile-clock").innerText = currentTime;
+}
+
+updateClocks();
+setInterval(updateClocks, 1000);
 
 function logDebug(message, data) {
     const timestamp = new Date().toLocaleTimeString("sk-SK");
@@ -942,7 +1374,7 @@ function applyModeClass() {
     document.body.classList.toggle("mode-default", !IS_SELECTOR_MODE && !IS_MOBILE_MODE && !IS_TV_MODE);
 
     if (IS_SELECTOR_MODE) {
-        document.title = "DHZ Lednica - Výber verzie";
+        document.title = "DHZ Lednica - DISPEČING";
     } else if (IS_MOBILE_MODE) {
         document.title = "DHZ Lednica - Mobil";
     } else if (IS_TV_MODE) {
@@ -964,14 +1396,14 @@ function initializeMobileForm() {
 }
 
 function buildRootModeUrl(mode) {
-    const params = new URLSearchParams();
-    params.set(mode, "1");
+    const url = new URL(ROOT_PAGE_URL);
+    url.searchParams.set(mode, "1");
 
     if (DEBUG_MODE) {
-        params.set("debug", "1");
+        url.searchParams.set("debug", "1");
     }
 
-    return `./?${params.toString()}`;
+    return url.toString();
 }
 
 function configureSelectorLinks() {
@@ -996,19 +1428,19 @@ function buildPersistentParams() {
 }
 
 function buildArchiveLinkUrl() {
-    const params = new URLSearchParams();
+    const url = new URL(ARCHIVE_PAGE_URL);
 
     if (IS_MOBILE_MODE) {
-        params.set("mobil", "1");
+        url.searchParams.set("mobil", "1");
     } else {
-        params.set("tv", "1");
+        url.searchParams.set("tv", "1");
     }
 
     if (DEBUG_MODE) {
-        params.set("debug", "1");
+        url.searchParams.set("debug", "1");
     }
 
-    return `archive.html?${params.toString()}`;
+    return url.toString();
 }
 
 function configureArchiveLink() {
@@ -1174,6 +1606,7 @@ function resetUiState() {
     document.getElementById("typ").innerText = "";
     document.getElementById("adresa").innerText = "";
     document.getElementById("timer").innerText = "00:00";
+    document.getElementById("mobile-timer").innerText = "00:00";
     document.getElementById("map-msg").style.display = "flex";
     document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
     document.getElementById("map").style.display = "none";
@@ -1676,9 +2109,15 @@ function startTimer(start) {
         clearInterval(timerInterval);
     }
 
-    document.getElementById("timer").innerText = formatElapsedTime(start);
+    const updateElapsedTimers = () => {
+        const formatted = formatElapsedTime(start);
+        document.getElementById("timer").innerText = formatted;
+        document.getElementById("mobile-timer").innerText = formatted;
+    };
+
+    updateElapsedTimers();
     timerInterval = setInterval(() => {
-        document.getElementById("timer").innerText = formatElapsedTime(start);
+        updateElapsedTimers();
 
         if ((Date.now() - start) >= AUTO_ARCHIVE_AFTER_MS) {
             autoArchiveActiveRun();
