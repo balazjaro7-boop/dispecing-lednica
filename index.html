@@ -1309,7 +1309,6 @@ let endMarker = null;
 let activeRouteRequest = 0;
 let autoArchiveInProgress = false;
 let lastKnownDispatch = null;
-let lastRenderedAddress = null;
 
 function normalizeSearch(search) {
     if (!search) {
@@ -1544,14 +1543,6 @@ function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDi
 }
 
 function clearRoute() {
-    const mapElement = document.getElementById("map");
-    const mapMsg = document.getElementById("map-msg");
-
-    mapElement.style.display = "none";
-    mapMsg.style.display = "flex";
-    mapMsg.innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
-    setMapMessage("");
-
     if (!map) {
         return;
     }
@@ -2052,27 +2043,16 @@ function updateMobileEvent(metadata) {
 }
 
 db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
-    resetUiStateWithoutMap();
+    resetUiState();
 
     if (!doc.exists) {
         lastKnownDispatch = null;
-        clearRoute();
-        lastRenderedAddress = null;
         return;
     }
 
     const d = doc.data();
     const m = d.__metadata || {};
-    if (!m.miesto || m.miesto.length < 3) {
-        clearRoute();
-        lastRenderedAddress = null;
-    }
-
-    if (m.miesto && m.miesto.length > 2 && m.miesto !== lastRenderedAddress) {
-        lastRenderedAddress = m.miesto;
-        clearRoute();
-        renderRouteToAddress(m.miesto);
-    }
+    lastKnownDispatch = m;
 
     if (m.typ) {
         document.getElementById("banner").style.display = "block";
@@ -2082,6 +2062,10 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
         updateMobileEvent(m);
 
+        if (m.miesto && m.miesto.length > 2) {
+            renderRouteToAddress(m.miesto);
+        }
+
         if (typeof m.timestamp === "number") {
             startTimer(m.timestamp);
         }
@@ -2089,29 +2073,6 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     updateParticipants(d);
 });
-
-function resetUiStateWithoutMap() {
-    document.getElementById("banner").style.display = "none";
-    document.getElementById("prefix").innerText = "";
-    document.getElementById("typ").innerText = "";
-    document.getElementById("adresa").innerText = "";
-    document.getElementById("timer").innerText = "00:00";
-    document.getElementById("mobile-timer").innerText = "00:00";
-    document.getElementById("map").style.display = "none";
-    document.getElementById("map-msg").style.display = "flex";
-    document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
-    setMapMessage("");
-
-    document.getElementById("idem").innerHTML = "";
-    document.getElementById("nejdem").innerHTML = "";
-
-    resetMobileState();
-
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
-}
 
 function formatElapsedTime(start) {
     const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
