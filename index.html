@@ -2044,7 +2044,7 @@ function updateMobileEvent(metadata) {
 }
 
 db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
-    resetUiState();
+    resetUiStateWithoutMap();
 
     if (!doc.exists) {
         lastKnownDispatch = null;
@@ -2063,8 +2063,9 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
         updateMobileEvent(m);
 
-        if (m.miesto && m.miesto.length > 2 && m.miesto !== lastRenderedAddress) {
+        if (m.miesto !== lastRenderedAddress) {
             lastRenderedAddress = m.miesto;
+            clearRoute();
             renderRouteToAddress(m.miesto);
         }
 
@@ -2075,6 +2076,25 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     updateParticipants(d);
 });
+
+function resetUiStateWithoutMap() {
+    document.getElementById("banner").style.display = "none";
+    document.getElementById("prefix").innerText = "";
+    document.getElementById("typ").innerText = "";
+    document.getElementById("adresa").innerText = "";
+    document.getElementById("timer").innerText = "00:00";
+    document.getElementById("mobile-timer").innerText = "00:00";
+
+    document.getElementById("idem").innerHTML = "";
+    document.getElementById("nejdem").innerHTML = "";
+
+    resetMobileState();
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
 
 function formatElapsedTime(start) {
     const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
