@@ -2048,12 +2048,23 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     if (!doc.exists) {
         lastKnownDispatch = null;
+        clearRoute();
+        lastRenderedAddress = null;
         return;
     }
 
     const d = doc.data();
     const m = d.__metadata || {};
-    lastKnownDispatch = m;
+    if (!m.miesto || m.miesto.length < 3) {
+        clearRoute();
+        lastRenderedAddress = null;
+    }
+
+    if (m.miesto && m.miesto.length > 2 && m.miesto !== lastRenderedAddress) {
+        lastRenderedAddress = m.miesto;
+        clearRoute();
+        renderRouteToAddress(m.miesto);
+    }
 
     if (m.typ) {
         document.getElementById("banner").style.display = "block";
@@ -2062,12 +2073,6 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
         document.getElementById("adresa").innerText = m.miesto || "";
 
         updateMobileEvent(m);
-
-        if (m.miesto !== lastRenderedAddress) {
-            lastRenderedAddress = m.miesto;
-            clearRoute();
-            renderRouteToAddress(m.miesto);
-        }
 
         if (typeof m.timestamp === "number") {
             startTimer(m.timestamp);
