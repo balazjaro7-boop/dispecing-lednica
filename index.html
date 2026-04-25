@@ -1031,97 +1031,6 @@
             border-radius:12px;
         }
 
-        @media (max-width: 1024px){
-            .main{ grid-template-columns:1fr 1fr; }
-            .map-shell{ display:none; }
-            .header{ flex-direction:column; padding:10px; gap:15px; }
-            #banner{ white-space:normal; font-size:1.2rem; }
-            #debug-panel{ width:auto; }
-            .archive-modal-box{
-                min-width:auto;
-                width:90vw;
-                padding:28px 22px;
-            }
-            .archive-modal-box strong{ font-size:2.1rem; }
-            .archive-modal-box span{ font-size:1.1rem; }
-
-            body.mode-tv .header{
-                width:calc(100% - 20px);
-                padding:8px 10px;
-            }
-
-            body.mode-tv .main{
-                width:calc(100% - 20px);
-                margin:10px auto 14px;
-                grid-template-columns:220px minmax(0, 1fr) 220px;
-            }
-
-            body.mode-tv .tv-header-top{
-                grid-template-columns:1fr;
-                align-items:flex-start;
-            }
-
-            body.mode-tv .tv-side-stack{
-                grid-template-columns:1fr;
-                width:100%;
-            }
-
-            body.mode-tv .tv-mode-badge{
-                align-self:flex-start;
-                justify-content:center;
-            }
-
-            body.mode-tv .tv-header-strip{
-                grid-template-columns:1fr;
-            }
-
-            body.mode-tv .map-shell{
-                display:block !important;
-            }
-
-            body.mode-tv #banner{
-                width:calc(100% - 20px);
-                white-space:nowrap;
-            }
-        }
-
-        @media (max-width: 720px){
-            .selector-actions,
-            .mobile-actions,
-            .mobile-footer-actions,
-            .mobile-summary-grid,
-            .mobile-list-grid{
-                grid-template-columns:1fr;
-            }
-
-            .selector-card{
-                padding:24px 18px;
-            }
-
-            .selector-title{
-                font-size:1.65rem;
-            }
-
-            .mobile-panel-top{
-                flex-direction:column;
-                align-items:flex-start;
-            }
-
-            .mobile-brand-inline{
-                width:100%;
-            }
-
-            .mobile-brand-copy strong{
-                font-size:0.98rem;
-            }
-
-            .mobile-timer-strip{
-                grid-template-columns:1fr;
-            }
-
-            .mobile-typ{ font-size:1.45rem; }
-            .mobile-body{ padding:16px; }
-        }
     </style>
 </head>
 <body>
@@ -1459,15 +1368,7 @@ function wait(ms) {
 }
 
 function isDesktopMapEnabled() {
-    if (IS_MOBILE_MODE) {
-        return false;
-    }
-
-    if (IS_TV_MODE) {
-        return true;
-    }
-
-    return window.innerWidth > 1024;
+    return IS_TV_MODE;
 }
 
 function setMapMessage(message) {
@@ -1974,7 +1875,12 @@ function setMobileMapLink(miesto) {
         return;
     }
 
-    link.href = `https://maps.google.com/?saddr=${encodeURIComponent(`${START_ADDRESS}, Lednica, Slovensko`)}&daddr=${encodeURIComponent(`${miesto}, Slovensko`)}&dirflg=d`;
+    const url = new URL("https://www.google.com/maps/dir/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("destination", `${miesto}, Slovensko`);
+    url.searchParams.set("travelmode", "driving");
+
+    link.href = url.toString();
     link.setAttribute("aria-disabled", "false");
 }
 
@@ -2115,22 +2021,6 @@ async function manualReset() {
         logDebug("Výjazd bol resetovaný");
     }
 }
-
-window.addEventListener("resize", () => {
-    if (!lastKnownDispatch || !lastKnownDispatch.miesto) {
-        return;
-    }
-
-    if (isDesktopMapEnabled()) {
-        renderRouteToAddress(lastKnownDispatch.miesto, getMapDispatchKey(lastKnownDispatch));
-        return;
-    }
-
-    document.getElementById("map").style.display = "none";
-    document.getElementById("map-msg").style.display = "flex";
-    document.getElementById("map-msg").innerText = "MAPA JE DOSTUPNÁ V TV REŽIME.";
-    setMapMessage("");
-});
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
