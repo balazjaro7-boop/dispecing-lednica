@@ -1459,7 +1459,15 @@ function wait(ms) {
 }
 
 function isDesktopMapEnabled() {
-    return IS_TV_MODE;
+    if (IS_MOBILE_MODE) {
+        return false;
+    }
+
+    if (IS_TV_MODE) {
+        return true;
+    }
+
+    return window.innerWidth > 1024;
 }
 
 function setMapMessage(message) {
@@ -1966,13 +1974,7 @@ function setMobileMapLink(miesto) {
         return;
     }
 
-    const url = new URL("https://www.google.com/maps/dir/");
-    url.searchParams.set("api", "1");
-    url.searchParams.set("origin", "Current Location");
-    url.searchParams.set("destination", `${miesto}, Slovensko`);
-    url.searchParams.set("travelmode", "driving");
-
-    link.href = url.toString();
+    link.href = `https://maps.google.com/?saddr=${encodeURIComponent(`${START_ADDRESS}, Lednica, Slovensko`)}&daddr=${encodeURIComponent(`${miesto}, Slovensko`)}&dirflg=d`;
     link.setAttribute("aria-disabled", "false");
 }
 
@@ -2113,6 +2115,22 @@ async function manualReset() {
         logDebug("Výjazd bol resetovaný");
     }
 }
+
+window.addEventListener("resize", () => {
+    if (!lastKnownDispatch || !lastKnownDispatch.miesto) {
+        return;
+    }
+
+    if (isDesktopMapEnabled()) {
+        renderRouteToAddress(lastKnownDispatch.miesto, getMapDispatchKey(lastKnownDispatch));
+        return;
+    }
+
+    document.getElementById("map").style.display = "none";
+    document.getElementById("map-msg").style.display = "flex";
+    document.getElementById("map-msg").innerText = "MAPA JE DOSTUPNÁ V TV REŽIME.";
+    setMapMessage("");
+});
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
