@@ -19,6 +19,8 @@
             --red:#ff1744;
             --yellow:#ffeb3b;
             --cyan:#38cfff;
+            --archive-header-control-width: 172px;
+            --archive-header-control-height: 46px;
         }
 
         *{ box-sizing:border-box; }
@@ -89,8 +91,10 @@
             display:inline-flex;
             align-items:center;
             justify-content:center;
-            padding:8px 12px;
-            border-radius:999px;
+            width:var(--archive-header-control-width);
+            height:var(--archive-header-control-height);
+            padding:4px 10px;
+            border-radius:12px;
             font-size:0.82rem;
             font-weight:900;
             letter-spacing:0.08em;
@@ -107,19 +111,54 @@
             color:var(--yellow);
         }
 
+        .mobile-timer-card{
+            width:var(--archive-header-control-width);
+            height:var(--archive-header-control-height);
+            padding:3px 6px;
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        .mobile-timer-label{
+            color:#9eacba;
+            font-size:0.78rem;
+            font-weight:800;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+
+        .mobile-card-clock{
+            margin-top:2px;
+            font-family:monospace;
+            font-size:1.26rem;
+            font-weight:800;
+            line-height:1;
+            color:#fff;
+        }
+
         .btn-link{
             display:inline-flex;
             align-items:center;
             justify-content:center;
-            min-height:40px;
-            padding:10px 14px;
+            width:var(--archive-header-control-width);
+            min-height:var(--archive-header-control-height);
+            height:var(--archive-header-control-height);
+            padding:4px 10px;
             border-radius:12px;
             text-decoration:none;
             color:#fff;
             font-weight:900;
+            text-align:center;
             background:linear-gradient(180deg, #223040, #16202b);
             border:1px solid rgba(255,255,255,0.08);
             cursor:pointer;
+            line-height:1.05;
         }
 
         button.btn-link{
@@ -404,6 +443,47 @@
             display:block;
         }
 
+        body.mode-tv{
+            --tv-header-card-height: 46px;
+            --tv-header-card-pad-y: 3px;
+            --tv-header-card-pad-x: 6px;
+        }
+
+        body.mode-tv .tv-clock-card{
+            width:var(--archive-header-control-width);
+            height:var(--tv-header-card-height);
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+        }
+
+        body.mode-tv .tv-clock-card .mobile-timer-label{
+            color:#9eacba;
+            font-size:0.78rem;
+            font-weight:800;
+            letter-spacing:0.08em;
+            line-height:1.1;
+            text-transform:uppercase;
+            white-space:nowrap;
+            overflow:visible;
+        }
+
+        body.mode-tv .tv-clock-card .mobile-card-clock{
+            margin-top:2px;
+        }
+
+        body.mode-tv #clock.mobile-card-clock{
+            font-size:1.26rem;
+            font-weight:800;
+            line-height:1;
+        }
+
         @media (max-width: 1200px){
             .cards-tv{
                 grid-template-columns:1fr;
@@ -422,6 +502,13 @@
 
             .header-right{
                 justify-content:space-between;
+            }
+
+            .header-right .mode-pill,
+            .header-right .mobile-timer-card,
+            .header-right .btn-link{
+                flex:1 1 calc(50% - 6px);
+                width:auto;
             }
         }
 
@@ -467,7 +554,10 @@
     </div>
     <div class="header-right">
         <div id="mode-pill" class="mode-pill">TV REŽIM</div>
-        <div id="clock" class="clock">00:00:00</div>
+        <div class="tv-clock-card mobile-timer-card">
+            <div class="mobile-timer-label">AKTUÁLNY ČAS</div>
+            <div id="clock" class="mobile-card-clock">00:00:00</div>
+        </div>
         <a id="dispatch-link" href="./?tv=1" class="btn-link">DISPEČING</a>
         <button id="archive-reset-btn" class="btn-link btn-link-danger" type="button" onclick="resetArchive()">RESET ARCHÍVU</button>
     </div>
@@ -540,9 +630,12 @@ if (normalizedSearch && normalizedSearch !== window.location.search) {
 applyModeClass();
 configureNavigation();
 
-setInterval(() => {
+function updateClock() {
     document.getElementById("clock").innerText = new Date().toLocaleTimeString("sk-SK");
-}, 1000);
+}
+
+updateClock();
+setInterval(updateClock, 1000);
 
 function logDebug(message, data) {
     const timestamp = new Date().toLocaleTimeString("sk-SK");
