@@ -1966,7 +1966,12 @@ function setMobileMapLink(miesto) {
         return;
     }
 
-    link.href = `https://maps.google.com/?saddr=${encodeURIComponent(`${START_ADDRESS}, Lednica, Slovensko`)}&daddr=${encodeURIComponent(`${miesto}, Slovensko`)}&dirflg=d`;
+    const url = new URL("https://www.google.com/maps/dir/");
+    url.searchParams.set("api", "1");
+    url.searchParams.set("destination", `${miesto}, Slovensko`);
+    url.searchParams.set("travelmode", "driving");
+
+    link.href = url.toString();
     link.setAttribute("aria-disabled", "false");
 }
 
