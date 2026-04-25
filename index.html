@@ -1459,15 +1459,7 @@ function wait(ms) {
 }
 
 function isDesktopMapEnabled() {
-    if (IS_MOBILE_MODE) {
-        return false;
-    }
-
-    if (IS_TV_MODE) {
-        return true;
-    }
-
-    return window.innerWidth > 1024;
+    return IS_TV_MODE;
 }
 
 function setMapMessage(message) {
@@ -2115,22 +2107,6 @@ async function manualReset() {
         logDebug("Výjazd bol resetovaný");
     }
 }
-
-window.addEventListener("resize", () => {
-    if (!lastKnownDispatch || !lastKnownDispatch.miesto) {
-        return;
-    }
-
-    if (isDesktopMapEnabled()) {
-        renderRouteToAddress(lastKnownDispatch.miesto, getMapDispatchKey(lastKnownDispatch));
-        return;
-    }
-
-    document.getElementById("map").style.display = "none";
-    document.getElementById("map-msg").style.display = "flex";
-    document.getElementById("map-msg").innerText = "MAPA JE DOSTUPNÁ V TV REŽIME.";
-    setMapMessage("");
-});
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
