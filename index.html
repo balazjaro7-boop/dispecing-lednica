@@ -6,9 +6,6 @@
     <title>DHZ Lednica - DISPEČING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <style>
         :root{
             --bg:#07090c;
@@ -110,7 +107,12 @@
             border:1px solid var(--line);
         }
 
-        #map{ width:100%; height:100%; display:none; }
+        #map{
+            width:100%;
+            height:100%;
+            display:none;
+            border:0;
+        }
 
         .map-placeholder{
             position:absolute;
@@ -179,9 +181,6 @@
             color:var(--red);
             background:rgba(255,23,68,0.12);
         }
-
-        .leaflet-container{ background:#111; }
-        .leaflet-routing-alt, .leaflet-control-attribution{ display:none !important; }
 
         #mobile-view{
             display:none;
@@ -1266,7 +1265,7 @@
     <div class="col"><div class="title" style="color:var(--green);">IDEM ✔️</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
         <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-        <div id="map"></div>
+        <iframe id="map" title="Trasa výjazdu" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <div id="map-note" class="map-note"></div>
     </div>
     <div class="col"><div class="title" style="color:var(--red);">NEJDEM ❌</div><div id="nejdem" class="list"></div></div>
@@ -1302,11 +1301,8 @@ const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 
 let timerInterval = null;
-let map = null;
-let routeLine = null;
-let startMarker = null;
-let endMarker = null;
-let activeRouteRequest = 0;
+let renderedMapDispatchKey = null;
+let activeMapInfoRequest = 0;
 let autoArchiveInProgress = false;
 let lastKnownDispatch = null;
 
@@ -1474,29 +1470,123 @@ function isDesktopMapEnabled() {
     return window.innerWidth > 1024;
 }
 
-function ensureMap() {
-    if (!isDesktopMapEnabled()) {
-        return null;
-    }
-
-    if (!map) {
-        map = L.map("map", {
-            zoomControl: false,
-            attributionControl: false
-        }).setView(START_FALLBACK_COORDS, 13);
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19
-        }).addTo(map);
-    }
-
-    return map;
-}
-
 function setMapMessage(message) {
     const note = document.getElementById("map-note");
+
+    if (IS_TV_MODE) {
+        note.innerText = "";
+        note.style.display = "none";
+        return;
+    }
+
     note.innerText = message || "";
     note.style.display = message ? "block" : "none";
+}
+
+function getMapDispatchKey(metadata) {
+    if (!metadata || !metadata.miesto) {
+        return "";
+    }
+
+    return `${metadata.timestamp || ""}|${metadata.miesto}`;
+}
+
+function buildGoogleMapUrl(adresa) {
+    const url = new URL("https://www.google.com/maps");
+    url.searchParams.set("output", "embed");
+    url.searchParams.set("saddr", `${START_ADDRESS}, Lednica, Slovensko`);
+    url.searchParams.set("daddr", `${adresa}, Slovensko`);
+    url.searchParams.set("dirflg", "d");
+    return url.toString();
+}
+
+async function geocodeAddressForRoute(query) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=sk&q=${encodeURIComponent(query)}`, {
+        headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+        throw new Error("Geocoding failed.");
+    }
+
+    const results = await response.json();
+    if (!results.length) {
+        throw new Error("Address not found.");
+    }
+
+    return [parseFloat(results[0].lat), parseFloat(results[0].lon)];
+}
+
+async function getDrivingRouteInfo(startCoords, endCoords) {
+    const [startLat, startLon] = startCoords;
+    const [endLat, endLon] = endCoords;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=false`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error("Route calculation failed.");
+    }
+
+    const data = await response.json();
+    if (!data.routes || !data.routes.length) {
+        throw new Error("Route not found.");
+    }
+
+    return data.routes[0];
+}
+
+function formatRouteDistance(meters) {
+    if (!Number.isFinite(meters)) {
+        return "";
+    }
+
+    if (meters < 1000) {
+        return `${Math.round(meters)} m`;
+    }
+
+    return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
+}
+
+function formatRouteDuration(seconds) {
+    if (!Number.isFinite(seconds)) {
+        return "";
+    }
+
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    if (minutes < 60) {
+        return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+async function updateMapRouteInfo(adresa, dispatchKey) {
+    const currentRequest = ++activeMapInfoRequest;
+
+    try {
+        const [startCoords, endCoords] = await Promise.all([
+            geocodeAddressForRoute(`${START_ADDRESS}, Lednica, Slovensko`).catch(() => START_FALLBACK_COORDS),
+            geocodeAddressForRoute(`${adresa}, Slovensko`)
+        ]);
+        const route = await getDrivingRouteInfo(startCoords, endCoords);
+
+        if (currentRequest !== activeMapInfoRequest || dispatchKey !== renderedMapDispatchKey) {
+            return;
+        }
+
+        const distance = formatRouteDistance(route.distance);
+        const duration = formatRouteDuration(route.duration);
+        setMapMessage(`Cieľ: ${adresa} | Dĺžka: ${distance} | Čas: ${duration}`);
+    } catch (error) {
+        if (currentRequest !== activeMapInfoRequest || dispatchKey !== renderedMapDispatchKey) {
+            return;
+        }
+
+        setMapMessage(`Cieľ: ${adresa} | Trasa autom`);
+        logDebug("Info o trase zlyhalo", error.message || String(error));
+    }
 }
 
 function getDispatchCategory(udalost, podtyp) {
@@ -1521,46 +1611,17 @@ function getDispatchCategory(udalost, podtyp) {
     return "POŽIAR";
 }
 
-function fitWholeRoute(mapInstance, startCoords, endCoords, routeBounds, routeDistanceMeters = 0) {
-    const bounds = L.latLngBounds([startCoords, endCoords]);
+function clearMap() {
+    const mapElement = document.getElementById("map");
+    const mapMsg = document.getElementById("map-msg");
 
-    if (routeBounds && routeBounds.isValid()) {
-        bounds.extend(routeBounds);
-    }
-
-    if (!bounds.isValid()) {
-        return;
-    }
-
-    const isShortRoute = routeDistanceMeters > 0 && routeDistanceMeters <= 1000;
-    const isMediumRoute = routeDistanceMeters > 1000 && routeDistanceMeters <= 5000;
-
-    mapInstance.fitBounds(bounds, {
-        paddingTopLeft: isShortRoute ? [2, 2] : isMediumRoute ? [6, 6] : [10, 10],
-        paddingBottomRight: isShortRoute ? [2, 18] : isMediumRoute ? [6, 24] : [10, 30],
-        maxZoom: isShortRoute ? 18 : isMediumRoute ? 17 : 16
-    });
-}
-
-function clearRoute() {
-    if (!map) {
-        return;
-    }
-
-    if (routeLine) {
-        map.removeLayer(routeLine);
-        routeLine = null;
-    }
-
-    if (startMarker) {
-        map.removeLayer(startMarker);
-        startMarker = null;
-    }
-
-    if (endMarker) {
-        map.removeLayer(endMarker);
-        endMarker = null;
-    }
+    renderedMapDispatchKey = null;
+    activeMapInfoRequest++;
+    mapElement.removeAttribute("src");
+    mapElement.style.display = "none";
+    mapMsg.style.display = "flex";
+    mapMsg.innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
+    setMapMessage("");
 }
 
 function setMobileFeedback(message, type = "warn") {
@@ -1587,21 +1648,22 @@ function resetMobileState() {
     setMobileButtonsDisabled(true);
 }
 
-function resetUiState() {
+function resetUiState(options = {}) {
+    const shouldClearMap = options.clearMap !== false;
     document.getElementById("banner").style.display = "none";
     document.getElementById("prefix").innerText = "";
     document.getElementById("typ").innerText = "";
     document.getElementById("adresa").innerText = "";
     document.getElementById("timer").innerText = "00:00";
     document.getElementById("mobile-timer").innerText = "00:00";
-    document.getElementById("map-msg").style.display = "flex";
     document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
-    document.getElementById("map").style.display = "none";
     document.getElementById("idem").innerHTML = "";
     document.getElementById("nejdem").innerHTML = "";
-    setMapMessage("");
-    clearRoute();
     resetMobileState();
+
+    if (shouldClearMap) {
+        clearMap();
+    }
 
     if (timerInterval) {
         clearInterval(timerInterval);
@@ -1732,107 +1794,30 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
     }
 }
 
-async function geocodeAddress(query) {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=sk&q=${encodeURIComponent(query)}`, {
-        headers: {
-            "Accept": "application/json"
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error("Geokódovanie zlyhalo.");
-    }
-
-    const results = await response.json();
-    if (!results.length) {
-        throw new Error("Adresa sa nenašla.");
-    }
-
-    return [parseFloat(results[0].lat), parseFloat(results[0].lon)];
-}
-
-async function getRoute(startCoords, endCoords) {
-    const [startLat, startLon] = startCoords;
-    const [endLat, endLon] = endCoords;
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLon},${startLat};${endLon},${endLat}?overview=full&geometries=geojson`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error("Výpočet trasy zlyhal.");
-    }
-
-    const data = await response.json();
-    if (!data.routes || !data.routes.length) {
-        throw new Error("Trasa sa nenašla.");
-    }
-
-    return data.routes[0];
-}
-
-async function renderRouteToAddress(adresa) {
+function renderRouteToAddress(adresa, dispatchKey) {
     if (!isDesktopMapEnabled()) {
         return;
     }
 
-    const currentRequest = ++activeRouteRequest;
-    const mapInstance = ensureMap();
+    if (!adresa || !dispatchKey) {
+        return;
+    }
+
     const mapElement = document.getElementById("map");
     const mapMsg = document.getElementById("map-msg");
 
+    if (renderedMapDispatchKey === dispatchKey) {
+        mapMsg.style.display = "none";
+        mapElement.style.display = "block";
+        return;
+    }
+
+    mapElement.src = buildGoogleMapUrl(adresa);
     mapMsg.style.display = "none";
     mapElement.style.display = "block";
-    setMapMessage("Načítavam trasu...");
-    clearRoute();
-
-    try {
-        const [startCoords, endCoords] = await Promise.all([
-            geocodeAddress(`${START_ADDRESS}, Lednica, Slovensko`).catch(() => START_FALLBACK_COORDS),
-            geocodeAddress(`${adresa}, Slovensko`)
-        ]);
-
-        if (currentRequest !== activeRouteRequest) {
-            return;
-        }
-
-        const route = await getRoute(startCoords, endCoords);
-
-        if (currentRequest !== activeRouteRequest) {
-            return;
-        }
-
-        routeLine = L.geoJSON(route.geometry, {
-            style: {
-                color: "#ff1744",
-                weight: 7,
-                opacity: 0.95
-            }
-        }).addTo(mapInstance);
-
-        startMarker = L.marker(startCoords).addTo(mapInstance).bindTooltip("Štart: Lednica 243", { permanent: false });
-        endMarker = L.marker(endCoords).addTo(mapInstance).bindTooltip(adresa, { permanent: false });
-
-        fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
-
-        const km = (route.distance / 1000).toFixed(1);
-        const min = Math.round(route.duration / 60);
-        setMapMessage(`Trasa ${km} km • cca ${min} min`);
-
-        setTimeout(() => {
-            mapInstance.invalidateSize();
-            fitWholeRoute(mapInstance, startCoords, endCoords, routeLine.getBounds(), route.distance);
-        }, 100);
-    } catch (error) {
-        if (currentRequest !== activeRouteRequest) {
-            return;
-        }
-
-        mapElement.style.display = "none";
-        mapMsg.style.display = "flex";
-        mapMsg.innerText = "NEPODARILO SA NAČÍTAŤ TRASU.";
-        setMapMessage("");
-        logDebug("Chyba mapy", error.message || String(error));
-        console.error(error);
-    }
+    renderedMapDispatchKey = dispatchKey;
+    setMapMessage(`Cieľ: ${adresa} | Trasa autom: načítavam...`);
+    updateMapRouteInfo(adresa, dispatchKey);
 }
 
 function formatDateParts(timestamp) {
@@ -1933,6 +1918,7 @@ async function autoArchiveActiveRun() {
             transaction.delete(activeRef);
         });
 
+        clearMap();
         logDebug("Auto-archivácia dokončená");
     } catch (error) {
         logDebug("Auto-archivácia zlyhala", error.message || String(error));
@@ -1988,7 +1974,7 @@ function setMobileMapLink(miesto) {
         return;
     }
 
-    link.href = `https://maps.google.com/?daddr=${encodeURIComponent(miesto)}`;
+    link.href = `https://maps.google.com/?saddr=${encodeURIComponent(`${START_ADDRESS}, Lednica, Slovensko`)}&daddr=${encodeURIComponent(`${miesto}, Slovensko`)}&dirflg=d`;
     link.setAttribute("aria-disabled", "false");
 }
 
@@ -2043,15 +2029,18 @@ function updateMobileEvent(metadata) {
 }
 
 db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
-    resetUiState();
-
     if (!doc.exists) {
+        resetUiState({ clearMap: true });
         lastKnownDispatch = null;
         return;
     }
 
     const d = doc.data();
     const m = d.__metadata || {};
+    const dispatchMapKey = getMapDispatchKey(m);
+    const shouldClearMap = !dispatchMapKey || dispatchMapKey !== renderedMapDispatchKey;
+
+    resetUiState({ clearMap: shouldClearMap });
     lastKnownDispatch = m;
 
     if (m.typ) {
@@ -2063,7 +2052,7 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
         updateMobileEvent(m);
 
         if (m.miesto && m.miesto.length > 2) {
-            renderRouteToAddress(m.miesto);
+            renderRouteToAddress(m.miesto, dispatchMapKey);
         }
 
         if (typeof m.timestamp === "number") {
@@ -2122,6 +2111,7 @@ async function manualReset() {
 
     if (confirm("Resetovať výjazd?")) {
         await db.collection("vyjazdy").doc("active").delete();
+        clearMap();
         logDebug("Výjazd bol resetovaný");
     }
 }
@@ -2132,13 +2122,7 @@ window.addEventListener("resize", () => {
     }
 
     if (isDesktopMapEnabled()) {
-        setTimeout(() => {
-            if (map) {
-                map.invalidateSize();
-            } else {
-                renderRouteToAddress(lastKnownDispatch.miesto);
-            }
-        }, 100);
+        renderRouteToAddress(lastKnownDispatch.miesto, getMapDispatchKey(lastKnownDispatch));
         return;
     }
 
