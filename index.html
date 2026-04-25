@@ -1968,6 +1968,7 @@ function setMobileMapLink(miesto) {
 
     const url = new URL("https://www.google.com/maps/dir/");
     url.searchParams.set("api", "1");
+    url.searchParams.set("origin", "Current Location");
     url.searchParams.set("destination", `${miesto}, Slovensko`);
     url.searchParams.set("travelmode", "driving");
 
