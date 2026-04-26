@@ -1227,6 +1227,7 @@ function normalizeSearch(search) {
 const normalizedSearch = normalizeSearch(window.location.search);
 const urlParams = new URLSearchParams(normalizedSearch);
 const DEBUG_MODE = urlParams.get("debug") === "1";
+const NO_PUSH_MODE = urlParams.get("nopush") === "1";
 const HAS_EXPLICIT_MOBILE_MODE = urlParams.get("mobil") === "1";
 const HAS_EXPLICIT_TV_MODE = urlParams.get("tv") === "1";
 const HAS_ACTION_QUERY = urlParams.has("akcia");
@@ -1307,6 +1308,10 @@ function buildRootModeUrl(mode) {
         url.searchParams.set("debug", "1");
     }
 
+    if (NO_PUSH_MODE) {
+        url.searchParams.set("nopush", "1");
+    }
+
     return url.toString();
 }
 
@@ -1328,6 +1333,10 @@ function buildPersistentParams() {
         params.set("debug", "1");
     }
 
+    if (NO_PUSH_MODE) {
+        params.set("nopush", "1");
+    }
+
     return params;
 }
 
@@ -1342,6 +1351,10 @@ function buildArchiveLinkUrl() {
 
     if (DEBUG_MODE) {
         url.searchParams.set("debug", "1");
+    }
+
+    if (NO_PUSH_MODE) {
+        url.searchParams.set("nopush", "1");
     }
 
     return url.toString();
@@ -1597,6 +1610,10 @@ function buildMobileActionUrl(action) {
         params.set("debug", "1");
     }
 
+    if (NO_PUSH_MODE) {
+        params.set("nopush", "1");
+    }
+
     params.set("akcia", action);
     return `${window.location.pathname}?${params.toString()}`;
 }
@@ -1632,10 +1649,14 @@ async function spracujVstup() {
 
         logDebug("Udalosť uložená do Firestore");
 
-        try {
-            await sendPushover(u, adr, t);
-        } catch (error) {
-            logDebug("Pushover chyba", error.message || String(error));
+        if (NO_PUSH_MODE) {
+            logDebug("Pushover preskoceny", "Aktivny testovaci rezim nopush=1");
+        } else {
+            try {
+                await sendPushover(u, adr, t);
+            } catch (error) {
+                logDebug("Pushover chyba", error.message || String(error));
+            }
         }
 
         replaceHistoryPreservingMode();
@@ -2022,7 +2043,7 @@ async function manualReset() {
     }
 }
 
-logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
+logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, nopush: NO_PUSH_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
 </script>
 </body>
