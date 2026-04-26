@@ -291,6 +291,35 @@
             font-weight:700;
         }
 
+        .export-pdf-btn{
+            margin-top:8px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:118px;
+            min-height:34px;
+            padding:8px 12px;
+            border-radius:10px;
+            border:1px solid rgba(255,255,255,0.12);
+            background:linear-gradient(180deg, #2db4ff, #156ed6);
+            color:#fff;
+            font-family:inherit;
+            font-size:0.76rem;
+            font-weight:900;
+            letter-spacing:0.06em;
+            text-transform:uppercase;
+            cursor:pointer;
+            box-shadow:0 10px 24px rgba(21,110,214,0.22);
+        }
+
+        .export-pdf-btn:hover{
+            filter:brightness(1.08);
+        }
+
+        .export-pdf-btn:active{
+            transform:translateY(1px);
+        }
+
         .archive-title{
             font-size:1.45rem;
             font-weight:900;
@@ -802,6 +831,346 @@ function getCategoryClass(category) {
     return "";
 }
 
+function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.innerText = value == null ? "" : String(value);
+    return div.innerHTML;
+}
+
+function renderReportNames(names, type = "") {
+    if (!names.length) {
+        return `<div class="name-list-columns"><div class="empty">Bez odpovede</div></div>`;
+    }
+
+    return `<div class="name-list-columns">${names
+        .map((name) => `<span class="person-pill ${escapeHtml(type)}">${escapeHtml(name)}</span>`)
+        .join("")}</div>`;
+}
+
+function buildArchiveReportHtml(item) {
+    const generatedAt = new Date().toLocaleString("sk-SK");
+    const safeTitle = escapeHtml(item.udalost);
+    const safePodtyp = escapeHtml(item.podtyp || "-");
+    const safeAddress = escapeHtml(item.adresa);
+    const safeCategory = escapeHtml(item.kategoria);
+    const safeDate = escapeHtml(item.datum);
+    const safeTime = escapeHtml(item.cas);
+
+    return `<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <title>Report udalosti - ${safeTitle}</title>
+    <style>
+        *{ box-sizing:border-box; }
+        body{
+            margin:0;
+            padding:0;
+            color:#111827;
+            font-family:Segoe UI,Arial,sans-serif;
+            background:#f3f6f9;
+            -webkit-print-color-adjust:exact;
+            print-color-adjust:exact;
+        }
+        .report{
+            width:210mm;
+            max-width:210mm;
+            margin:0 auto;
+            padding:34px;
+            background:#fff;
+            border:1px solid #d8e0e8;
+            min-height:297mm;
+            height:297mm;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+        }
+        .top{
+            display:flex;
+            justify-content:space-between;
+            gap:24px;
+            padding-bottom:22px;
+            border-bottom:3px solid #111827;
+        }
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:14px;
+        }
+        .brand img{
+            width:auto;
+            height:58px;
+        }
+        .brand strong{
+            display:block;
+            font-size:22px;
+            letter-spacing:0.04em;
+        }
+        .brand span{
+            display:block;
+            margin-top:4px;
+            color:#4b5563;
+            font-weight:700;
+        }
+        .meta{
+            text-align:right;
+            color:#374151;
+            font-weight:700;
+            line-height:1.5;
+        }
+        h1{
+            margin:30px 0 8px;
+            font-size:30px;
+            line-height:1.12;
+            text-transform:uppercase;
+            text-align:center;
+        }
+        .category{
+            display:block;
+            margin-top:8px;
+            margin-left:auto;
+            margin-right:auto;
+            padding:8px 12px;
+            border-radius:999px;
+            width:auto;
+            max-width:max-content;
+            background:#ffeb3b;
+            color:#111827;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+        .report-address{
+            margin-top:14px;
+            color:#111827;
+            font-size:18px;
+            font-weight:800;
+            line-height:1.45;
+            text-align:center;
+        }
+        .grid{
+            margin-top:24px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+        .box{
+            padding:16px;
+            border:1px solid #d8e0e8;
+            background:#f8fafc;
+        }
+        .box.full{
+            grid-column:1 / -1;
+        }
+        .label{
+            color:#64748b;
+            font-size:12px;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+        .value{
+            margin-top:7px;
+            font-size:18px;
+            font-weight:800;
+            line-height:1.35;
+        }
+        .counts{
+            margin-top:24px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+        .count{
+            padding:18px;
+            border:1px solid #d8e0e8;
+            background:#fff;
+        }
+        .count strong{
+            display:block;
+            color:#64748b;
+            font-size:12px;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+        .count b{
+            display:block;
+            margin-top:8px;
+            font-size:34px;
+        }
+        .idem b{ color:#008f4a; }
+        .nejdem b{ color:#d60d37; }
+        .names{
+            margin-top:24px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+        .name-box{
+            height:345px;
+            min-height:345px;
+            padding:16px;
+            border:1px solid #d8e0e8;
+            background:#f8fafc;
+            overflow:hidden;
+        }
+        .name-box strong{
+            display:block;
+            margin-bottom:12px;
+            font-size:13px;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            text-align:center;
+        }
+        .name-box.idem strong{
+            color:#00a85a;
+        }
+        .name-box.nejdem strong{
+            color:#d60d37;
+        }
+        .name-box span{
+            display:inline-block;
+            margin:0 3px 4px 0;
+            padding:5px 7px;
+            border-radius:999px;
+            font-size:10px;
+            font-weight:800;
+            line-height:1.15;
+            text-transform:uppercase;
+        }
+        .name-list-columns{
+            column-count:2;
+            column-gap:8px;
+        }
+        .name-list-columns span,
+        .name-list-columns .empty{
+            break-inside:avoid;
+        }
+        .person-pill.idem,
+        .name-box.idem span{
+            color:#00a85a;
+            background:#d9fbe8;
+            border:1px solid #a7efc5;
+        }
+        .person-pill.nejdem,
+        .name-box.nejdem span{
+            color:#d60d37;
+            background:#ffe1e8;
+            border:1px solid #ffb8c7;
+        }
+        .empty{
+            color:#64748b;
+            font-weight:700;
+        }
+        .notes-box{
+            margin-top:26px;
+            min-height:180px;
+            flex:1 1 auto;
+            padding:16px;
+            border:1px solid #d8e0e8;
+            background:#fff;
+        }
+        .notes-box strong{
+            display:block;
+            color:#64748b;
+            font-size:13px;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+            text-align:center;
+        }
+        .footer{
+            margin-top:12px;
+            padding-top:14px;
+            border-top:1px solid #d8e0e8;
+            color:#64748b;
+            font-size:12px;
+            font-weight:700;
+            text-align:center;
+        }
+        @media print{
+            @page{ margin:0; }
+            html,
+            body{
+                width:100%;
+                margin:0;
+                padding:0;
+                background:#fff;
+            }
+            .report{
+                max-width:none;
+                width:210mm;
+                min-height:297mm;
+                height:297mm;
+                margin:0;
+                border:0;
+                padding:34px;
+                -webkit-print-color-adjust:exact;
+                print-color-adjust:exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="report">
+        <section class="top">
+            <div class="brand">
+                <img src="logo.png" alt="DHZ Lednica">
+                <div>
+                    <strong>DHZ LEDNICA</strong>
+                    <span>Report udalosti</span>
+                </div>
+            </div>
+            <div class="meta">
+                <div>Dátum: ${safeDate}</div>
+                <div>Čas: ${safeTime}</div>
+                <div>Vygenerované: ${escapeHtml(generatedAt)}</div>
+            </div>
+        </section>
+
+        <h1>${safeTitle}</h1>
+        <div class="category">${safeCategory}</div>
+        <div class="report-address">${safeAddress}</div>
+
+        <section class="names">
+            <div class="name-box idem">
+                <strong>IDEM</strong>
+                ${renderReportNames(item.idem, "idem")}
+            </div>
+            <div class="name-box nejdem">
+                <strong>NEJDEM</strong>
+                ${renderReportNames(item.nejdem, "nejdem")}
+            </div>
+        </section>
+
+        <section class="notes-box">
+            <strong>Poznámky</strong>
+        </section>
+
+        <div class="footer">Exportované z archívu DHZ Lednica.</div>
+    </main>
+    <script>
+        window.addEventListener("load", () => {
+            setTimeout(() => window.print(), 250);
+        });
+    <\/script>
+</body>
+</html>`;
+}
+
+function exportArchivePdf(item) {
+    const reportWindow = window.open("", "_blank", "width=960,height=720");
+
+    if (!reportWindow) {
+        alert("Pre export PDF povoľ v prehliadači otváranie nových okien.");
+        return;
+    }
+
+    reportWindow.document.open();
+    reportWindow.document.write(buildArchiveReportHtml(item));
+    reportWindow.document.close();
+    logDebug("PDF report pripravený", { id: item.id, udalost: item.udalost });
+}
+
 function createArchiveCard(item, mobile = false) {
     const card = document.createElement("article");
     card.className = `archive-card${mobile ? " mobile" : ""}`;
@@ -817,6 +1186,13 @@ function createArchiveCard(item, mobile = false) {
     const dateWrap = document.createElement("div");
     dateWrap.className = "archive-datetime";
     dateWrap.innerHTML = `${item.datum}<span>${item.cas}</span>`;
+
+    const exportButton = document.createElement("button");
+    exportButton.className = "export-pdf-btn";
+    exportButton.type = "button";
+    exportButton.innerText = "EXPORT PDF";
+    exportButton.addEventListener("click", () => exportArchivePdf(item));
+    dateWrap.appendChild(exportButton);
 
     top.appendChild(badge);
     top.appendChild(dateWrap);
