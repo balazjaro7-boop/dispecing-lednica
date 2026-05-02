@@ -715,6 +715,120 @@
             background:linear-gradient(180deg, #2db4ff, #156ed6);
         }
 
+        .reset-modal{
+            position:fixed;
+            inset:0;
+            z-index:500;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:18px;
+            background:rgba(0,0,0,0.72);
+            backdrop-filter:blur(10px);
+        }
+
+        .reset-modal[hidden]{
+            display:none;
+        }
+
+        .reset-dialog{
+            width:min(420px, 100%);
+            padding:22px;
+            border-radius:20px;
+            border:1px solid #273240;
+            background:linear-gradient(180deg, rgba(21,29,38,0.98), rgba(10,14,19,0.98));
+            box-shadow:0 24px 70px rgba(0,0,0,0.45);
+        }
+
+        .reset-kicker{
+            color:var(--btn-reset);
+            font-size:0.8rem;
+            font-weight:900;
+            letter-spacing:0.12em;
+            text-transform:uppercase;
+        }
+
+        .reset-title{
+            margin-top:8px;
+            color:#fff;
+            font-size:1.45rem;
+            font-weight:900;
+            text-transform:uppercase;
+        }
+
+        .reset-text{
+            margin-top:8px;
+            color:#d2dae4;
+            line-height:1.5;
+        }
+
+        .reset-field{
+            display:block;
+            margin-top:18px;
+        }
+
+        .reset-field span{
+            display:block;
+            margin-bottom:8px;
+            color:#9eacba;
+            font-size:0.78rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-transform:uppercase;
+        }
+
+        .reset-field input{
+            width:100%;
+            padding:14px 16px;
+            border-radius:14px;
+            border:1px solid #2b3847;
+            background:#080c12;
+            color:#fff;
+            font:900 1.2rem/1 monospace;
+            outline:none;
+        }
+
+        .reset-status{
+            min-height:22px;
+            margin-top:12px;
+            color:#ffb2c1;
+            font-weight:800;
+        }
+
+        .reset-status.ok{
+            color:var(--green);
+        }
+
+        .reset-actions{
+            margin-top:16px;
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+        }
+
+        .reset-actions button{
+            min-height:48px;
+            border:0;
+            border-radius:14px;
+            color:#fff;
+            font-family:inherit;
+            font-weight:900;
+            cursor:pointer;
+        }
+
+        .reset-cancel{
+            background:#1a2330;
+        }
+
+        .reset-confirm{
+            background:linear-gradient(180deg, #ff4166, #d60d37);
+        }
+
+        .reset-actions button:disabled{
+            opacity:0.65;
+            cursor:not-allowed;
+        }
+
         body.mode-mobile{
             overflow:auto;
         }
@@ -1185,6 +1299,23 @@
     <div id="debug-log"></div>
 </div>
 
+<div id="reset-modal" class="reset-modal" hidden>
+    <div class="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+        <div class="reset-kicker">Reset</div>
+        <div id="reset-modal-title" class="reset-title">Reset výjazdu</div>
+        <div id="reset-modal-text" class="reset-text">Naozaj chceš resetovať aktuálny výjazd?</div>
+        <label class="reset-field">
+            <span>PIN</span>
+            <input id="reset-pin-input" type="password" inputmode="numeric" autocomplete="off">
+        </label>
+        <div id="reset-status" class="reset-status"></div>
+        <div class="reset-actions">
+            <button class="reset-cancel" type="button" onclick="closeResetModal()">Zrušiť</button>
+            <button id="reset-confirm-btn" class="reset-confirm" type="button" onclick="confirmResetModal()">Resetovať</button>
+        </div>
+    </div>
+</div>
+
 <div id="archive-modal">
     <div class="archive-modal-box">
         <strong>Ukladám výjazd</strong>
@@ -1201,6 +1332,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+let pendingResetAction = null;
 
 const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
@@ -1590,10 +1722,8 @@ function getResponderName() {
     let meno = (input.value || localStorage.getItem("h_meno") || "").trim();
 
     if (!meno) {
-        meno = (prompt("Zadaj meno:") || "").trim();
-    }
-
-    if (!meno) {
+        input.focus();
+        setMobileFeedback("Najprv zadaj svoje meno do poľa Meno hasiča.", "warn");
         return "";
     }
 
@@ -2025,21 +2155,69 @@ function startTimer(start) {
 }
 
 async function manualReset() {
-    const pin = prompt("Zadaj PIN pre reset:");
-    if (pin === null) {
-        return;
-    }
+    openResetModal({
+        title: "Reset výjazdu",
+        text: "Naozaj chceš resetovať aktuálny výjazd?",
+        confirmText: "Resetovať",
+        onConfirm: async () => {
+            await db.collection("vyjazdy").doc("active").delete();
+            clearMap();
+            logDebug("Výjazd bol resetovaný");
+            return "Výjazd bol resetovaný.";
+        }
+    });
+}
+
+function openResetModal(config) {
+    pendingResetAction = config.onConfirm;
+    document.getElementById("reset-modal-title").innerText = config.title;
+    document.getElementById("reset-modal-text").innerText = config.text;
+    document.getElementById("reset-confirm-btn").innerText = config.confirmText;
+    document.getElementById("reset-status").innerText = "";
+    document.getElementById("reset-status").className = "reset-status";
+    document.getElementById("reset-pin-input").value = "";
+    document.getElementById("reset-modal").hidden = false;
+    setTimeout(() => document.getElementById("reset-pin-input").focus(), 0);
+}
+
+function closeResetModal() {
+    pendingResetAction = null;
+    document.getElementById("reset-modal").hidden = true;
+}
+
+async function confirmResetModal() {
+    const pinInput = document.getElementById("reset-pin-input");
+    const status = document.getElementById("reset-status");
+    const confirmButton = document.getElementById("reset-confirm-btn");
+    const pin = pinInput.value.trim();
 
     if (pin !== RESET_PIN) {
-        alert("Nesprávny PIN.");
+        status.innerText = "Nesprávny PIN.";
+        status.className = "reset-status";
         logDebug("Reset zamietnutý", "Nesprávny PIN");
+        pinInput.select();
         return;
     }
 
-    if (confirm("Resetovať výjazd?")) {
-        await db.collection("vyjazdy").doc("active").delete();
-        clearMap();
-        logDebug("Výjazd bol resetovaný");
+    if (!pendingResetAction) {
+        return;
+    }
+
+    confirmButton.disabled = true;
+    status.innerText = "Resetujem...";
+    status.className = "reset-status";
+
+    try {
+        const successMessage = await pendingResetAction();
+        status.innerText = successMessage || "Reset bol dokončený.";
+        status.className = "reset-status ok";
+        setTimeout(closeResetModal, 900);
+    } catch (error) {
+        console.error(error);
+        status.innerText = "Reset zlyhal.";
+        status.className = "reset-status";
+    } finally {
+        confirmButton.disabled = false;
     }
 }
 
