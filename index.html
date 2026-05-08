@@ -1337,6 +1337,8 @@ let pendingResetAction = null;
 const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
+const DISPATCH_ACCESS_KEY = "dhzlednica1880*";
+const DISPATCH_ACCESS_KEY_PARAM = "klic";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
@@ -1502,6 +1504,10 @@ function replaceHistoryPreservingMode() {
     const params = buildPersistentParams();
     const query = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+}
+
+function hasValidDispatchAccessKey() {
+    return urlParams.get(DISPATCH_ACCESS_KEY_PARAM) === DISPATCH_ACCESS_KEY;
 }
 
 function showArchiveModal(show) {
@@ -1768,6 +1774,12 @@ async function spracujVstup() {
     logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 
     if (u) {
+        if (!hasValidDispatchAccessKey()) {
+            logDebug("Vyhlasenie udalosti zamietnute", `Chyba alebo je nespravny parameter ${DISPATCH_ACCESS_KEY_PARAM}`);
+            replaceHistoryPreservingMode();
+            return;
+        }
+
         await ref.set({
             __metadata: {
                 typ: u,
