@@ -1287,9 +1287,16 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM ✔️</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
-        <iframe id="map" title="Trasa výjazdu" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        <div id="map-note" class="map-note"></div>
+        <div id="map-msg" class="map-placeholder">
+    <div>ČAKÁM NA ADRESU VÝJAZDU...</div>
+    <div id="sentinel-info" style="margin-top: 15px; font-size: 1.1rem; color: var(--gray); display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 600;">
+        <span id="sentinel-dot" style="width: 10px; height: 10px; border-radius: 50%; background: gray; transition: 0.5s;"></span>
+        <span>SENTINEL: <span id="sentinel-temp" style="color: #fff;">--.-</span>°C</span>
+        <span id="sentinel-time" style="font-size: 0.8rem; opacity: 0.5; font-weight: normal;">--:--:--</span>
+    </div>
+</div>
+<iframe id="map" title="Trasa výjazdu" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<div id="map-note" class="map-note"></div>
     </div>
     <div class="col"><div class="title" style="color:var(--red);">NEJDEM ❌</div><div id="nejdem" class="list"></div></div>
 </div>
@@ -1337,8 +1344,6 @@ let pendingResetAction = null;
 const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
-const DISPATCH_ACCESS_KEY = "dhzlednica1880*";
-const DISPATCH_ACCESS_KEY_PARAM = "klic";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
@@ -1504,10 +1509,6 @@ function replaceHistoryPreservingMode() {
     const params = buildPersistentParams();
     const query = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-}
-
-function hasValidDispatchAccessKey() {
-    return urlParams.get(DISPATCH_ACCESS_KEY_PARAM) === DISPATCH_ACCESS_KEY;
 }
 
 function showArchiveModal(show) {
@@ -1774,14 +1775,7 @@ async function spracujVstup() {
     logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 
     if (u) {
-        if (!hasValidDispatchAccessKey()) {
-            logDebug("Vyhlasenie udalosti zamietnute", `Chyba alebo je nespravny parameter ${DISPATCH_ACCESS_KEY_PARAM}`);
-            replaceHistoryPreservingMode();
-            return;
-        }
-
         await ref.set({
-            klic: DISPATCH_ACCESS_KEY,
             __metadata: {
                 typ: u,
                 podtyp: t || "",
@@ -2226,13 +2220,43 @@ async function confirmResetModal() {
         status.className = "reset-status ok";
         setTimeout(closeResetModal, 900);
     } catch (error) {
-        console.error(error);
+       console.error(error);
         status.innerText = "Reset zlyhal.";
         status.className = "reset-status";
     } finally {
         confirmButton.disabled = false;
     }
 }
+
+// --- MONITORING SENTINEL (Sledovanie garáže a spojenia) ---
+db.collection("system").doc("sentinel").onSnapshot((doc) => {
+    const dot = document.getElementById("sentinel-dot");
+    const tempEl = document.getElementById("sentinel-temp");
+    const timeEl = document.getElementById("sentinel-time");
+
+    if (!doc.exists || !dot) return;
+
+    const data = doc.data();
+    const teplota = data.teplota || 0;
+    const timestamp = data.timestamp || Date.now();
+    const teraz = Date.now();
+
+    // 1. Zápis aktuálnych hodnôt
+    tempEl.innerText = teplota.toFixed(1);
+    timeEl.innerText = new Date(timestamp).toLocaleTimeString("sk-SK");
+
+    // 2. Kontrola spojenia (limit 15 minút = 900 000 ms)
+    if ((teraz - timestamp) > 900000) {
+        dot.style.background = "var(--red)";
+        dot.style.boxShadow = "0 0 8px var(--red)";
+    } else {
+        dot.style.background = "var(--green)";
+        dot.style.boxShadow = "0 0 8px var(--green)";
+    }
+
+    // 3. Vizuálne upozornenie na mráz (pod 4°C)
+    tempEl.style.color = (teplota < 4) ? "var(--red)" : "#fff";
+});
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, nopush: NO_PUSH_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
