@@ -2228,24 +2228,23 @@ async function confirmResetModal() {
     }
 }
 
-// --- MONITORING SENTINEL (Sledovanie garáže a spojenia) ---
+// --- MONITORING SENTINEL (Firestore realtime: system/sentinel) ---
 db.collection("system").doc("sentinel").onSnapshot((doc) => {
     const dot = document.getElementById("sentinel-dot");
     const tempEl = document.getElementById("sentinel-temp");
     const timeEl = document.getElementById("sentinel-time");
 
-    if (!doc.exists || !dot) return;
+    if (!dot || !tempEl || !timeEl) return;
+    if (!doc.exists) return;
 
     const data = doc.data();
-    const teplota = data.teplota || 0;
-    const timestamp = data.timestamp || Date.now();
+    const teplota = Number(data.teplota || 0);
+    const timestamp = Number(data.timestamp || Date.now());
     const teraz = Date.now();
 
-    // 1. Zápis aktuálnych hodnôt
     tempEl.innerText = teplota.toFixed(1);
     timeEl.innerText = new Date(timestamp).toLocaleTimeString("sk-SK");
 
-    // 2. Kontrola spojenia (limit 15 minút = 900 000 ms)
     if ((teraz - timestamp) > 900000) {
         dot.style.background = "var(--red)";
         dot.style.boxShadow = "0 0 8px var(--red)";
@@ -2254,8 +2253,9 @@ db.collection("system").doc("sentinel").onSnapshot((doc) => {
         dot.style.boxShadow = "0 0 8px var(--green)";
     }
 
-    // 3. Vizuálne upozornenie na mráz (pod 4°C)
     tempEl.style.color = (teplota < 4) ? "var(--red)" : "#fff";
+}, (error) => {
+    logDebug("Sentinel Firestore chyba", error.message || String(error));
 });
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, nopush: NO_PUSH_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
