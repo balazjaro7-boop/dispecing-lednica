@@ -1153,27 +1153,6 @@
             border-radius:12px;
         }
 
-        .esp-status{
-            display:flex;
-            align-items:center;
-            gap:6px;
-            font-size:0.72rem;
-            font-weight:800;
-            letter-spacing:0.06em;
-            text-transform:uppercase;
-            color:#9eacba;
-        }
-        .esp-status-dot{
-            width:10px;
-            height:10px;
-            border-radius:50%;
-            background:#444;
-            flex-shrink:0;
-            transition:background 0.4s;
-        }
-        .esp-status-dot.online { background:#00e676; box-shadow:0 0 6px #00e676; }
-        .esp-status-dot.offline{ background:#ff1744; box-shadow:0 0 6px #ff1744; }
-
     </style>
 </head>
 <body>
@@ -1220,10 +1199,6 @@
                     <a id="archive-link" href="archive.html?tv=1" class="btn-action btn-action-archive tv-control-action">ARCHÍV</a>
                     <a id="esp-link" href="esp.html?tv=1" class="btn-action btn-action-esp tv-control-action">ESP</a>
                     <button class="btn-action btn-action-reset tv-control-action" onclick="manualReset()">RESET</button>
-                </div>
-                <div class="esp-status">
-                    <div id="esp-dot" class="esp-status-dot"></div>
-                    <span id="esp-label">ESP...</span>
                 </div>
             </div>
             <div id="display-mode-badge" class="mobile-badge tv-mode-badge">TV REŽIM</div>
@@ -2295,29 +2270,6 @@ async function confirmResetModal() {
         confirmButton.disabled = false;
     }
 }
-
-// --- ESP STATUS ---
-const ESP_OFFLINE_AFTER_MS = 120000;
-
-function updateEspDot(lastSeenSeconds) {
-    const dot = document.getElementById("esp-dot");
-    const label = document.getElementById("esp-label");
-    if (!dot || !label) return;
-    if (!lastSeenSeconds) {
-        dot.className = "esp-status-dot offline";
-        label.innerText = "ESP OFFLINE";
-        return;
-    }
-    const agoMs = Date.now() - (lastSeenSeconds * 1000);
-    const online = agoMs < ESP_OFFLINE_AFTER_MS;
-    dot.className = "esp-status-dot " + (online ? "online" : "offline");
-    label.innerText = online ? "ESP ONLINE" : "ESP OFFLINE";
-}
-
-db.collection("espStatus").doc("lednica").onSnapshot((doc) => {
-    const lastSeen = doc.exists ? (doc.data().lastSeen || null) : null;
-    updateEspDot(lastSeen);
-});
 
 logDebug("Aplikácia pripravená", { debug: DEBUG_MODE, nopush: NO_PUSH_MODE, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 window.addEventListener("load", spracujVstup);
