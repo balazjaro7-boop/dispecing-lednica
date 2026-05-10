@@ -2168,16 +2168,9 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
 const ESP_OFFLINE_WARN_MS = 15 * 60 * 1000;
 const ESP_OFFLINE_ALERT_MS = 15 * 60 * 1000;
-const TEPLOTA_MIN_C = 4.0;
 let espAlertSent = false;
-let tempAlertSent = false;
 
-function formatTeplota(teplota) {
-    if (teplota === null || teplota === undefined) return "";
-    return ` · 🌡️ ${teplota.toFixed(1)} °C`;
-}
-
-function updateEspDot(lastSeen, teplota) {
+function updateEspDot(lastSeen) {
     const dot = document.getElementById("esp-dot");
     const label = document.getElementById("esp-label");
     if (!dot) return;
@@ -2191,54 +2184,20 @@ function updateEspDot(lastSeen, teplota) {
 
     const age = Date.now() - lastSeen;
     const minutes = Math.floor(age / 60000);
-    const tepString = formatTeplota(teplota);
 
     if (age < ESP_OFFLINE_WARN_MS) {
-        const lowTemp = teplota !== null && teplota !== undefined && teplota < TEPLOTA_MIN_C;
-        dot.className = lowTemp ? "esp-dot offline" : "esp-dot online";
-        label.style.color = lowTemp ? "#ff1744" : "#00e676";
-        label.innerText = `ESP32 online – pred ${minutes < 1 ? "<1" : minutes} min${tepString}${lowTemp ? " ⚠️ NÍZKA TEPLOTA" : ""}`;
+        dot.className = "esp-dot online";
+        label.style.color = "#00e676";
+        label.innerText = `ESP32 online – naposledy pred ${minutes < 1 ? "<1" : minutes} min`;
         espAlertSent = false;
-
-        if (lowTemp && !tempAlertSent) {
-            tempAlertSent = true;
-            sendTempAlert(teplota);
-        } else if (!lowTemp) {
-            tempAlertSent = false;
-        }
     } else {
         dot.className = "esp-dot offline";
         label.style.color = "#ff1744";
-        label.innerText = `ESP32 OFFLINE – naposledy pred ${minutes} min${tepString}`;
-
+        label.innerText = `ESP32 OFFLINE – naposledy pred ${minutes} min`;
         if (!espAlertSent) {
             espAlertSent = true;
             sendEspOfflineAlert(minutes);
         }
-    }
-}
-
-async function sendTempAlert(teplota) {
-    if (NO_PUSH_MODE) { logDebug("Temp alert preskoceny (nopush)"); return; }
-    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
-    const adminGroup = "gdquxjjbzk9ptkkh9tsuzofujtbqbg";
-    const body = new URLSearchParams({
-        token: apiToken,
-        user: adminGroup,
-        message: `Teplota v zbrojnici klesla na ${teplota.toFixed(1)} °C. Hrozí zamrznutie!`,
-        title: "🥶 NÍZKA TEPLOTA V ZBROJNICI",
-        priority: 1,
-        sound: "siren"
-    });
-    try {
-        await fetch("https://api.pushover.net/1/messages.json", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body
-        });
-        logDebug("Temp alert odoslaný adminovi");
-    } catch (e) {
-        logDebug("Temp alert zlyhal", e.message);
     }
 }
 
@@ -2267,12 +2226,11 @@ async function sendEspOfflineAlert(minutes) {
 }
 
 db.collection("esp_heartbeat").doc("lednica").onSnapshot((doc) => {
-    if (!doc.exists) { updateEspDot(null, null); return; }
+    if (!doc.exists) { updateEspDot(null); return; }
     const data = doc.data();
     const lastSeen = typeof data.lastSeen === "number" ? data.lastSeen : null;
-    const teplota = typeof data.teplota === "number" ? data.teplota : null;
-    updateEspDot(lastSeen, teplota);
-    logDebug("ESP heartbeat", { lastSeen, teplota });
+    updateEspDot(lastSeen);
+    logDebug("ESP heartbeat", { lastSeen });
 });
 
 setInterval(() => {
@@ -2280,10 +2238,9 @@ setInterval(() => {
     if (!dot) return;
     if (dot.classList.contains("online") || dot.classList.contains("offline")) {
         db.collection("esp_heartbeat").doc("lednica").get().then((doc) => {
-            if (!doc.exists) { updateEspDot(null, null); return; }
+            if (!doc.exists) { updateEspDot(null); return; }
             const data = doc.data();
-            const teplota = typeof data.teplota === "number" ? data.teplota : null;
-            updateEspDot(typeof data.lastSeen === "number" ? data.lastSeen : null, teplota);
+            updateEspDot(typeof data.lastSeen === "number" ? data.lastSeen : null);
         });
     }
 }, 60000);
