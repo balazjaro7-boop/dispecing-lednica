@@ -1425,7 +1425,7 @@ const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = new URL(window.location.pathname, window.location.origin).toString();
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 const ESP_HEARTBEAT_DOC = "espStatus/esp32d";
-const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 90 * 1000;
+const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 3 * 60 * 1000;
 
 let timerInterval = null;
 let renderedMapDispatchKey = null;
@@ -1444,6 +1444,7 @@ function normalizeSearch(search) {
 
 const normalizedSearch = normalizeSearch(window.location.search);
 const urlParams = new URLSearchParams(normalizedSearch);
+const IS_ESP_LIFEBIT = urlParams.get("esp_lifebit") === "1";
 const DEBUG_MODE = urlParams.get("debug") === "1";
 const NO_PUSH_MODE = urlParams.get("nopush") === "1";
 const HAS_EXPLICIT_MOBILE_MODE = urlParams.get("mobil") === "1";
@@ -1454,15 +1455,38 @@ const IS_MOBILE_MODE = HAS_EXPLICIT_MOBILE_MODE || (!HAS_EXPLICIT_TV_MODE && HAS
 const IS_TV_MODE = !IS_MOBILE_MODE && (HAS_EXPLICIT_TV_MODE || HAS_EVENT_QUERY);
 const IS_SELECTOR_MODE = !IS_MOBILE_MODE && !IS_TV_MODE;
 
+if (IS_ESP_LIFEBIT) {
+    document.body.innerHTML = "SPRACOVÁVAM LIFEBIT...";
+
+    const lifebitKey = urlParams.get("key");
+
+    if (lifebitKey === "lifebit") {
+        db.doc(ESP_HEARTBEAT_DOC).set({
+            device: "ESP32 D",
+            lastSeen: Date.now()
+        }).then(() => {
+            document.body.innerHTML = "OK";
+        }).catch((error) => {
+            console.error("ESP lifebit chyba:", error);
+            document.body.innerHTML = "ERROR";
+        });
+    } else {
+        document.body.innerHTML = "FORBIDDEN";
+    }
+}
+
+
 if (normalizedSearch && normalizedSearch !== window.location.search) {
     window.history.replaceState({}, "", `${window.location.pathname}${normalizedSearch}${window.location.hash}`);
 }
 
-applyModeClass();
-initializeMobileForm();
-configureArchiveLink();
-configureSelectorLinks();
-configureDispatchLinks();
+if (!IS_ESP_LIFEBIT) {
+    applyModeClass();
+    initializeMobileForm();
+    configureArchiveLink();
+    configureSelectorLinks();
+    configureDispatchLinks();
+}
 
 function updateClocks() {
     const currentTime = new Date().toLocaleTimeString("sk-SK");
@@ -1470,8 +1494,10 @@ function updateClocks() {
     document.getElementById("mobile-clock").innerText = currentTime;
 }
 
-updateClocks();
-setInterval(updateClocks, 1000);
+if (!IS_ESP_LIFEBIT) {
+    updateClocks();
+    setInterval(updateClocks, 1000);
+}
 
 let espHeartbeatLastSeen = 0;
 
@@ -1517,17 +1543,19 @@ function refreshEspHeartbeatView() {
     setEspHeartbeatView(isOnline, espHeartbeatLastSeen);
 }
 
-db.doc(ESP_HEARTBEAT_DOC).onSnapshot((doc) => {
-    espHeartbeatLastSeen = doc.exists ? getHeartbeatMillis(doc.data().lastSeen) : 0;
-    refreshEspHeartbeatView();
-}, (error) => {
-    espHeartbeatLastSeen = 0;
-    refreshEspHeartbeatView();
-    logDebug("ESP heartbeat sa nepodarilo načítať", error.message || String(error));
-});
+if (!IS_ESP_LIFEBIT) {
+    db.doc(ESP_HEARTBEAT_DOC).onSnapshot((doc) => {
+        espHeartbeatLastSeen = doc.exists ? getHeartbeatMillis(doc.data().lastSeen) : 0;
+        refreshEspHeartbeatView();
+    }, (error) => {
+        espHeartbeatLastSeen = 0;
+        refreshEspHeartbeatView();
+        logDebug("ESP heartbeat sa nepodarilo načítať", error.message || String(error));
+    });
 
-refreshEspHeartbeatView();
-setInterval(refreshEspHeartbeatView, 5000);
+    refreshEspHeartbeatView();
+    setInterval(refreshEspHeartbeatView, 5000);
+}
 
 function logDebug(message, data) {
     const timestamp = new Date().toLocaleTimeString("sk-SK");
