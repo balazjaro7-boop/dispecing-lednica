@@ -118,6 +118,7 @@
             position:absolute;
             inset:0;
             display:flex;
+            flex-direction:column;
             align-items:center;
             justify-content:center;
             font-size:1.2rem;
@@ -126,6 +127,46 @@
             font-weight:bold;
             padding:20px;
             background:var(--panel);
+        }
+
+        .esp-status{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin-top:18px;
+            font-size:0.95rem;
+            font-weight:700;
+            letter-spacing:0.04em;
+        }
+
+        .esp-dot{
+            width:14px;
+            height:14px;
+            border-radius:50%;
+            flex-shrink:0;
+            background:#444;
+            transition:background 0.4s;
+        }
+
+        .esp-dot.online{
+            background:#00e676;
+            box-shadow:0 0 8px rgba(0,230,118,0.7);
+            animation:pulse-green 2s infinite;
+        }
+
+        .esp-dot.offline{
+            background:#ff1744;
+            box-shadow:0 0 8px rgba(255,23,68,0.7);
+        }
+
+        .esp-dot.unknown{
+            background:#888;
+        }
+
+        @keyframes pulse-green{
+            0%{ box-shadow:0 0 4px rgba(0,230,118,0.5); }
+            50%{ box-shadow:0 0 14px rgba(0,230,118,0.9); }
+            100%{ box-shadow:0 0 4px rgba(0,230,118,0.5); }
         }
 
         .map-note{
@@ -1287,7 +1328,12 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM ✔️</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...
+            <div class="esp-status">
+                <div id="esp-dot" class="esp-dot unknown"></div>
+                <span id="esp-label" style="color:#666;">ESP32 – načítavam...</span>
+            </div>
+        </div>
         <iframe id="map" title="Trasa výjazdu" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <div id="map-note" class="map-note"></div>
     </div>
@@ -2119,6 +2165,128 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     updateParticipants(d);
 });
+
+const ESP_OFFLINE_WARN_MS = 15 * 60 * 1000;
+const ESP_OFFLINE_ALERT_MS = 15 * 60 * 1000;
+const TEPLOTA_MIN_C = 4.0;
+let espAlertSent = false;
+let tempAlertSent = false;
+
+function formatTeplota(teplota) {
+    if (teplota === null || teplota === undefined) return "";
+    return ` · 🌡️ ${teplota.toFixed(1)} °C`;
+}
+
+function updateEspDot(lastSeen, teplota) {
+    const dot = document.getElementById("esp-dot");
+    const label = document.getElementById("esp-label");
+    if (!dot) return;
+
+    if (!lastSeen) {
+        dot.className = "esp-dot unknown";
+        label.style.color = "#666";
+        label.innerText = "ESP32 – žiadne dáta";
+        return;
+    }
+
+    const age = Date.now() - lastSeen;
+    const minutes = Math.floor(age / 60000);
+    const tepString = formatTeplota(teplota);
+
+    if (age < ESP_OFFLINE_WARN_MS) {
+        const lowTemp = teplota !== null && teplota !== undefined && teplota < TEPLOTA_MIN_C;
+        dot.className = lowTemp ? "esp-dot offline" : "esp-dot online";
+        label.style.color = lowTemp ? "#ff1744" : "#00e676";
+        label.innerText = `ESP32 online – pred ${minutes < 1 ? "<1" : minutes} min${tepString}${lowTemp ? " ⚠️ NÍZKA TEPLOTA" : ""}`;
+        espAlertSent = false;
+
+        if (lowTemp && !tempAlertSent) {
+            tempAlertSent = true;
+            sendTempAlert(teplota);
+        } else if (!lowTemp) {
+            tempAlertSent = false;
+        }
+    } else {
+        dot.className = "esp-dot offline";
+        label.style.color = "#ff1744";
+        label.innerText = `ESP32 OFFLINE – naposledy pred ${minutes} min${tepString}`;
+
+        if (!espAlertSent) {
+            espAlertSent = true;
+            sendEspOfflineAlert(minutes);
+        }
+    }
+}
+
+async function sendTempAlert(teplota) {
+    if (NO_PUSH_MODE) { logDebug("Temp alert preskoceny (nopush)"); return; }
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const adminGroup = "gdquxjjbzk9ptkkh9tsuzofujtbqbg";
+    const body = new URLSearchParams({
+        token: apiToken,
+        user: adminGroup,
+        message: `Teplota v zbrojnici klesla na ${teplota.toFixed(1)} °C. Hrozí zamrznutie!`,
+        title: "🥶 NÍZKA TEPLOTA V ZBROJNICI",
+        priority: 1,
+        sound: "siren"
+    });
+    try {
+        await fetch("https://api.pushover.net/1/messages.json", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body
+        });
+        logDebug("Temp alert odoslaný adminovi");
+    } catch (e) {
+        logDebug("Temp alert zlyhal", e.message);
+    }
+}
+
+async function sendEspOfflineAlert(minutes) {
+    if (NO_PUSH_MODE) { logDebug("ESP offline alert preskoceny (nopush)"); return; }
+    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
+    const adminGroup = "gdquxjjbzk9ptkkh9tsuzofujtbqbg";
+    const body = new URLSearchParams({
+        token: apiToken,
+        user: adminGroup,
+        message: `ESP32 sa neozval už ${minutes} minút. Skontroluj zariadenie.`,
+        title: "⚠️ ESP32 OFFLINE",
+        priority: 1,
+        sound: "siren"
+    });
+    try {
+        await fetch("https://api.pushover.net/1/messages.json", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body
+        });
+        logDebug("ESP offline alert odoslaný adminovi");
+    } catch (e) {
+        logDebug("ESP offline alert zlyhal", e.message);
+    }
+}
+
+db.collection("esp_heartbeat").doc("lednica").onSnapshot((doc) => {
+    if (!doc.exists) { updateEspDot(null, null); return; }
+    const data = doc.data();
+    const lastSeen = typeof data.lastSeen === "number" ? data.lastSeen : null;
+    const teplota = typeof data.teplota === "number" ? data.teplota : null;
+    updateEspDot(lastSeen, teplota);
+    logDebug("ESP heartbeat", { lastSeen, teplota });
+});
+
+setInterval(() => {
+    const dot = document.getElementById("esp-dot");
+    if (!dot) return;
+    if (dot.classList.contains("online") || dot.classList.contains("offline")) {
+        db.collection("esp_heartbeat").doc("lednica").get().then((doc) => {
+            if (!doc.exists) { updateEspDot(null, null); return; }
+            const data = doc.data();
+            const teplota = typeof data.teplota === "number" ? data.teplota : null;
+            updateEspDot(typeof data.lastSeen === "number" ? data.lastSeen : null, teplota);
+        });
+    }
+}, 60000);
 
 function formatElapsedTime(start) {
     const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
