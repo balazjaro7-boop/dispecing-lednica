@@ -69,8 +69,11 @@
             font-weight:bold;
         }
 
-        .btn-action:first-child{ background:var(--btn-archiv); }
-        .btn-action:last-child{ background:var(--btn-reset); }
+        .btn-action:first-child,
+        .btn-action-archive{ background:var(--btn-archiv); }
+        .btn-action:last-child,
+        .btn-action-reset{ background:var(--btn-reset); }
+        .btn-action-esp{ background:#f57c00; }
 
         #banner{
             display:none;
@@ -118,7 +121,6 @@
             position:absolute;
             inset:0;
             display:flex;
-            flex-direction:column;
             align-items:center;
             justify-content:center;
             font-size:1.2rem;
@@ -127,46 +129,6 @@
             font-weight:bold;
             padding:20px;
             background:var(--panel);
-        }
-
-        .esp-status{
-            display:flex;
-            align-items:center;
-            gap:10px;
-            margin-top:18px;
-            font-size:0.95rem;
-            font-weight:700;
-            letter-spacing:0.04em;
-        }
-
-        .esp-dot{
-            width:14px;
-            height:14px;
-            border-radius:50%;
-            flex-shrink:0;
-            background:#444;
-            transition:background 0.4s;
-        }
-
-        .esp-dot.online{
-            background:#00e676;
-            box-shadow:0 0 8px rgba(0,230,118,0.7);
-            animation:pulse-green 2s infinite;
-        }
-
-        .esp-dot.offline{
-            background:#ff1744;
-            box-shadow:0 0 8px rgba(255,23,68,0.7);
-        }
-
-        .esp-dot.unknown{
-            background:#888;
-        }
-
-        @keyframes pulse-green{
-            0%{ box-shadow:0 0 4px rgba(0,230,118,0.5); }
-            50%{ box-shadow:0 0 14px rgba(0,230,118,0.9); }
-            100%{ box-shadow:0 0 4px rgba(0,230,118,0.5); }
         }
 
         .map-note{
@@ -411,7 +373,7 @@
 
         .mobile-footer-actions{
             display:grid;
-            grid-template-columns:1fr 1fr;
+            grid-template-columns:repeat(3, minmax(0, 1fr));
             gap:12px;
             margin-top:4px;
             padding-top:4px;
@@ -433,13 +395,18 @@
         }
 
         .mobile-footer-btn-archive{
-            background:linear-gradient(180deg, #31a9ff, #146fd4);
-            box-shadow:0 14px 34px rgba(49,169,255,0.22);
+            background:linear-gradient(180deg, #00d66f, #008f4a);
+            box-shadow:0 14px 34px rgba(0,214,111,0.22);
         }
 
         .mobile-footer-btn-reset{
             background:linear-gradient(180deg, #ff4166, #d60d37);
             box-shadow:0 14px 34px rgba(255,23,68,0.24);
+        }
+
+        .mobile-footer-btn-esp{
+            background:linear-gradient(180deg, #ffad33, #f57c00);
+            box-shadow:0 14px 34px rgba(245,124,0,0.24);
         }
 
         .mobile-field{
@@ -1195,18 +1162,12 @@
         <img class="selector-logo" src="logo.png" alt="DHZ">
         <div class="selector-kicker">Výber zobrazenia</div>
         <div class="selector-title">DHZ Lednica - Dispečing</div>
-        <div class="selector-text">
-            Vyber si režim, v ktorom chceš web otvoriť.
-            TV verzia zobrazuje veľký dispečing s mapou a mobilná verzia slúži na rýchlu odpoveď IDEM / NEJDEM.
-        </div>
         <div class="selector-actions">
             <a id="selector-tv-link" class="selector-btn selector-btn-tv" href="?tv=1">
                 <strong>TV VERZIA</strong>
-                <span>Veľké zobrazenie s mapou trasy udalosti.</span>
             </a>
             <a id="selector-mobile-link" class="selector-btn selector-btn-mobile" href="?mobil=1">
                 <strong>MOBILNÁ VERZIA</strong>
-                <span>Mobilné ovládanie s odpoveďou IDEM alebo NEJDEM.</span>
             </a>
         </div>
     </div>
@@ -1235,11 +1196,12 @@
             <div class="header-meta">
                 <div class="mobile-timer-label">OVLÁDANIE</div>
                 <div class="header-actions">
-                    <a id="archive-link" href="archive.html?tv=1" class="btn-action">ARCHÍV</a>
-                    <button class="btn-action" onclick="manualReset()">RESET</button>
+                    <a id="archive-link" href="archive.html?tv=1" class="btn-action btn-action-archive tv-control-action">ARCHÍV</a>
+                    <a id="esp-link" href="esp.html?tv=1" class="btn-action btn-action-esp tv-control-action">ESP</a>
+                    <button class="btn-action btn-action-reset tv-control-action" onclick="manualReset()">RESET</button>
                 </div>
             </div>
-            <div class="mobile-badge tv-mode-badge">TV REŽIM</div>
+            <div id="display-mode-badge" class="mobile-badge tv-mode-badge">TV REŽIM</div>
         </div>
     </div>
 </div>
@@ -1319,6 +1281,7 @@
 
             <div class="mobile-footer-actions">
                 <a id="mobile-bottom-archive-link" class="mobile-footer-btn mobile-footer-btn-archive" href="archive.html?mobil=1">ARCHÍV</a>
+                <a id="mobile-esp-link" class="mobile-footer-btn mobile-footer-btn-esp" href="esp.html?mobil=1">ESP</a>
                 <button class="mobile-footer-btn mobile-footer-btn-reset" type="button" onclick="manualReset()">RESET</button>
             </div>
         </div>
@@ -1328,12 +1291,7 @@
 <div class="main">
     <div class="col"><div class="title" style="color:var(--green);">IDEM ✔️</div><div id="idem" class="list"></div></div>
     <div class="map-shell">
-        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...
-            <div class="esp-status">
-                <div id="esp-dot" class="esp-dot unknown"></div>
-                <span id="esp-label" style="color:#666;">ESP32 – načítavam...</span>
-            </div>
-        </div>
+        <div id="map-msg" class="map-placeholder">ČAKÁM NA ADRESU VÝJAZDU...</div>
         <iframe id="map" title="Trasa výjazdu" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <div id="map-note" class="map-note"></div>
     </div>
@@ -1383,6 +1341,8 @@ let pendingResetAction = null;
 const START_ADDRESS = "Lednica 243";
 const START_FALLBACK_COORDS = [49.064949, 18.206457];
 const RESET_PIN = "1234";
+const DISPATCH_ACCESS_KEY = "dhzlednica1880*";
+const DISPATCH_ACCESS_KEY_PARAM = "klic";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
@@ -1422,6 +1382,7 @@ applyModeClass();
 initializeMobileForm();
 configureArchiveLink();
 configureSelectorLinks();
+configureEspLink();
 
 function updateClocks() {
     const currentTime = new Date().toLocaleTimeString("sk-SK");
@@ -1455,6 +1416,8 @@ function applyModeClass() {
     document.body.classList.toggle("mode-mobile", IS_MOBILE_MODE);
     document.body.classList.toggle("mode-tv", IS_TV_MODE);
     document.body.classList.toggle("mode-default", !IS_SELECTOR_MODE && !IS_MOBILE_MODE && !IS_TV_MODE);
+
+    document.getElementById("display-mode-badge").innerText = "TV REŽIM";
 
     if (IS_SELECTOR_MODE) {
         document.title = "DHZ Lednica - DISPEČING";
@@ -1496,6 +1459,33 @@ function buildRootModeUrl(mode) {
 function configureSelectorLinks() {
     document.getElementById("selector-tv-link").href = buildRootModeUrl("tv");
     document.getElementById("selector-mobile-link").href = buildRootModeUrl("mobil");
+}
+
+function configureEspLink() {
+    const buildEspUrl = (baseMode) => {
+        const url = new URL("esp.html", ROOT_PAGE_URL);
+        url.searchParams.set(baseMode, "1");
+
+        if (DEBUG_MODE) {
+            url.searchParams.set("debug", "1");
+        }
+
+        if (NO_PUSH_MODE) {
+            url.searchParams.set("nopush", "1");
+        }
+
+        return url.toString();
+    };
+
+    const espLink = document.getElementById("esp-link");
+    if (espLink) {
+        espLink.href = buildEspUrl("tv");
+    }
+
+    const mobileEspLink = document.getElementById("mobile-esp-link");
+    if (mobileEspLink) {
+        mobileEspLink.href = buildEspUrl("mobil");
+    }
 }
 
 function buildPersistentParams() {
@@ -1540,7 +1530,10 @@ function buildArchiveLinkUrl() {
 
 function configureArchiveLink() {
     const url = buildArchiveLinkUrl();
-    document.getElementById("archive-link").href = url;
+    const archiveLink = document.getElementById("archive-link");
+    if (archiveLink) {
+        archiveLink.href = url;
+    }
     document.getElementById("mobile-bottom-archive-link").href = url;
 }
 
@@ -1548,6 +1541,10 @@ function replaceHistoryPreservingMode() {
     const params = buildPersistentParams();
     const query = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+}
+
+function hasValidDispatchAccessKey() {
+    return urlParams.get(DISPATCH_ACCESS_KEY_PARAM) === DISPATCH_ACCESS_KEY;
 }
 
 function showArchiveModal(show) {
@@ -1814,7 +1811,14 @@ async function spracujVstup() {
     logDebug("Spracovanie vstupu", { udalost: u, miesto: adr, akcia: akc, typ: t, mobil: IS_MOBILE_MODE, tv: IS_TV_MODE });
 
     if (u) {
+        if (!hasValidDispatchAccessKey()) {
+            logDebug("Vyhlasenie udalosti zamietnute", `Chyba alebo je nespravny parameter ${DISPATCH_ACCESS_KEY_PARAM}`);
+            replaceHistoryPreservingMode();
+            return;
+        }
+
         await ref.set({
+            klic: DISPATCH_ACCESS_KEY,
             __metadata: {
                 typ: u,
                 podtyp: t || "",
@@ -2165,85 +2169,6 @@ db.collection("vyjazdy").doc("active").onSnapshot((doc) => {
 
     updateParticipants(d);
 });
-
-const ESP_OFFLINE_WARN_MS = 15 * 60 * 1000;
-const ESP_OFFLINE_ALERT_MS = 15 * 60 * 1000;
-let espAlertSent = false;
-
-function updateEspDot(lastSeen) {
-    const dot = document.getElementById("esp-dot");
-    const label = document.getElementById("esp-label");
-    if (!dot) return;
-
-    if (!lastSeen) {
-        dot.className = "esp-dot unknown";
-        label.style.color = "#666";
-        label.innerText = "ESP32 – žiadne dáta";
-        return;
-    }
-
-    const age = Date.now() - lastSeen;
-    const minutes = Math.floor(age / 60000);
-
-    if (age < ESP_OFFLINE_WARN_MS) {
-        dot.className = "esp-dot online";
-        label.style.color = "#00e676";
-        label.innerText = `ESP32 online – naposledy pred ${minutes < 1 ? "<1" : minutes} min`;
-        espAlertSent = false;
-    } else {
-        dot.className = "esp-dot offline";
-        label.style.color = "#ff1744";
-        label.innerText = `ESP32 OFFLINE – naposledy pred ${minutes} min`;
-        if (!espAlertSent) {
-            espAlertSent = true;
-            sendEspOfflineAlert(minutes);
-        }
-    }
-}
-
-async function sendEspOfflineAlert(minutes) {
-    if (NO_PUSH_MODE) { logDebug("ESP offline alert preskoceny (nopush)"); return; }
-    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
-    const adminGroup = "gdquxjjbzk9ptkkh9tsuzofujtbqbg";
-    const body = new URLSearchParams({
-        token: apiToken,
-        user: adminGroup,
-        message: `ESP32 sa neozval už ${minutes} minút. Skontroluj zariadenie.`,
-        title: "⚠️ ESP32 OFFLINE",
-        priority: 1,
-        sound: "siren"
-    });
-    try {
-        await fetch("https://api.pushover.net/1/messages.json", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body
-        });
-        logDebug("ESP offline alert odoslaný adminovi");
-    } catch (e) {
-        logDebug("ESP offline alert zlyhal", e.message);
-    }
-}
-
-db.collection("esp_heartbeat").doc("lednica").onSnapshot((doc) => {
-    if (!doc.exists) { updateEspDot(null); return; }
-    const data = doc.data();
-    const lastSeen = typeof data.lastSeen === "number" ? data.lastSeen : null;
-    updateEspDot(lastSeen);
-    logDebug("ESP heartbeat", { lastSeen });
-});
-
-setInterval(() => {
-    const dot = document.getElementById("esp-dot");
-    if (!dot) return;
-    if (dot.classList.contains("online") || dot.classList.contains("offline")) {
-        db.collection("esp_heartbeat").doc("lednica").get().then((doc) => {
-            if (!doc.exists) { updateEspDot(null); return; }
-            const data = doc.data();
-            updateEspDot(typeof data.lastSeen === "number" ? data.lastSeen : null);
-        });
-    }
-}, 60000);
 
 function formatElapsedTime(start) {
     const elapsed = Math.max(0, Math.floor((Date.now() - start) / 1000));
