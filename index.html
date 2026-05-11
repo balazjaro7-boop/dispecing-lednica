@@ -213,6 +213,7 @@
             align-items:center;
             justify-content:space-between;
             gap:12px;
+            flex-wrap:wrap;
         }
 
         .mobile-header-status{
@@ -220,7 +221,7 @@
             align-items:center;
             justify-content:flex-end;
             gap:8px;
-            flex:0 0 auto;
+            flex:0 1 auto;
         }
 
         .mobile-brand-inline{
@@ -230,6 +231,7 @@
             gap:12px;
             text-align:left;
             min-width:0;
+            flex:1 1 auto;
         }
 
         .mobile-brand-inline img{
@@ -272,6 +274,14 @@
             border:1px solid #212a35;
             box-shadow:0 16px 40px rgba(0,0,0,0.25);
             text-align:center;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            min-width:0;
+        }
+
+        .mobile-timer-strip .mobile-timer-card{
+            min-height:90px;
         }
 
         .mobile-timer-label{
@@ -285,16 +295,18 @@
         .mobile-card-timer{
             margin-top:8px;
             font-family:monospace;
-            font-size:1.95rem;
+            font-size:clamp(1.55rem, 6.2vw, 1.95rem);
             font-weight:900;
+            line-height:1.1;
             color:#fff;
         }
 
         .mobile-card-clock{
             margin-top:8px;
             font-family:monospace;
-            font-size:1.35rem;
-            font-weight:800;
+            font-size:clamp(1.55rem, 6.2vw, 1.95rem);
+            font-weight:900;
+            line-height:1.1;
             color:#fff;
             text-align:center;
         }
@@ -377,13 +389,15 @@
         }
 
         .mobile-header-heartbeat{
-            min-height:36px;
-            padding:7px 12px;
+            min-width:0;
+            height:40px;
+            min-height:40px;
+            padding:6px 10px;
             border-radius:999px;
             background:rgba(255,255,255,0.08);
             border:1px solid rgba(255,255,255,0.08);
             box-shadow:none;
-            gap:8px;
+            gap:6px;
         }
 
         .mobile-header-heartbeat .esp-heartbeat-status{
@@ -397,15 +411,19 @@
         }
 
         .mobile-header-heartbeat .esp-heartbeat-copy{
+            flex:0 1 auto;
+            justify-content:center;
             gap:7px;
+            min-width:0;
         }
 
         .mobile-header-heartbeat .esp-heartbeat-module{
-            font-size:0.62rem;
+            font-size:0.7rem;
+            line-height:1.05;
         }
 
         .mobile-header-heartbeat .mobile-timer-label{
-            font-size:0.68rem;
+            font-size:0.72rem;
             line-height:1;
         }
 
@@ -435,6 +453,18 @@
             letter-spacing:0.08em;
             text-transform:uppercase;
             border:1px solid rgba(255,255,255,0.08);
+            text-align:center;
+        }
+
+        #mobile-view .mobile-badge{
+            justify-content:center;
+            width:auto;
+            height:40px;
+            min-height:40px;
+            padding:6px 10px;
+            border-radius:999px;
+            font-size:0.72rem;
+            line-height:1.05;
         }
 
         .mobile-prefix{
@@ -1450,7 +1480,7 @@
         <div class="mobile-hero">
             <div id="mobile-prefix" class="mobile-prefix">ČAKÁM NA VÝJAZD</div>
             <div id="mobile-typ" class="mobile-typ">Bez aktívnej udalosti</div>
-            <div id="mobile-adresa" class="mobile-adresa">Po vyhlásení výjazdu sa tu zobrazí typ a adresa udalosti.</div>
+            <div id="mobile-adresa" class="mobile-adresa"></div>
             <div class="mobile-toolbar">
                 <a id="mobile-map-link" class="mobile-link" href="#" target="_blank" rel="noopener" aria-disabled="true">OTVORIŤ NAVIGÁCIU</a>
             </div>
@@ -2032,7 +2062,7 @@ function setMobileButtonsDisabled(disabled) {
 function resetMobileState() {
     document.getElementById("mobile-prefix").innerText = "ČAKÁM NA VÝJAZD";
     document.getElementById("mobile-typ").innerText = "Bez aktívnej udalosti";
-    document.getElementById("mobile-adresa").innerText = "Po vyhlásení výjazdu sa tu zobrazí typ a adresa udalosti.";
+    document.getElementById("mobile-adresa").innerText = "";
     document.getElementById("mobile-count-idem").innerText = "0";
     document.getElementById("mobile-count-nejdem").innerText = "0";
     renderMobileNames("mobile-idem-list", [], "idem");
