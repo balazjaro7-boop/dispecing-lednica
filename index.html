@@ -209,19 +209,18 @@
         }
 
         .mobile-panel-top{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:12px;
-            flex-wrap:wrap;
+            display:grid;
+            grid-template-columns:1fr;
+            align-items:stretch;
+            gap:14px;
         }
 
         .mobile-header-status{
-            display:flex;
+            display:grid;
+            grid-template-columns:1fr 1fr;
             align-items:center;
-            justify-content:flex-end;
-            gap:8px;
-            flex:0 1 auto;
+            gap:12px;
+            width:100%;
         }
 
         .mobile-brand-inline{
@@ -231,7 +230,6 @@
             gap:12px;
             text-align:left;
             min-width:0;
-            flex:1 1 auto;
         }
 
         .mobile-brand-inline img{
@@ -389,15 +387,16 @@
         }
 
         .mobile-header-heartbeat{
+            width:100%;
             min-width:0;
-            height:40px;
-            min-height:40px;
-            padding:6px 10px;
+            height:64px;
+            min-height:64px;
+            padding:8px 14px;
             border-radius:999px;
             background:rgba(255,255,255,0.08);
             border:1px solid rgba(255,255,255,0.08);
             box-shadow:none;
-            gap:6px;
+            gap:10px;
         }
 
         .mobile-header-heartbeat .esp-heartbeat-status{
@@ -458,12 +457,12 @@
 
         #mobile-view .mobile-badge{
             justify-content:center;
-            width:auto;
-            height:40px;
-            min-height:40px;
-            padding:6px 10px;
+            width:100%;
+            height:64px;
+            min-height:64px;
+            padding:8px 14px;
             border-radius:999px;
-            font-size:0.72rem;
+            font-size:0.82rem;
             line-height:1.05;
         }
 
