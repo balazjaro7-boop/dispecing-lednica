@@ -6,6 +6,7 @@
     <title>DHZ Lednica - DISPEČING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         :root{
             --bg:#07090c;
@@ -73,7 +74,6 @@
         .btn-action-archive{ background:var(--btn-archiv); }
         .btn-action:last-child,
         .btn-action-reset{ background:var(--btn-reset); }
-        .btn-action-esp{ background:#f57c00; }
 
         #banner{
             display:none;
@@ -216,6 +216,14 @@
             gap:12px;
         }
 
+        .mobile-header-status{
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            gap:8px;
+            flex:0 0 auto;
+        }
+
         .mobile-brand-inline{
             display:flex;
             align-items:center;
@@ -290,6 +298,121 @@
             font-weight:800;
             color:#fff;
             text-align:center;
+        }
+
+        .esp-heartbeat-card{
+            display:flex;
+            flex-direction:row;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            cursor:pointer;
+            user-select:none;
+        }
+
+        .esp-heartbeat-card:focus-visible{
+            outline:2px solid rgba(255,255,255,0.42);
+            outline-offset:3px;
+        }
+
+        .esp-heartbeat-status{
+            display:block;
+            flex:0 0 18px;
+            width:18px;
+            min-width:18px;
+            max-width:18px;
+            height:18px;
+            min-height:18px;
+            max-height:18px;
+            aspect-ratio:1 / 1;
+            border-radius:50%;
+            background:#9eacba;
+            box-shadow:0 0 0 0 rgba(158,172,186,0.55);
+        }
+
+        .esp-heartbeat-copy{
+            display:flex;
+            flex-direction:row;
+            align-items:center;
+            gap:10px;
+            min-width:0;
+        }
+
+        .esp-heartbeat-labels{
+            display:flex;
+            flex-direction:column;
+            align-items:flex-start;
+            gap:2px;
+            min-width:0;
+        }
+
+        .esp-heartbeat-module{
+            color:#d9e4ef;
+            font-size:0.74rem;
+            font-weight:900;
+            line-height:1;
+            text-transform:uppercase;
+            white-space:nowrap;
+        }
+
+        .esp-heartbeat-card.online .esp-heartbeat-status{
+            background:var(--green);
+            box-shadow:0 0 0 0 rgba(0,230,118,0.7);
+            animation:espHeartbeatPulseOnline 1s infinite;
+        }
+
+        .esp-heartbeat-card.offline .esp-heartbeat-status{
+            background:var(--red);
+            box-shadow:none;
+            animation:none;
+        }
+
+        @keyframes espHeartbeatPulseOnline{
+            0%{ opacity:1; transform:scale(1); box-shadow:0 0 0 0 rgba(0,230,118,0.72); }
+            45%{ opacity:0.38; transform:scale(0.82); box-shadow:0 0 14px 5px rgba(0,230,118,0.28); }
+            100%{ opacity:1; transform:scale(1); box-shadow:0 0 0 0 rgba(0,230,118,0); }
+        }
+
+        .esp-heartbeat-last{
+            display:none;
+        }
+
+        .mobile-header-heartbeat{
+            min-height:36px;
+            padding:7px 12px;
+            border-radius:999px;
+            background:rgba(255,255,255,0.08);
+            border:1px solid rgba(255,255,255,0.08);
+            box-shadow:none;
+            gap:8px;
+        }
+
+        .mobile-header-heartbeat .esp-heartbeat-status{
+            flex-basis:12px;
+            width:12px;
+            min-width:12px;
+            max-width:12px;
+            height:12px;
+            min-height:12px;
+            max-height:12px;
+        }
+
+        .mobile-header-heartbeat .esp-heartbeat-copy{
+            gap:7px;
+        }
+
+        .mobile-header-heartbeat .esp-heartbeat-module{
+            font-size:0.62rem;
+        }
+
+        .mobile-header-heartbeat .mobile-timer-label{
+            font-size:0.68rem;
+            line-height:1;
+        }
+
+        .mobile-header-heartbeat .esp-heartbeat-last{
+            font-size:0.88rem;
+            line-height:1;
         }
 
         .mobile-hero{
@@ -373,7 +496,7 @@
 
         .mobile-footer-actions{
             display:grid;
-            grid-template-columns:repeat(3, minmax(0, 1fr));
+            grid-template-columns:repeat(2, minmax(0, 1fr));
             gap:12px;
             margin-top:4px;
             padding-top:4px;
@@ -402,11 +525,6 @@
         .mobile-footer-btn-reset{
             background:linear-gradient(180deg, #ff4166, #d60d37);
             box-shadow:0 14px 34px rgba(255,23,68,0.24);
-        }
-
-        .mobile-footer-btn-esp{
-            background:linear-gradient(180deg, #ffad33, #f57c00);
-            box-shadow:0 14px 34px rgba(245,124,0,0.24);
         }
 
         .mobile-field{
@@ -756,6 +874,10 @@
             text-transform:uppercase;
         }
 
+        .heartbeat-detail-kicker{
+            color:#2db4ff;
+        }
+
         .reset-title{
             margin-top:8px;
             color:#fff;
@@ -835,6 +957,39 @@
         .reset-actions button:disabled{
             opacity:0.65;
             cursor:not-allowed;
+        }
+
+        .heartbeat-detail-time{
+            margin-top:18px;
+            padding:16px;
+            border-radius:14px;
+            border:1px solid #2b3847;
+            background:#080c12;
+            color:#fff;
+            font:900 1.45rem/1 monospace;
+            text-align:center;
+        }
+
+        .heartbeat-detail-state{
+            margin-top:12px;
+            color:#9eacba;
+            font-size:0.82rem;
+            font-weight:900;
+            letter-spacing:0.08em;
+            text-align:center;
+            text-transform:uppercase;
+        }
+
+        .heartbeat-detail-state.online{
+            color:var(--green);
+        }
+
+        .heartbeat-detail-state.offline{
+            color:var(--red);
+        }
+
+        .heartbeat-detail-actions{
+            grid-template-columns:1fr;
         }
 
         body.mode-mobile{
@@ -962,7 +1117,7 @@
 
         body.mode-tv .tv-side-stack{
             display:grid;
-            grid-template-columns:auto auto;
+            grid-template-columns:auto auto auto;
             gap:var(--tv-header-gap);
             align-items:stretch;
             width:auto;
@@ -983,6 +1138,7 @@
         body.mode-tv #timer-container,
         body.mode-tv .tv-clock-card,
         body.mode-tv .header-meta,
+        body.mode-tv .esp-heartbeat-card,
         body.mode-tv .tv-mode-badge{
             height:var(--tv-header-card-height);
         }
@@ -1039,13 +1195,33 @@
             text-align:center;
         }
 
+        body.mode-tv .esp-heartbeat-card{
+            min-width:120px;
+            padding:var(--tv-header-card-pad-y) var(--tv-header-card-pad-x);
+            border-radius:12px;
+            background:linear-gradient(180deg, rgba(21,28,36,0.96), rgba(10,14,19,0.96));
+            border:1px solid #212a35;
+            box-shadow:0 16px 40px rgba(0,0,0,0.25);
+            text-align:left;
+            gap:7px;
+        }
+
+        body.mode-tv .esp-heartbeat-copy{
+            gap:7px;
+        }
+
+        body.mode-tv .esp-heartbeat-module{
+            font-size:0.62rem;
+        }
+
         body.mode-tv .clock{
             color:#fff;
             text-align:center;
         }
 
         body.mode-tv #timer-container .mobile-timer-label,
-        body.mode-tv .tv-clock-card .mobile-timer-label{
+        body.mode-tv .tv-clock-card .mobile-timer-label,
+        body.mode-tv .esp-heartbeat-card .mobile-timer-label{
             color:#9eacba;
             font-size:0.66rem;
             font-weight:800;
@@ -1066,6 +1242,21 @@
         body.mode-tv #timer-container .mobile-card-timer,
         body.mode-tv .tv-clock-card .mobile-card-clock{
             margin-top:2px;
+        }
+
+        body.mode-tv .esp-heartbeat-status{
+            flex-basis:14px;
+            width:14px;
+            min-width:14px;
+            max-width:14px;
+            height:14px;
+            min-height:14px;
+            max-height:14px;
+        }
+
+        body.mode-tv .esp-heartbeat-last{
+            font-size:0.92rem;
+            line-height:1;
         }
 
         body.mode-tv #timer.mobile-card-timer{
@@ -1185,7 +1376,7 @@
         <div class="tv-header-strip">
             <div id="timer-container" class="center-timer mobile-timer-card">
                 <div class="mobile-timer-label">ČAS OD VYHLÁSENIA UDALOSTI</div>
-                <div id="timer" class="mobile-card-timer">00:00</div>
+                <div id="timer" class="mobile-card-timer">--:--:--</div>
             </div>
             <div class="tv-clock-card mobile-timer-card">
                 <div class="mobile-timer-label">AKTUÁLNY ČAS</div>
@@ -1197,8 +1388,17 @@
                 <div class="mobile-timer-label">OVLÁDANIE</div>
                 <div class="header-actions">
                     <a id="archive-link" href="archive.html?tv=1" class="btn-action btn-action-archive tv-control-action">ARCHÍV</a>
-                    <a id="esp-link" href="esp.html?tv=1" class="btn-action btn-action-esp tv-control-action">ESP</a>
                     <button class="btn-action btn-action-reset tv-control-action" onclick="manualReset()">RESET</button>
+                </div>
+            </div>
+            <div id="esp-heartbeat-card" class="esp-heartbeat-card mobile-timer-card offline" role="button" tabindex="0" onclick="openEspHeartbeatModal()" onkeydown="handleEspHeartbeatKey(event)">
+                <div id="esp-heartbeat-status" class="esp-heartbeat-status" aria-label="Lifebit offline" data-last-seen="Posledná komunikácia: --:--:--"></div>
+                <div class="esp-heartbeat-copy">
+                    <div class="esp-heartbeat-labels">
+                        <div class="esp-heartbeat-module">I/O Modul</div>
+                        <div class="mobile-timer-label">Lifebit</div>
+                    </div>
+                    <div id="esp-heartbeat-last" class="esp-heartbeat-last">--:--:--</div>
                 </div>
             </div>
             <div id="display-mode-badge" class="mobile-badge tv-mode-badge">TV REŽIM</div>
@@ -1223,12 +1423,24 @@
                         <span>Odpoveď na výjazd</span>
                     </div>
                 </div>
-                <div class="mobile-badge">MOBILNÝ REŽIM</div>
+                <div class="mobile-header-status">
+                    <div id="mobile-esp-heartbeat-card" class="esp-heartbeat-card mobile-header-heartbeat offline" role="button" tabindex="0" onclick="openEspHeartbeatModal()" onkeydown="handleEspHeartbeatKey(event)">
+                        <div id="mobile-esp-heartbeat-status" class="esp-heartbeat-status" aria-label="Lifebit offline" data-last-seen="Posledná komunikácia: --:--:--"></div>
+                        <div class="esp-heartbeat-copy">
+                            <div class="esp-heartbeat-labels">
+                                <div class="esp-heartbeat-module">I/O Modul</div>
+                                <div class="mobile-timer-label">Lifebit</div>
+                            </div>
+                            <div id="mobile-esp-heartbeat-last" class="esp-heartbeat-last">--:--:--</div>
+                        </div>
+                    </div>
+                    <div class="mobile-badge">MOBILNÝ REŽIM</div>
+                </div>
             </div>
             <div class="mobile-timer-strip">
                 <div class="mobile-timer-card">
                     <div class="mobile-timer-label">ČAS OD VYHLÁSENIA UDALOSTI</div>
-                    <div id="mobile-timer" class="mobile-card-timer">00:00</div>
+                    <div id="mobile-timer" class="mobile-card-timer">--:--:--</div>
                 </div>
                 <div class="mobile-timer-card">
                     <div class="mobile-timer-label">AKTUÁLNY ČAS</div>
@@ -1281,7 +1493,6 @@
 
             <div class="mobile-footer-actions">
                 <a id="mobile-bottom-archive-link" class="mobile-footer-btn mobile-footer-btn-archive" href="archive.html?mobil=1">ARCHÍV</a>
-                <a id="mobile-esp-link" class="mobile-footer-btn mobile-footer-btn-esp" href="esp.html?mobil=1">ESP</a>
                 <button class="mobile-footer-btn mobile-footer-btn-reset" type="button" onclick="manualReset()">RESET</button>
             </div>
         </div>
@@ -1301,6 +1512,18 @@
 <div id="debug-panel">
     <strong>DEBUG REŽIM</strong>
     <div id="debug-log"></div>
+</div>
+
+<div id="esp-heartbeat-modal" class="reset-modal" hidden>
+    <div class="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="esp-heartbeat-modal-title">
+        <div class="reset-kicker heartbeat-detail-kicker">Lifebit</div>
+        <div id="esp-heartbeat-modal-title" class="reset-title">I/O Modul</div>
+        <div class="reset-text">Posledná komunikácia</div>
+        <div id="esp-heartbeat-modal-time" class="heartbeat-detail-time">--:--:--</div>
+        <div class="reset-actions heartbeat-detail-actions">
+            <button class="reset-cancel" type="button" onclick="closeEspHeartbeatModal()">Zavrieť</button>
+        </div>
+    </div>
 </div>
 
 <div id="reset-modal" class="reset-modal" hidden>
@@ -1331,11 +1554,13 @@
 const firebaseConfig = {
     apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
     authDomain: "hasici-lednica.firebaseapp.com",
+    databaseURL: "https://hasici-lednica-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "hasici-lednica"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const rtdb = firebase.database();
 let pendingResetAction = null;
 
 const START_ADDRESS = "Lednica 243";
@@ -1346,6 +1571,8 @@ const DISPATCH_ACCESS_KEY_PARAM = "klic";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
+const ESP_HEARTBEAT_DOC = "espStatus/esp32d";
+const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 2 * 60 * 1000;
 
 let timerInterval = null;
 let renderedMapDispatchKey = null;
@@ -1382,7 +1609,6 @@ applyModeClass();
 initializeMobileForm();
 configureArchiveLink();
 configureSelectorLinks();
-configureEspLink();
 
 function updateClocks() {
     const currentTime = new Date().toLocaleTimeString("sk-SK");
@@ -1392,6 +1618,107 @@ function updateClocks() {
 
 updateClocks();
 setInterval(updateClocks, 1000);
+
+let espHeartbeatLastSeen = 0;
+let espHeartbeatLastSeenText = "--:--:--";
+let espHeartbeatIsOnline = false;
+
+function getHeartbeatMillis(value) {
+    if (typeof value === "number") {
+        return value;
+    }
+
+    if (value && typeof value.toMillis === "function") {
+        return value.toMillis();
+    }
+
+    return 0;
+}
+
+function setEspHeartbeatView(isOnline, lastSeen) {
+    const statusText = isOnline ? "Lifebit online" : "Lifebit offline";
+    const lastSeenText = lastSeen
+        ? new Date(lastSeen).toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        : "--:--:--";
+    espHeartbeatLastSeenText = lastSeenText;
+    espHeartbeatIsOnline = isOnline;
+
+    [
+        ["esp-heartbeat-card", "esp-heartbeat-status", "esp-heartbeat-last"],
+        ["mobile-esp-heartbeat-card", "mobile-esp-heartbeat-status", "mobile-esp-heartbeat-last"]
+    ].forEach(([cardId, statusId, lastId]) => {
+        const card = document.getElementById(cardId);
+        const status = document.getElementById(statusId);
+        const last = document.getElementById(lastId);
+
+        if (!card || !status || !last) {
+            return;
+        }
+
+        card.classList.toggle("online", isOnline);
+        card.classList.toggle("offline", !isOnline);
+        status.setAttribute("aria-label", `${statusText}, posledná komunikácia ${lastSeenText}`);
+        status.setAttribute("data-last-seen", `Posledná komunikácia: ${lastSeenText}`);
+        status.removeAttribute("title");
+        last.innerText = lastSeenText;
+    });
+
+    updateEspHeartbeatModal();
+}
+
+function updateEspHeartbeatModal() {
+    const time = document.getElementById("esp-heartbeat-modal-time");
+
+    if (!time) {
+        return;
+    }
+
+    time.innerText = espHeartbeatLastSeenText;
+}
+
+function openEspHeartbeatModal() {
+    updateEspHeartbeatModal();
+    document.getElementById("esp-heartbeat-modal").hidden = false;
+}
+
+function closeEspHeartbeatModal() {
+    document.getElementById("esp-heartbeat-modal").hidden = true;
+}
+
+function handleEspHeartbeatKey(event) {
+    if (event.key !== "Enter" && event.key !== " ") {
+        return;
+    }
+
+    event.preventDefault();
+    openEspHeartbeatModal();
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+        return;
+    }
+
+    closeEspHeartbeatModal();
+});
+
+function refreshEspHeartbeatView() {
+    const isOnline = espHeartbeatLastSeen > 0 && (Date.now() - espHeartbeatLastSeen) < ESP_HEARTBEAT_OFFLINE_AFTER_MS;
+    setEspHeartbeatView(isOnline, espHeartbeatLastSeen);
+}
+
+rtdb.ref(ESP_HEARTBEAT_DOC).on("value", (snapshot) => {
+    const data = snapshot.val();
+    espHeartbeatLastSeen = data && data.lastSeen ? getHeartbeatMillis(data.lastSeen) : 0;
+    refreshEspHeartbeatView();
+}, (error) => {
+    espHeartbeatLastSeen = 0;
+    refreshEspHeartbeatView();
+    logDebug("ESP heartbeat RTDB sa nepodarilo načítať", error.message || String(error));
+});
+
+refreshEspHeartbeatView();
+setInterval(refreshEspHeartbeatView, 5000);
 
 function logDebug(message, data) {
     const timestamp = new Date().toLocaleTimeString("sk-SK");
@@ -1459,33 +1786,6 @@ function buildRootModeUrl(mode) {
 function configureSelectorLinks() {
     document.getElementById("selector-tv-link").href = buildRootModeUrl("tv");
     document.getElementById("selector-mobile-link").href = buildRootModeUrl("mobil");
-}
-
-function configureEspLink() {
-    const buildEspUrl = (baseMode) => {
-        const url = new URL("esp.html", ROOT_PAGE_URL);
-        url.searchParams.set(baseMode, "1");
-
-        if (DEBUG_MODE) {
-            url.searchParams.set("debug", "1");
-        }
-
-        if (NO_PUSH_MODE) {
-            url.searchParams.set("nopush", "1");
-        }
-
-        return url.toString();
-    };
-
-    const espLink = document.getElementById("esp-link");
-    if (espLink) {
-        espLink.href = buildEspUrl("tv");
-    }
-
-    const mobileEspLink = document.getElementById("mobile-esp-link");
-    if (mobileEspLink) {
-        mobileEspLink.href = buildEspUrl("mobil");
-    }
 }
 
 function buildPersistentParams() {
@@ -1743,8 +2043,8 @@ function resetUiState(options = {}) {
     document.getElementById("prefix").innerText = "";
     document.getElementById("typ").innerText = "";
     document.getElementById("adresa").innerText = "";
-    document.getElementById("timer").innerText = "00:00";
-    document.getElementById("mobile-timer").innerText = "00:00";
+    document.getElementById("timer").innerText = "--:--:--";
+    document.getElementById("mobile-timer").innerText = "--:--:--";
     document.getElementById("map-msg").innerText = "ČAKÁM NA ADRESU VÝJAZDU...";
     document.getElementById("idem").innerHTML = "";
     document.getElementById("nejdem").innerHTML = "";
@@ -2176,11 +2476,7 @@ function formatElapsedTime(start) {
     const minutes = Math.floor((elapsed % 3600) / 60);
     const seconds = elapsed % 60;
 
-    if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    }
-
-    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function startTimer(start) {
