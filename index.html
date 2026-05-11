@@ -6,7 +6,6 @@
     <title>DHZ Lednica - DISPEČING</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         :root{
             --bg:#07090c;
@@ -1554,13 +1553,11 @@
 const firebaseConfig = {
     apiKey: "AIzaSyA1rEXY06wS2Eq7YvNsDiqzlr_tX39ur-s",
     authDomain: "hasici-lednica.firebaseapp.com",
-    databaseURL: "https://hasici-lednica-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "hasici-lednica"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const rtdb = firebase.database();
 let pendingResetAction = null;
 
 const START_ADDRESS = "Lednica 243";
@@ -1571,7 +1568,8 @@ const DISPATCH_ACCESS_KEY_PARAM = "klic";
 const AUTO_ARCHIVE_AFTER_MS = 1 * 60 * 1000;
 const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
-const ESP_HEARTBEAT_DOC = "espStatus/esp32d";
+const ESP_HEARTBEAT_COLLECTION = "espStatus";
+const ESP_HEARTBEAT_DOCUMENT = "esp32d";
 const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 2 * 60 * 1000;
 
 let timerInterval = null;
@@ -1626,6 +1624,11 @@ let espHeartbeatIsOnline = false;
 function getHeartbeatMillis(value) {
     if (typeof value === "number") {
         return value;
+    }
+
+    if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
     }
 
     if (value && typeof value.toMillis === "function") {
@@ -1707,14 +1710,16 @@ function refreshEspHeartbeatView() {
     setEspHeartbeatView(isOnline, espHeartbeatLastSeen);
 }
 
-rtdb.ref(ESP_HEARTBEAT_DOC).on("value", (snapshot) => {
-    const data = snapshot.val();
-    espHeartbeatLastSeen = data && data.lastSeen ? getHeartbeatMillis(data.lastSeen) : 0;
+db.collection(ESP_HEARTBEAT_COLLECTION).doc(ESP_HEARTBEAT_DOCUMENT).onSnapshot((doc) => {
+    const data = doc.exists ? doc.data() : null;
+    espHeartbeatLastSeen = data
+        ? getHeartbeatMillis(data.naposledy_videny || data.lastSeen || data.timestamp)
+        : 0;
     refreshEspHeartbeatView();
 }, (error) => {
     espHeartbeatLastSeen = 0;
     refreshEspHeartbeatView();
-    logDebug("ESP heartbeat RTDB sa nepodarilo načítať", error.message || String(error));
+    logDebug("ESP heartbeat Firestore sa nepodarilo nacitat", error.message || String(error));
 });
 
 refreshEspHeartbeatView();
