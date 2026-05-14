@@ -1599,7 +1599,7 @@ const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 const ESP_HEARTBEAT_COLLECTION = "espStatus";
 const ESP_HEARTBEAT_DOCUMENT = "esp32d";
-const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 5 * 1000;
+const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 10 * 1000;
 const PUSHOVER_API_TOKEN = "arrtgeqpd5uczfjk1x918fgziguqp9";
 
 let timerInterval = null;
@@ -1753,7 +1753,7 @@ db.collection(ESP_HEARTBEAT_COLLECTION).doc(ESP_HEARTBEAT_DOCUMENT).onSnapshot((
 });
 
 refreshEspHeartbeatView();
-setInterval(refreshEspHeartbeatView, 5000);
+setInterval(refreshEspHeartbeatView, 1000);
 
 function logDebug(message, data) {
     const timestamp = new Date().toLocaleTimeString("sk-SK");
