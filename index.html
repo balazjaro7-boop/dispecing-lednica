@@ -1599,7 +1599,8 @@ const ROOT_PAGE_URL = `${window.location.origin}/`;
 const ARCHIVE_PAGE_URL = new URL("archive.html", ROOT_PAGE_URL).toString();
 const ESP_HEARTBEAT_COLLECTION = "espStatus";
 const ESP_HEARTBEAT_DOCUMENT = "esp32d";
-const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 2 * 60 * 1000;
+const ESP_HEARTBEAT_OFFLINE_AFTER_MS = 5 * 1000;
+const PUSHOVER_API_TOKEN = "arrtgeqpd5uczfjk1x918fgziguqp9";
 
 let timerInterval = null;
 let renderedMapDispatchKey = null;
@@ -2013,25 +2014,7 @@ async function updateMapRouteInfo(adresa, dispatchKey) {
 }
 
 function getDispatchCategory(udalost, podtyp) {
-    const upperPodtyp = (podtyp || "").toUpperCase();
-    const upperUdalost = (udalost || "").toUpperCase();
-
-    if (upperPodtyp === "AED" || upperUdalost.includes("AED")) {
-        return "VÝJAZD";
-    }
-
-    const text = `${udalost || ""} ${podtyp || ""}`.toLowerCase();
-    if (
-        text.includes("nehoda") ||
-        text.includes("voda") ||
-        text.includes("vody") ||
-        text.includes("strom") ||
-        text.includes("technic")
-    ) {
-        return "TECHNICKÝ VÝJAZD";
-    }
-
-    return "POŽIAR";
+    return "Výjazd";
 }
 
 function clearMap() {
@@ -2193,7 +2176,6 @@ async function spracujVstup() {
 }
 
 async function sendPushover(udalost, miesto, skupinaTyp) {
-    const apiToken = "arrtgeqpd5uczfjk1x918fgziguqp9";
     const groupVyjazd = (skupinaTyp === "AED") ? "gzv839iw4b249tqay7jicqzaw53w42" : "g796q69yjbfy1v2e2kc5enwqn57j1x";
     const responseUrl = "https://hasici-lednica.web.app/?mobil=1";
     const safeMiesto = miesto || "Nezadané";
@@ -2201,7 +2183,7 @@ async function sendPushover(udalost, miesto, skupinaTyp) {
         `<b>${udalost}</b><br>` +
         `Adresa: ${safeMiesto}`; 
     const body = new URLSearchParams({
-        token: apiToken,
+        token: PUSHOVER_API_TOKEN,
         user: groupVyjazd,
         message: msg,
         title: `${skupinaTyp === "AED" ? "🫀" : "🚨"} ${udalost}`,
@@ -2288,6 +2270,7 @@ function buildArchivePayload(data) {
     const info = [metadata.typ || "", podtyp, metadata.miesto || ""].filter(Boolean).join(" - ");
 
     return {
+        klic: DISPATCH_ACCESS_KEY,
         datum: firebase.firestore.Timestamp.fromMillis(eventTimestamp),
         datumText: timeParts.datum,
         cas: timeParts.cas,
