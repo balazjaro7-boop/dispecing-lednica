@@ -6,6 +6,7 @@
     <title>DHZ Lednica - Archív</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         :root{
@@ -323,6 +324,23 @@
 
         .export-pdf-btn:active{
             transform:translateY(1px);
+        }
+
+        .pdf-export-overlay{
+            position:fixed;
+            inset:0;
+            z-index:2147483647;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:rgba(0,0,0,0.96);
+            backdrop-filter:blur(10px);
+            -webkit-backdrop-filter:blur(10px);
+            color:#ffffff;
+            font-size:28px;
+            font-weight:900;
+            letter-spacing:0.04em;
+            text-transform:uppercase;
         }
 
         .archive-title{
@@ -1579,16 +1597,11 @@ function buildArchiveReportHtml(item) {
 
         <div class="footer">Exportované z archívu DHZ Lednica.</div>
     </main>
-    <script>
-        window.addEventListener("load", () => {
-            setTimeout(() => window.print(), 250);
-        });
-    <\/script>
 </body>
 </html>`;
 }
 
-function exportArchivePdf(item) {
+function exportArchivePdfPrintOld(item) {
     const reportWindow = window.open("", "_blank", "width=960,height=720");
 
     if (!reportWindow) {
@@ -1596,10 +1609,160 @@ function exportArchivePdf(item) {
         return;
     }
 
+    const printableHtml = buildArchiveReportHtml(item).replace(
+        "</body>",
+        `<script>
+        window.addEventListener("load", () => {
+            setTimeout(() => window.print(), 250);
+        });
+    <\/script>
+</body>`
+    );
+
     reportWindow.document.open();
-    reportWindow.document.write(buildArchiveReportHtml(item));
+    reportWindow.document.write(printableHtml);
     reportWindow.document.close();
     logDebug("PDF report pripravený", { id: item.id, udalost: item.udalost });
+}
+
+function padNumber(value) {
+    return String(value).padStart(2, "0");
+}
+
+function sanitizeFilePart(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w.-]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
+}
+
+function buildArchivePdfFilename(item) {
+    let dateTimePart = "";
+
+    if (Number.isFinite(item.timestamp)) {
+        const date = new Date(item.timestamp);
+        dateTimePart = [
+            date.getFullYear(),
+            padNumber(date.getMonth() + 1),
+            padNumber(date.getDate())
+        ].join("-") + "_" + [
+            padNumber(date.getHours()),
+            padNumber(date.getMinutes()),
+            padNumber(date.getSeconds())
+        ].join("-");
+    } else {
+        dateTimePart = sanitizeFilePart(`${item.datum || ""}_${item.cas || ""}`);
+    }
+
+    return `${dateTimePart || "report"}.pdf`;
+}
+
+function waitForReportAssets(doc) {
+    const images = Array.from(doc.images || []);
+    return Promise.all(images.map((img) => {
+        if (img.complete) {
+            return Promise.resolve();
+        }
+
+        return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+        });
+    }));
+}
+
+function showPdfExportOverlay() {
+    const overlay = document.createElement("div");
+    overlay.className = "pdf-export-overlay";
+    overlay.textContent = "Exportujem PDF...";
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function createReportExportElement(item) {
+    const parser = new DOMParser();
+    const reportDoc = parser.parseFromString(buildArchiveReportHtml(item), "text/html");
+    const report = reportDoc.querySelector(".report");
+    const reportStyle = reportDoc.querySelector("style");
+
+    if (!report) {
+        throw new Error("Report sa nepodarilo pripravit.");
+    }
+
+    const styleElement = document.createElement("style");
+    styleElement.textContent = reportStyle ? reportStyle.textContent : "";
+    document.head.appendChild(styleElement);
+
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "0";
+    wrapper.style.top = "0";
+    wrapper.style.width = "210mm";
+    wrapper.style.height = "297mm";
+    wrapper.style.overflow = "hidden";
+    wrapper.style.background = "#ffffff";
+    wrapper.style.pointerEvents = "none";
+    wrapper.style.zIndex = "-1";
+
+    wrapper.appendChild(document.importNode(report, true));
+    document.body.appendChild(wrapper);
+    const exportReport = wrapper.querySelector(".report");
+    exportReport.style.height = "296mm";
+    exportReport.style.minHeight = "296mm";
+
+    return {
+        element: exportReport,
+        cleanup() {
+            wrapper.remove();
+            styleElement.remove();
+        }
+    };
+}
+
+async function exportArchivePdf(item) {
+    if (typeof html2pdf === "undefined") {
+        alert("Export PDF nie je dostupny. Skontroluj internetove pripojenie a skus to znova.");
+        return;
+    }
+
+    let exportTarget = null;
+    const overlay = showPdfExportOverlay();
+
+    try {
+        exportTarget = createReportExportElement(item);
+        await waitForReportAssets(document);
+
+        await html2pdf()
+            .set({
+                filename: buildArchivePdfFilename(item),
+                margin: 0,
+                image: { type: "jpeg", quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#ffffff"
+                },
+                jsPDF: {
+                    unit: "mm",
+                    format: "a4",
+                    orientation: "portrait"
+                }
+            })
+            .from(exportTarget.element)
+            .save();
+
+        logDebug("PDF report stiahnuty", { id: item.id, udalost: item.udalost });
+    } catch (error) {
+        logDebug("PDF export chyba", error && error.message ? error.message : error);
+        alert("PDF sa nepodarilo vytvorit. Skus to prosim znova.");
+    } finally {
+        if (exportTarget) {
+            exportTarget.cleanup();
+        }
+        overlay.remove();
+    }
 }
 
 function createArchiveCard(item, mobile = false) {
@@ -1622,7 +1785,14 @@ function createArchiveCard(item, mobile = false) {
     exportButton.className = "export-pdf-btn";
     exportButton.type = "button";
     exportButton.innerText = "EXPORT PDF";
-    exportButton.addEventListener("click", () => exportArchivePdf(item));
+    exportButton.addEventListener("click", () => {
+        if (mobile) {
+            exportArchivePdfPrintOld(item);
+            return;
+        }
+
+        exportArchivePdf(item);
+    });
     dateWrap.appendChild(exportButton);
 
     top.appendChild(badge);
